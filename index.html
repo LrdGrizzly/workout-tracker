@@ -3286,6 +3286,9 @@ function selectProfile(profile) {
   document.getElementById('topbar-username').textContent = state.programme.name;
   document.getElementById('topbar-dot').style.background = state.programme.color;
 
+  // Ensure tracker is fully reset for the new profile
+  resetTrackerState();
+
   loadLocalState();
   tryRestoreToken();
   renderProgramme();
@@ -3296,18 +3299,62 @@ function selectProfile(profile) {
 }
 
 function showProfileScreen() {
+  const hasActiveSession = state.activeSessionId !== null;
+  const modalBody = hasActiveSession
+    ? 'You have an active session in progress. Switching profiles will cancel it without saving.'
+    : 'Return to the profile selector? Your current session data will not be lost.';
+
   showModal(
     'Switch Profile',
-    'Return to the profile selector? Your current session data will not be lost.',
+    modalBody,
     [
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Switch', cls: 'confirm', action: () => {
         closeModal();
+        // Always reset tracker state fully before switching
+        resetTrackerState();
         document.getElementById('profile-screen').style.display = 'flex';
         document.getElementById('app').style.display = 'none';
       }}
     ]
   );
+}
+
+function resetTrackerState() {
+  // Cancel any active session without saving
+  state.activeSessionId = null;
+  state.activeSession   = null;
+  state.startTime       = null;
+  state.endTime         = null;
+
+  // Reset tracker DOM to session select view
+  const activeView  = document.getElementById('active-session-view');
+  const selectView  = document.getElementById('session-select-view');
+  const warmupOverlay = document.getElementById('warmup-overlay');
+  const deloadBanner  = document.getElementById('deload-banner');
+  const progCard      = document.getElementById('prog-suggestion');
+  const partialWarn   = document.getElementById('partial-warning');
+
+  if (activeView)    { activeView.classList.remove('visible'); }
+  if (selectView)    { selectView.style.display = 'block'; }
+  if (warmupOverlay) { warmupOverlay.classList.add('hidden'); }
+  if (deloadBanner)  { deloadBanner.classList.add('hidden'); }
+  if (progCard)      { progCard.classList.add('hidden'); }
+  if (partialWarn)   { partialWarn.remove(); }
+
+  // Reset start/end button states
+  const startBtn  = document.getElementById('start-btn');
+  const endBtn    = document.getElementById('end-btn');
+  const timeDisp  = document.getElementById('start-time-display');
+  const notesInput = document.getElementById('session-notes-input');
+
+  if (startBtn)   { startBtn.classList.remove('hidden'); }
+  if (endBtn)     { endBtn.classList.add('hidden'); }
+  if (timeDisp)   { timeDisp.classList.add('hidden'); }
+  if (notesInput) { notesInput.value = ''; }
+
+  // Switch back to programme tab so there's no stale tracker view visible
+  switchTab('programme');
 }
 
 /* ═══════════════════════════════════════════
