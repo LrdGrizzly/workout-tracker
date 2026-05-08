@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Workout Tracker</title>
+<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIldvcmtvdXQgVHJhY2tlciIsCiAgInNob3J0X25hbWUiOiAiV29ya291dCIsCiAgImRlc2NyaXB0aW9uIjogIlBlcnNvbmFsIHdvcmtvdXQgdHJhY2tlciBhbmQgcHJvZ3JhbW1lIHJlZmVyZW5jZSIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzA4MDkwOSIsCiAgInRoZW1lX2NvbG9yIjogIiMwODA5MDkiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdC1wcmltYXJ5IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIgMTkyJyUzRSUzQ3JlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIHJ4PScyNCcgZmlsbD0nJTIzMDgwOTA5Jy8lM0UlM0N0ZXh0IHg9Jzk2JyB5PScxMzAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nMTEwJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZiclM0XimqElM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFza2FibGUiCiAgICB9LAogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNjQnIGZpbGw9JyUyMzA4MDkwOScvJTNFJTNDdGV4dCB4PScyNTYnIHk9JzM0MCcgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1zaXplPSczMDAnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyUzReKaoSUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Workout">
+<meta name="theme-color" content="#080909">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -2478,6 +2484,92 @@ body::before {
   flex: 1;
 }
 
+
+/* Transition session colour token */
+:root { --transition-week: #00bcd4; }
+
+.s-transition .session-pip  { background: var(--transition-week); }
+.s-transition .session-tag  { color: var(--transition-week); border-color: rgba(0,188,212,0.25); background: rgba(0,188,212,0.07); }
+.s-transition:hover          { border-color: rgba(0,188,212,0.2); }
+
+/* ALT exercise card state */
+.tracker-ex-card.is-alt {
+  border-color: rgba(255,194,51,0.4);
+  background: rgba(255,194,51,0.04);
+}
+
+/* Swap animation — card emerges from button (top-right origin) */
+@keyframes cardEmerge {
+  0%   { transform: scale(0.96); opacity: 0.7; }
+  60%  { transform: scale(1.01); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes cardShrink {
+  0%   { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(0.96); opacity: 0.7; }
+}
+
+.tracker-ex-card.swapping-in {
+  transform-origin: top right;
+  animation: cardEmerge 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.alt-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,194,51,0.15);
+  border: 1px solid rgba(255,194,51,0.35);
+  color: var(--amber);
+  margin-left: 6px;
+  vertical-align: middle;
+  animation: altTagIn 0.25s 0.1s ease both;
+}
+
+@keyframes altTagIn {
+  from { opacity: 0; transform: scale(0.75) translateY(-2px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* Border colour transition */
+.tracker-ex-card {
+  transition: border-color 0.22s ease, background 0.22s ease, transform 0.22s ease, opacity 0.22s ease;
+}
+
+.swap-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,194,51,0.25);
+  background: rgba(255,194,51,0.06);
+  color: rgba(255,194,51,0.7);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.swap-btn:hover { background: rgba(255,194,51,0.14); border-color: rgba(255,194,51,0.4); color: var(--amber); }
+.swap-btn.is-alt { background: rgba(255,194,51,0.12); border-color: rgba(255,194,51,0.4); color: var(--amber); }
+
+/* Transition session — no set logging rows (non-tracked exercises) */
+.no-track-card .tracker-ex-body { padding: 8px 14px 12px; }
+.no-track-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.65;
+  margin-bottom: 6px;
+}
+
 .delete-set-btn {
   width: 22px;
   height: 22px;
@@ -2830,6 +2922,14 @@ body::before {
               <span style="font-family:'DM Mono',monospace;font-size:10px;flex:1" id="settings-drive-text">Not connected</span>
               <button class="settings-btn primary" onclick="handleDriveConnect()" id="settings-drive-btn">Connect</button>
             </div>
+            <div id="settings-client-id-row" style="margin-top:8px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">OAuth Client ID</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <span id="settings-client-id-display" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Not set</span>
+                <button class="settings-btn" style="font-size:10px;padding:3px 8px" onclick="promptDriveClientId()">Edit</button>
+                <button class="settings-btn" style="font-size:10px;padding:3px 8px" onclick="clearDriveClientId()">Clear</button>
+              </div>
+            </div>
           </div>
 
           <!-- Export -->
@@ -2863,7 +2963,6 @@ body::before {
           <!-- Danger zone -->
           <div style="padding:10px 12px;background:rgba(255,77,109,0.04);border-radius:6px;border:1px solid rgba(255,77,109,0.15)">
             <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:rgba(255,77,109,0.5);margin-bottom:8px">Danger Zone</div>
-            <button class="settings-btn danger" style="width:100%;margin-bottom:6px" onclick="deleteDummyData()">Remove Demo Data</button>
             <button class="settings-btn danger" style="width:100%" onclick="deleteAllData()">Delete All Session Data</button>
           </div>
 
@@ -3061,6 +3160,96 @@ const PROGRAMMES = {
           desc: 'KB locked overhead. Push the hip out on the same side as the bell, hinge laterally keeping the bottom arm straight. Eyes on the KB throughout. Develops lateral hip strength, thoracic rotation, and overhead stability simultaneously.' },
           { num: '07', name: 'Turkish Get-Up', tags: ['compound', 'unilateral'], type: 'compound', sets: '2', reps: '3/side', repRange: [3,3], load: '8 kg → 12 kg', prog: '16 kg', notes: 'Quality movement, not conditioning. KB overhead throughout. Eyes on bell.',
           desc: 'From lying with KB pressed overhead, navigate to standing and back down through a series of defined positions: sweep, bridge, kneeling, standing. The KB stays locked overhead throughout. Slow, deliberate, quality over speed.' },
+        ]
+      },
+      {
+        id: 'transition-1',
+        name: 'Transition T1',
+        subtitle: 'Hip & Power',
+        class: 's-transition',
+        color: '#00bcd4',
+        rest: 60,
+        sessionType: 'transition',
+        note: 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. Explosive alternatives available per exercise if knees are uncomfortable.',
+        exercises: [
+          { num: '01', name: 'Standing Banded Hip Flexion', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'Light band', prog: 'Heavier band → pause at top', notes: 'Band anchored behind you at ankle height. Drive knee explosively to 90°.',
+            desc: 'Light band anchored low behind you. Drive one knee up to hip height against band resistance. Concentric iliopsoas loading. Focus on speed and height of the drive. Pause briefly at the top before lowering.' },
+          { num: '02', name: 'Tuck Jump', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Add pause at top of drive',
+            altName: 'Standing Hip Drive to Knee Raise (Banded)', notes: 'Drive both knees to chest at the top of the jump. Soft landing.',
+            desc: 'Jump explosively, driving both knees toward your chest at the peak. Land softly with bent knees. The hip flexors must work powerfully at the top of the movement.' },
+          { num: '03', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → add KB goblet hold', notes: 'Wide stance, deep lateral lunge. Start at 50–60% depth.',
+            desc: 'Wide stance, toes pointed out. Shift weight to one side into a deep lateral lunge while the other leg stays straight with heel on the floor. One of the most complete hip mobility exercises available with bodyweight only.' },
+          { num: '04', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band resistance',
+            altName: 'Lateral Step and Drive', notes: 'Jump laterally off one foot, land and hold 2s on the other.',
+            desc: 'Jump as far as possible to the side off one foot. Land on the opposite foot and absorb the landing for a 2-second hold before the next rep. Frontal plane power and single-leg stability.' },
+          { num: '05', name: 'Single-Leg Glute Bridge with Knee Hold', tags: ['accessory', 'unilateral', 'bw'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'BW', prog: 'Add light band around knee → add KB on hip',
+            notes: '1s hold at top. Drive through heel of planted leg.',
+            desc: 'Bridge on one leg while holding the opposite knee at 90° with both hands. The hip flexor of the floating leg works isometrically while the glute of the planted leg drives the movement. Trains both simultaneously.' },
+          { num: '06', name: 'Single-Leg Pogo', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '15/side', repRange: [15,15], load: 'BW', prog: 'Increase duration → add KB hold',
+            altName: 'Single-Leg Calf Raise — Explosive Tempo', notes: 'Tiny rapid hops. Minimal knee bend. Elastic rebound.',
+            desc: 'Small rapid hops on one foot with minimal knee bend. The energy comes from the ankle and Achilles, not the knee. Trains elastic tendon quality. Keep the hops small and fast rather than high.' },
+          { num: '07', name: 'Dead Bug with Hip Flexion Drive', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '10/side', repRange: [10,10], load: 'BW → light band', prog: 'Add band resistance at knee',
+            notes: 'As one leg extends, opposite knee drives into chest against band.',
+            desc: 'Standard dead bug position. As one leg extends toward the floor, the opposite knee actively drives up into your chest — optionally against a light band for resistance. Combines deep core stability with hip flexor loading.' },
+        ]
+      },
+      {
+        id: 'transition-2',
+        name: 'Transition T2',
+        subtitle: 'Stability & Control',
+        class: 's-transition',
+        color: '#00bcd4',
+        rest: 60,
+        sessionType: 'transition',
+        note: 'Between-mesocycle session. Slow, deliberate, mobility and stability focus. No explosive movements. Focus on movement quality and range.',
+        exercises: [
+          { num: '01', name: 'Turkish Get-Up', tags: ['compound', 'unilateral'], type: 'compound', sets: '2', reps: '3/side', repRange: [3,3], load: '8 kg', prog: '12 kg → 16 kg', notes: 'Slow and deliberate. KB overhead throughout.',
+            desc: 'From lying with KB pressed overhead, navigate to standing through sweep, bridge, kneeling, standing positions. Every position addresses a different mobility and stability gap. Quality over speed — each rep takes 45–60 seconds.' },
+          { num: '02', name: 'Serratus Wall Slide', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '12', repRange: [12,12], load: 'BW', prog: 'Add band resistance overhead', notes: 'Forearms on wall. Slide overhead, maintain rib-down.',
+            desc: 'Stand facing a wall, forearms resting on it at shoulder height. Slide both arms overhead while actively pressing into the wall and keeping your ribs pulled down. Activates serratus anterior — completely absent from standard pressing patterns.' },
+          { num: '03', name: 'Reverse Nordic', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Increase lean range → add band resistance', notes: 'Start with 10–15° lean only. Increase range over sessions.',
+            desc: 'Kneel on a mat with feet anchored. Keeping hips extended, slowly lean back against the resistance of your hip flexors. The hip flexors work eccentrically to control the descent. Start conservatively — even a small range is very demanding.' },
+          { num: '04', name: 'Single-Leg Balance with KB Reach', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3', reps: '10/side', repRange: [10,10], load: '4–8 kg', prog: 'Reach further → eyes closed', notes: 'Stand on one leg, reach KB to floor in various directions.',
+            desc: 'Balance on one leg holding a light KB. Slowly reach the KB toward the floor in front, to the side, and behind — touching or nearly touching without losing balance. Trains proprioception and ankle stability through a full range of reach.' },
+          { num: '05', name: 'Lateral Band Walk — Athletic Lean', tags: ['accessory'], type: 'accessory', sets: '3', reps: '20 steps/side', repRange: [20,20], load: 'Red band', prog: 'Blue band → add pause at extended position', notes: 'Maintain slight forward hip hinge throughout. Slower than standard.',
+            desc: 'Band around ankles, maintain a deliberate forward hip hinge (not upright). Step laterally with a slow, controlled pace — 2s per step. The hip hinge shifts demand from glute medius to the full hip abductor complex in a more athletic position.' },
+          { num: '06', name: 'Tibialis Anterior Raise', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '15', repRange: [15,15], load: 'BW → light band', prog: 'Add band resistance → single-leg', notes: 'Heels on step, raise toes up against gravity.',
+            desc: 'Stand with heels on a raised surface — a step, book, or plate. Raise both toes as high as possible then lower slowly. Targets the tibialis anterior on the front of the shin — completely absent from all standard lifting. Directly counteracts the calf dominance of lower leg training.' },
+          { num: '07', name: 'KB Windmill', tags: ['compound', 'unilateral'], type: 'compound', sets: '3', reps: '5/side', repRange: [5,5], load: '8 kg', prog: '12 kg → increase tempo', notes: 'Lighter than KB Flow version. Full thoracic rotation emphasis.',
+            desc: 'KB locked overhead, push hip out on the same side as the bell, hinge laterally with eyes on the KB. Here used lighter and slower than KB Flow — the goal is full thoracic rotation and hip mobility rather than load. Take 4–5 seconds per rep.' },
+          { num: '08', name: 'Band Pull-Apart with Overhead Reach', tags: ['accessory'], type: 'accessory', sets: '3', reps: '12', repRange: [12,12], load: 'Light band', prog: 'Heavier band → slower tempo', notes: 'Pull apart, then reach both arms overhead while maintaining tension.',
+            desc: 'Hold a light band with both hands at shoulder width. Pull apart to a T position, then — keeping the band taut — reach both arms overhead as far as mobility allows. Combines rear delt and lower trap activation with overhead shoulder mobility.' },
+        ]
+      },
+      {
+        id: 'transition-3',
+        name: 'Transition T3',
+        subtitle: 'Athletic Full Body',
+        class: 's-transition',
+        color: '#00bcd4',
+        rest: 60,
+        sessionType: 'transition',
+        note: 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
+        exercises: [
+          { num: '01', name: 'KB Clean — Light and Fast', tags: ['compound', 'unilateral'], type: 'compound', sets: '4', reps: '6/side', repRange: [6,6], load: '12 kg', prog: '16 kg — focus is speed not load', notes: 'Lighter than working weight. Prioritise hip drive speed and clean rack catch.',
+            desc: 'KB clean performed at lighter load with maximum hip drive speed. The goal is rate of force development — how fast you can produce power — not the load itself. Tight arc, fast snap, controlled catch in the rack position.' },
+          { num: '02', name: 'Standing Banded Hip Flexion', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'Light band', prog: 'Heavier band → pause at top', notes: 'Band anchored low behind you. Explosive knee drive to 90°.',
+            desc: 'Light band anchored low behind you. Drive one knee up to hip height against band resistance. Focus on speed of the drive. Used here as active recovery between the KB clean sets and the next explosive movement.' },
+          { num: '03', name: 'Tuck Jump', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Add pause at top',
+            altName: 'Standing Hip Drive to Knee Raise (Banded)', notes: 'Drive both knees to chest. Soft landing.',
+            desc: 'Jump explosively, driving both knees toward your chest at the peak. Land softly with bent knees. The hip flexors must work powerfully at the top of the movement.' },
+          { num: '04', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → KB goblet hold', notes: 'Wide lateral lunge. Manage depth to comfort.',
+            desc: 'Wide stance, deep lateral lunge to one side while the other leg stays straight. Targets adductors, hip flexors, and hip external rotators through a range most training never addresses.' },
+          { num: '05', name: 'Single-Arm Alternating KB Swing', tags: ['compound'], type: 'compound', sets: '3', reps: '12/side', repRange: [12,12], load: '12 kg', prog: '16 kg — focus on hip snap speed', notes: 'Lighter than working weight. Emphasise hip snap velocity.',
+            desc: 'Standard KB swing but one hand at a time, alternating at the top of each rep. Lighter than your working weight — the goal is explosive hip snap speed rather than load. The alternating catch adds a reactive element that bilateral swings lack.' },
+          { num: '06', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band',
+            altName: 'Lateral Step and Drive', notes: 'Jump laterally off one foot, hold landing for 2s.',
+            desc: 'Jump as far as possible laterally off one foot. Land on the opposite foot and absorb the landing. 2-second hold before the next rep. Frontal plane power and landing stability.' },
+          { num: '07', name: 'Single-Leg Calf Raise — Explosive Tempo', tags: ['accessory', 'unilateral', 'bw'], type: 'accessory', sets: '3', reps: '15/side', repRange: [15,15], load: 'BW → KB hold', prog: 'Add KB hold → increase speed',
+            altName: 'Single-Leg Pogo', notes: 'Rise as fast as possible. Lower under control. No pause at bottom.',
+            desc: 'Single-leg calf raise performed with maximum concentric speed — rise as fast as possible. Lower under control in 2 seconds. No pause at the bottom. Trains the same elastic Achilles quality as the pogo but without ground impact.' },
+          { num: '08', name: 'Reverse Nordic', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Increase lean range over sessions', notes: 'Always last — hip flexors are pre-fatigued.',
+            desc: 'Kneel on mat, feet anchored, hips extended. Lean back slowly against hip flexor resistance. Placed last deliberately — hip flexors are pre-fatigued from the session, making even a small lean range very effective.' },
         ]
       },
     ]
@@ -3321,39 +3510,52 @@ function showProfileScreen() {
 }
 
 function resetTrackerState() {
-  // Cancel any active session without saving
+  // Clear all session state
   state.activeSessionId = null;
   state.activeSession   = null;
   state.startTime       = null;
   state.endTime         = null;
 
-  // Reset tracker DOM to session select view
+  // Force tracker DOM to correct state using both class and inline style
+  // to override any inline styles set during session
   const activeView  = document.getElementById('active-session-view');
   const selectView  = document.getElementById('session-select-view');
+
+  if (activeView) {
+    activeView.classList.remove('visible');
+    activeView.style.display = '';  // clear any inline style, let CSS take over
+  }
+  if (selectView) {
+    selectView.style.display = 'block';  // force visible
+  }
+
+  // Hide overlays and banners
   const warmupOverlay = document.getElementById('warmup-overlay');
   const deloadBanner  = document.getElementById('deload-banner');
   const progCard      = document.getElementById('prog-suggestion');
   const partialWarn   = document.getElementById('partial-warning');
 
-  if (activeView)    { activeView.classList.remove('visible'); }
-  if (selectView)    { selectView.style.display = 'block'; }
-  if (warmupOverlay) { warmupOverlay.classList.add('hidden'); }
-  if (deloadBanner)  { deloadBanner.classList.add('hidden'); }
-  if (progCard)      { progCard.classList.add('hidden'); }
-  if (partialWarn)   { partialWarn.remove(); }
+  if (warmupOverlay) warmupOverlay.classList.add('hidden');
+  if (deloadBanner)  deloadBanner.classList.add('hidden');
+  if (progCard)      progCard.classList.add('hidden');
+  if (partialWarn)   partialWarn.remove();
 
-  // Reset start/end button states
-  const startBtn  = document.getElementById('start-btn');
-  const endBtn    = document.getElementById('end-btn');
-  const timeDisp  = document.getElementById('start-time-display');
+  // Reset button states
+  const startBtn   = document.getElementById('start-btn');
+  const endBtn     = document.getElementById('end-btn');
+  const timeDisp   = document.getElementById('start-time-display');
   const notesInput = document.getElementById('session-notes-input');
 
-  if (startBtn)   { startBtn.classList.remove('hidden'); }
-  if (endBtn)     { endBtn.classList.add('hidden'); }
-  if (timeDisp)   { timeDisp.classList.add('hidden'); }
-  if (notesInput) { notesInput.value = ''; }
+  if (startBtn)   startBtn.classList.remove('hidden');
+  if (endBtn)     endBtn.classList.add('hidden');
+  if (timeDisp)   timeDisp.classList.add('hidden');
+  if (notesInput) notesInput.value = '';
 
-  // Switch back to programme tab so there's no stale tracker view visible
+  // Clear tracker exercise list so no stale content remains
+  const exList = document.getElementById('tracker-ex-list');
+  if (exList) exList.innerHTML = '';
+
+  // Always switch to programme tab — tracker tab will be clean when revisited
   switchTab('programme');
 }
 
@@ -3366,7 +3568,8 @@ function loadLocalState() {
     const saved = localStorage.getItem(key);
     if (saved) {
       const data = JSON.parse(saved);
-      state.sessions = data.sessions || [];
+      // Silently remove any dummy/demo data from previous test sessions
+      state.sessions = (data.sessions || []).filter(s => !s._dummy);
       state.mesoStartDate = data.mesoStartDate || null;
       state.mesoWeekOverride = data.mesoWeekOverride || null;
       // Restore rest periods
@@ -3647,6 +3850,12 @@ function editRest(e, sessionId) {
    RENDER: TRACKER TAB
 ═══════════════════════════════════════════ */
 function renderTracker() {
+  // Always ensure tracker is in session-select state when re-rendered
+  const activeView = document.getElementById('active-session-view');
+  const selectView = document.getElementById('session-select-view');
+  if (activeView) { activeView.classList.remove('visible'); activeView.style.display = ''; }
+  if (selectView) { selectView.style.display = 'block'; }
+
   const grid = document.getElementById('tracker-select-grid');
   grid.innerHTML = state.programme.sessions.map(session => `
     <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" style="border-left: 3px solid ${session.color}">
@@ -3726,8 +3935,24 @@ function buildTrackerExercises(session) {
     }
 
     const prev2 = getPrev2Sessions(session.id, ex.name);
-    const setCount = deload ? 2 : 3; // Start with base sets
+    // Determine correct starting set count.
+    // If the last suggestion for this exercise was increase_load, reset to 3 sets.
+    // Otherwise carry forward the last session's set count (up to the weekly target).
+    const _lastCompleteSess = state.sessions
+      .filter(s => s.sessionId === session.id && s.status === 'complete')
+      .slice(-1)[0];
+    const _lastExData = _lastCompleteSess?.exercises?.find(e => e.name === ex.name);
+    const _lastSetCount = _lastExData ? _lastExData.sets.length : 3;
+    const _suggestion = state.profile === 'alex'
+      ? getProgressionSuggestion(session.id, ex.name, ex.repRange)
+      : null;
+    const _loadIncreaseSignalled = _suggestion && _suggestion.type === 'increase_load';
+    const setCount = deload ? 2 : (_loadIncreaseSignalled ? 3 : Math.min(_lastSetCount, getMesoSetTarget(week)));
     const targetSets = deload ? 2 : getMesoSetTarget(week);
+    const loadResetNote = (!deload && _loadIncreaseSignalled)
+      ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--pull);margin-bottom:8px">↑ Load increase — sets reset to 3. Increase load before starting.</div>`
+      : '';
+
 
     const prevRef = prev2.length > 0
       ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
@@ -3754,11 +3979,14 @@ function buildTrackerExercises(session) {
           <div class="range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.85;font-weight:600">${ex.reps}</div>
           <div class="range" style="color:var(--text-muted);font-size:8px">${ex.load}</div>
         </div>
-        <button class="tracker-sub-btn" onclick="showSubstitution('${ex.name}')">Sub</button>
+        ${EXERCISE_SWAP_MAP[ex.name]
+          ? `<button class="swap-btn" id="swap-btn-${idx}" onclick="toggleExerciseSwap('${ex.name}',this.closest('.tracker-ex-card'),this)">Alt ⇄</button>`
+          : `<button class="tracker-sub-btn" onclick="showSubstitution('${ex.name}')">Sub</button>`
+        }
       </div>
       <div class="tracker-ex-body">
         <div class="prev-sessions-ref">${prevRef}</div>
-        ${deloadNote}
+        ${deloadNote}${loadResetNote}
         <div class="set-rows" id="sets-${session.id}-${idx}">
           ${initialSets.join('')}
         </div>
@@ -3778,62 +4006,128 @@ const BAND_KG = { yellow: 4.5, green: 9.1, red: 13.6, blue: 18.1, black: 22.7 };
 
 function parseBandLoad(loadStr) {
   // Returns kg equivalent for band loads, 0 for BW, numeric for KB
+  // Handles: 'BW', 'BW+Blue', 'Black', 'Black+Yellow', '16', '16.5'
   if (!loadStr) return 0;
   const s = loadStr.toString().toLowerCase();
   if (s === 'bw' || s === '') return 0;
-  // Check for BW + band combos
+  // BW + band combos (e.g. 'BW+Blue')
   if (s.startsWith('bw')) {
     let extra = 0;
     Object.entries(BAND_KG).forEach(([name, kg]) => {
       if (s.includes(name)) extra += kg;
     });
-    return extra; // returns band-only portion
+    return extra;
   }
-  // Check for pure band
+  // Pure band or multi-band combos (e.g. 'Blue', 'Black+Yellow', 'Black+Green')
   let bandTotal = 0;
   let foundBand = false;
-  Object.entries(BAND_KG).forEach(([name, kg]) => {
-    if (s.includes(name)) { bandTotal += kg; foundBand = true; }
+  // Split on '+' so 'Black+Yellow' correctly sums both
+  const parts = s.split('+');
+  parts.forEach(part => {
+    const trimmed = part.trim();
+    Object.entries(BAND_KG).forEach(([name, kg]) => {
+      if (trimmed === name) { bandTotal += kg; foundBand = true; }
+    });
   });
   if (foundBand) return bandTotal;
-  // Numeric
+  // Numeric KB load
   return parseFloat(loadStr) || 0;
 }
 
-function buildBandPills(setIdx, exIdx, sessionId) {
+function buildBandPills(setIdx, exIdx, sessionId, isBWContext) {
+  // isBWContext: pills are an add-on to a BW exercise (single-select, None clears)
+  // !isBWContext: pure band exercise — multi-select, combinations allowed (e.g. Black+Yellow)
   const bands = ['None','Yellow','Green','Red','Blue','Black'];
-  return `<div class="band-pills" id="bpills-${sessionId}-${exIdx}-${setIdx}">
-    ${bands.map(b => `<button class="band-pill${b==='None'?' active-none':''}" 
-      onclick="selectBandPill(this,'${b.toLowerCase()}','${sessionId}',${exIdx},${setIdx})">${b==='None'?'—':b}</button>`).join('')}
+  const ctx   = isBWContext ? 'bw' : 'band';
+  return `<div class="band-pills" id="bpills-${sessionId}-${exIdx}-${setIdx}" data-ctx="${ctx}">
+    ${bands.map(b => `<button class="band-pill${b==='None'?' active-none':''}"
+      onclick="selectBandPill(this,'${b.toLowerCase()}')">${b==='None'?'—':b}</button>`).join('')}
   </div>`;
 }
 
-function selectBandPill(btn, band, sessionId, exIdx, setIdx) {
+function selectBandPill(btn, band) {
   const container = btn.closest('.band-pills');
-  container.querySelectorAll('.band-pill').forEach(b => {
-    b.className = 'band-pill';
-  });
-  btn.classList.add(`active-${band === '' || band === 'none' ? 'none' : band}`);
-  // Update hidden load value on the set row
-  const row = btn.closest('.set-row');
-  const loadStore = row.querySelector('.bw-load-store');
-  if (loadStore) {
-    loadStore.value = band === 'none' || band === '' ? 'BW' : `BW+${band.charAt(0).toUpperCase()+band.slice(1)}`;
+  const isBWCtx   = container.dataset.ctx === 'bw';
+  const row       = btn.closest('.set-row');
+
+  if (isBWCtx) {
+    // BW context: single-select (same as before)
+    container.querySelectorAll('.band-pill').forEach(b => { b.className = 'band-pill'; });
+    btn.classList.add(`active-${band === 'none' ? 'none' : band}`);
+    const loadStore = row.querySelector('.bw-load-store');
+    if (loadStore) {
+      loadStore.value = band === 'none' ? 'BW' : `BW+${band.charAt(0).toUpperCase()+band.slice(1)}`;
+    }
+    return;
   }
+
+  // Pure band context: multi-select
+  // 'None' deselects everything
+  if (band === 'none') {
+    container.querySelectorAll('.band-pill').forEach(b => { b.className = 'band-pill'; });
+    btn.classList.add('active-none');
+  } else {
+    // Deselect None pill
+    const nonePill = container.querySelector('.band-pill:first-child');
+    if (nonePill) nonePill.className = 'band-pill';
+    // Toggle this band
+    if (btn.classList.contains(`active-${band}`)) {
+      btn.classList.remove(`active-${band}`);
+    } else {
+      btn.classList.add(`active-${band}`);
+    }
+  }
+
+  // Compute combined load string from all active pills
+  const ORDER = ['yellow','green','red','blue','black'];
+  const active = [];
+  container.querySelectorAll('.band-pill').forEach(b => {
+    ORDER.forEach(c => { if (b.classList.contains(`active-${c}`)) active.push(c); });
+  });
+
+  // Store as load value on the set row (numeric input)
+  const loadInput = row.querySelector('.set-load-val');
+  if (loadInput) {
+    if (active.length === 0) {
+      loadInput.value = '';
+    } else {
+      // Build label: e.g. "Black+Yellow" and numeric kg-equiv
+      const label = active.map(c => c.charAt(0).toUpperCase()+c.slice(1)).join('+');
+      loadInput.value = label;
+      // Store kg equivalent in a data attribute for chart calculations
+      const kgEq = active.reduce((sum, c) => sum + (BAND_KG[c] || 0), 0);
+      loadInput.dataset.bandKg = kgEq;
+    }
+    loadInput.dispatchEvent(new Event('change'));
+  }
+}
+
+function isBandExercise(ex) {
+  // Pure band exercise (not BW+band): load field contains a band colour but no 'BW'
+  const load = (ex.load || '').toString().toLowerCase();
+  const hasBand = ['yellow','green','red','blue','black'].some(b => load.includes(b));
+  const isBW = load.includes('bw') || ex.tags.includes('bw');
+  return hasBand && !isBW;
 }
 
 function buildSetRow(setIdx, ex, isDeload) {
   const rirPlaceholder = ex.tags.includes('unilateral') ? 'RIR L / R' : 'RIR';
-  const isBW = isBWExercise(ex);
+  const isBW   = isBWExercise(ex);
+  const isBand = isBandExercise(ex);
 
   const loadInput = isBW
     ? `<div class="bw-band-wrap">
         <span class="bw-label">BW</span>
         <input type="hidden" class="bw-load-store set-load-val" value="BW">
-        ${buildBandPills(setIdx, 0, 'ex')}
+        ${buildBandPills(setIdx, 0, 'ex', true)}
        </div>`
-    : `<input class="set-input set-load-val" type="number" placeholder="kg / band" min="0" step="0.5"
-        onchange="evaluateSet(this, ${JSON.stringify(ex.repRange)})">`;
+    : isBand
+      ? `<div class="bw-band-wrap">
+          <input type="hidden" class="set-load-val" value="">
+          ${buildBandPills(setIdx, 0, 'ex', false)}
+         </div>`
+      : `<input class="set-input set-load-val" type="number" placeholder="kg" min="0" step="0.5"
+          onchange="evaluateSet(this, ${JSON.stringify(ex.repRange)})">`;
 
   return `<div class="set-row">
     <div class="set-indicator"></div>
@@ -4056,7 +4350,8 @@ function endSession() {
       });
     });
     const hasData = sets.some(s => s.reps || s.load);
-    exerciseData.push({ name: ex.name, type: ex.type, repRange: ex.repRange, sets: hasData ? sets : [] });
+    const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name]);
+    exerciseData.push({ name: ex.name, type: ex.type, repRange: ex.repRange, sets: hasData ? sets : [], ...(tempoApplied ? { tempoApplied: true } : {}) });
   });
 
   // Check completeness
@@ -4104,6 +4399,9 @@ function saveSession(exerciseData, status) {
 }
 
 function cancelSession() {
+  // Clear swap state and tempo flags for next session
+  Object.keys(_swapState).forEach(k => delete _swapState[k]);
+  state._tempoFlags = {};
   state.activeSessionId = null;
   state.activeSession = null;
   state.startTime = null;
@@ -4212,7 +4510,17 @@ function getSessionAccentColor(sessionId) {
 }
 
 function get2MesoCycleSessions(sessionId) {
-  // Get last ~70 days of complete sessions for this session type (covers ~2 mesocycles)
+  // For transition sessions: use all history (session-number based)
+  // For standard sessions: last ~70 days (2 mesocycles)
+  const sess = state.programme.sessions.find(s => s.id === sessionId);
+  const isTransition = sess && sess.sessionType === 'transition';
+
+  if (isTransition) {
+    return state.sessions
+      .filter(s => s.sessionId === sessionId && s.status === 'complete')
+      .sort((a,b) => new Date(a.date) - new Date(b.date));
+  }
+
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 70);
   return state.sessions
@@ -4399,7 +4707,10 @@ function renderExerciseChart(sessionId, exName, accentColor) {
     }
     lastVariant = currentVariant;
 
-    labels.push(formatDateITShort(sess.date)); // DD/MM
+    // Transition sessions: label by session number, not date
+    const sessConfig = state.programme.sessions.find(s => s.id === related[0]?.sessionId);
+    const isTransition = sessConfig && sessConfig.sessionType === 'transition';
+    labels.push(isTransition ? `S${labels.length + 1}` : formatDateITShort(sess.date));
 
     const vol = calcVolume(ex, mode);
     volData.push(vol ? Math.round(vol.volume) : 0);
@@ -4630,13 +4941,10 @@ function toggleGuide(id) {
 ═══════════════════════════════════════════ */
 
 // ── CONFIGURATION ──────────────────────────
-// To enable Drive sync:
-// 1. Go to https://console.cloud.google.com/
-// 2. Create a project, enable Google Drive API
-// 3. Create OAuth 2.0 credentials (Web Application)
-// 4. Add your deployed URL to Authorized JavaScript origins
-// 5. Replace the string below with your Client ID
-const DRIVE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+// Drive Client ID is set at runtime via Settings → Data → Google Drive.
+// It is persisted in localStorage under 'wt_drive_client_id'.
+// No source-code edit needed.
+let DRIVE_CLIENT_ID = localStorage.getItem('wt_drive_client_id') || '';
 const DRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FOLDER    = 'WorkoutApp';
 
@@ -4668,19 +4976,20 @@ async function handleDriveConnect() {
     return;
   }
 
-  if (DRIVE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+  if (!DRIVE_CLIENT_ID) {
     showModal(
       'Drive Setup Required',
-      'Google Drive sync requires a Google OAuth Client ID.<br><br>' +
-      '<strong>To set up:</strong><br>' +
+      'Enter your Google OAuth Client ID to enable Drive sync.<br><br>' +
+      '<strong>To get a Client ID:</strong><br>' +
       '1. Visit <code>console.cloud.google.com</code><br>' +
       '2. Create a project → Enable Drive API<br>' +
-      '3. Create OAuth 2.0 Web credentials<br>' +
-      '4. Replace <code>YOUR_GOOGLE_CLIENT_ID</code> in the app code<br><br>' +
-      'In the meantime, your data is saved locally. Use Export CSV to back it up.',
+      '3. Create OAuth 2.0 Web credentials (Web Application)<br>' +
+      '4. Add your GitHub Pages URL to Authorised JavaScript origins<br>' +
+      '5. Paste the Client ID into Settings → Data → Google Drive<br><br>' +
+      'Your data is saved locally in the meantime.',
       [
         { label: 'Close', cls: 'cancel', action: closeModal },
-        { label: 'Export CSV', cls: 'save', action: () => { closeModal(); exportCSV(); } }
+        { label: 'Set Client ID', cls: 'save', action: () => { closeModal(); promptDriveClientId(); } }
       ]
     );
     return;
@@ -4745,14 +5054,49 @@ function tryRestoreToken() {
   } catch(e) {}
 }
 
+function promptDriveClientId() {
+  const current = localStorage.getItem('wt_drive_client_id') || '';
+  showModal(
+    'Set Google OAuth Client ID',
+    `<p style="margin-bottom:10px;font-size:13px;color:var(--text-dim)">Paste your Client ID from Google Cloud Console. It ends in <code>.apps.googleusercontent.com</code></p>` +
+    `<input id="modal-client-id-input" type="text" value="${current}"
+       style="width:100%;background:var(--surface3);border:1px solid var(--border-h);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;box-sizing:border-box"
+       placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com">`,
+    [
+      { label: 'Cancel', cls: 'cancel', action: closeModal },
+      { label: 'Save & Connect', cls: 'save', action: () => {
+        const val = document.getElementById('modal-client-id-input')?.value?.trim();
+        if (!val || !val.includes('.apps.googleusercontent.com')) {
+          toast('Invalid Client ID — must end in .apps.googleusercontent.com', 'error');
+          return;
+        }
+        DRIVE_CLIENT_ID = val;
+        localStorage.setItem('wt_drive_client_id', val);
+        closeModal();
+        toast('Client ID saved — connecting…', 'info');
+        handleDriveConnect();
+      }}
+    ]
+  );
+  // Focus after modal renders
+  setTimeout(() => document.getElementById('modal-client-id-input')?.focus(), 80);
+}
+
+function clearDriveClientId() {
+  DRIVE_CLIENT_ID = '';
+  localStorage.removeItem('wt_drive_client_id');
+  toast('Client ID cleared', 'info');
+  updateDriveStatus(false);
+}
+
 function updateDriveStatus(connected, message) {
   const dot  = document.getElementById('drive-dot');
   const text = document.getElementById('drive-status-text');
   const btn  = document.getElementById('drive-connect-btn');
   state.driveConnected = connected;
-  dot.className  = `drive-dot ${connected ? 'connected' : ''}`;
-  text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
-  btn.textContent  = connected ? 'Manage' : 'Connect';
+  if (dot)  dot.className  = `drive-dot ${connected ? 'connected' : ''}`;
+  if (text) text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
+  if (btn)  btn.textContent  = connected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
 }
 
 // ── FOLDER MANAGEMENT ──────────────────────
@@ -5238,7 +5582,44 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
 
 /* ═══════════════════════════════════════════
    ALEX — PROGRESSION ALGORITHM
+   Steps:
+   1. Suppress in week 1 and deload
+   2. Check rep ceiling hit in last 2 complete sessions of same type
+   3a. Below set ceiling → add set
+   3b. At set ceiling, load can increase → increase load (sets reset to 3)
+   3c. At set ceiling, load cannot increase, no tempo flag → suggest tempo
+   3d. At set ceiling, tempo already applied → equipment ceiling flag
 ═══════════════════════════════════════════ */
+
+// Determine whether an exercise has a higher KB or band load available
+function canIncreaseLoad(exerciseName) {
+  const KB_SIZES  = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
+  const BAND_ORDER = ['yellow', 'green', 'red', 'blue', 'black'];
+  const exConfig   = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
+  if (!exConfig) return true; // unknown — don't block
+  const load = (exConfig.load || '').toString().toLowerCase();
+  // BW-only exercises never get a load increase suggestion
+  if (isBWExercise(exConfig) && !load.includes('band')) return false;
+  // Band exercise
+  let topBand = null;
+  BAND_ORDER.forEach(b => { if (load.includes(b)) topBand = b; });
+  if (topBand) return BAND_ORDER.indexOf(topBand) < BAND_ORDER.length - 1;
+  // KB numeric
+  const kg = parseFloat(load);
+  if (!isNaN(kg)) return KB_SIZES.some(s => s > kg);
+  return true;
+}
+
+// Check if tempo has already been flagged for this exercise
+function hasTempoApplied(sessionId, exerciseName) {
+  return state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .some(s => {
+      const ex = s.exercises.find(e => e.name === exerciseName);
+      return ex && ex.tempoApplied === true;
+    });
+}
+
 function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const week = getCurrentMesoWeek();
   if (week === 1 || isDeloadWeek()) return null;
@@ -5265,25 +5646,58 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const currentSets = lastEx ? lastEx.sets.length : 0;
   const targetSets  = getMesoSetTarget(week);
 
+  // Step 3a — below set ceiling
   if (currentSets < targetSets) {
     return {
       exercise: exerciseName,
       type: 'add_set',
       message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.`
     };
-  } else {
+  }
+
+  // At set ceiling — check if load can go up
+  if (canIncreaseLoad(exerciseName)) {
     return {
       exercise: exerciseName,
       type: 'increase_load',
       message: `Set ceiling reached (${currentSets} sets). Increase load — sets reset to 3.`
     };
   }
+
+  // Step 3c — equipment ceiling, check if tempo already applied
+  if (hasTempoApplied(sessionId, exerciseName)) {
+    return {
+      exercise: exerciseName,
+      type: 'equipment_ceiling',
+      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached — new kit needed to progress further.`
+    };
+  }
+
+  // Step 3c — suggest tempo manipulation
+  return {
+    exercise: exerciseName,
+    type: 'tempo',
+    message: `Equipment ceiling reached. Apply 3s eccentric tempo — same load, significantly harder. Flag session with tempo once applied.`
+  };
 }
 
 /* ═══════════════════════════════════════════
    UNIFIED renderProgressionSuggestions
    Routes to the correct algorithm per profile
 ═══════════════════════════════════════════ */
+function markTempoApplied(exerciseName) {
+  // Find the active session's exercise and flag tempoApplied on it
+  // This flag is stored when the session is saved, so we set it on the in-progress data
+  if (!state.activeSessionId) return;
+  // We'll tag this onto the state for saveSession to pick up
+  if (!state._tempoFlags) state._tempoFlags = {};
+  state._tempoFlags[exerciseName] = true;
+  toast(`Tempo flagged for ${exerciseName} — will be saved with this session`, 'success');
+  // Re-render so the button disappears and equipment_ceiling check can fire next time
+  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  if (session) renderProgressionSuggestions(session);
+}
+
 function renderProgressionSuggestions(session) {
   const card   = document.getElementById('prog-suggestion');
   const textEl = document.getElementById('prog-suggestion-text');
@@ -5291,6 +5705,13 @@ function renderProgressionSuggestions(session) {
   if (isDeloadWeek()) { card.classList.add('hidden'); return; }
 
   const suggestions = [];
+
+  // Transition sessions never trigger progression suggestions
+  const activeSession = state.programme.sessions.find(s => s.id === session.id);
+  if (activeSession && activeSession.sessionType === 'transition') {
+    card.classList.add('hidden');
+    return;
+  }
 
   if (state.profile === 'je') {
     // Je: pattern-driven, variant ladder, support-reduction
@@ -5314,16 +5735,21 @@ function renderProgressionSuggestions(session) {
   if (suggestions.length > 0) {
     textEl.innerHTML = suggestions.map(s => {
       const typeColors = {
-        'add_set':        'var(--green)',
-        'increase_load':  'var(--pull)',
-        'support_reduce': 'var(--amber)',
+        'add_set':             'var(--green)',
+        'increase_load':       'var(--pull)',
+        'support_reduce':      'var(--amber)',
         'variant advancement': 'var(--push-b)',
         'band progression':    'var(--legs-a)',
+        'tempo':               'var(--push-b)',
+        'equipment_ceiling':   'var(--red)',
       };
       const col = typeColors[s.type] || 'var(--text-dim)';
+      const tempoBtn = s.type === 'tempo'
+        ? `<br><button onclick="markTempoApplied('${s.exercise.replace(/'/g,"\\'")}')" style="margin-top:5px;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid ${col}44;background:${col}15;color:${col};cursor:pointer">✓ Mark tempo applied this session</button>`
+        : '';
       return `<div style="margin-bottom:6px;padding:6px 8px;border-radius:5px;border:1px solid ${col}22;background:${col}0d">
-        <span style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:${col};margin-right:6px">${s.type.replace('_',' ')}</span>
-        <strong>${s.exercise}</strong> — ${s.message}
+        <span style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:${col};margin-right:6px">${s.type.replace(/_/g,' ')}</span>
+        <strong>${s.exercise}</strong> — ${s.message}${tempoBtn}
       </div>`;
     }).join('');
     card.classList.remove('hidden');
@@ -5855,7 +6281,22 @@ function computeNextProgression(ex) {
   const BAND_ORDER = ['yellow','green','red','blue','black'];
   const KB_SIZES   = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 
-  // Band exercise
+  // Band exercise — full combination ladder
+  const BAND_LADDER = [
+    'yellow', 'green', 'red', 'blue', 'black',
+    'black+yellow', 'black+green', 'black+red', 'black+blue', 'black+black'
+  ];
+  // Normalise: sort parts alphabetically to match ladder entries
+  const loadParts = load.split('+').map(p => p.trim()).sort().join('+');
+  const bandIdx = BAND_LADDER.indexOf(loadParts);
+  if (bandIdx !== -1) {
+    if (bandIdx < BAND_LADDER.length - 1) {
+      const next = BAND_LADDER[bandIdx + 1];
+      return `→ ${next.split('+').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' + ')} band`;
+    }
+    return '→ Top of band ladder';
+  }
+  // Fallback: single band found anywhere in load string
   let foundBand = null;
   BAND_ORDER.forEach(b => { if (load.includes(b)) foundBand = b; });
   if (foundBand) {
@@ -5964,7 +6405,16 @@ function openSettings() {
   if (dot && text && btn) {
     dot.className  = `drive-dot ${state.driveConnected ? 'connected' : ''}`;
     text.textContent = state.driveConnected ? 'Connected to Google Drive' : 'Not connected';
-    btn.textContent  = state.driveConnected ? 'Manage' : 'Connect';
+    btn.textContent  = state.driveConnected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
+  }
+  // Sync Client ID display
+  const clientIdDisplay = document.getElementById('settings-client-id-display');
+  if (clientIdDisplay) {
+    const saved = localStorage.getItem('wt_drive_client_id') || '';
+    clientIdDisplay.textContent = saved
+      ? saved.substring(0, 20) + '…' + saved.slice(-28)
+      : 'Not set';
+    clientIdDisplay.style.color = saved ? 'var(--text-dim)' : 'var(--text-muted)';
   }
 
   // Band config
@@ -6649,6 +7099,216 @@ function saveManualSession() {
   toast(`Session added: ${session.name} on ${formatDateIT(date)}`, 'success');
 }
 
+
+/* ═══════════════════════════════════════════
+   EXERCISE SWAP MAP — transition sessions
+   Primary exercise name → alternative def
+═══════════════════════════════════════════ */
+const EXERCISE_SWAP_MAP = {
+  'Tuck Jump': {
+    name: 'Standing Hip Drive to Knee Raise (Banded)',
+    load: 'Light band',
+    notes: 'Drive one knee explosively to 90°. Hold 1s at top. Same hip flexor demand without the jump.',
+    desc: 'Stand on one leg, drive the opposite knee up to 90° as explosively as possible against a light band. Hold briefly at the top. Same hip flexor power demand as the tuck jump but with zero impact on the knee joint.',
+  },
+  'Lateral Bound to Stick': {
+    name: 'Lateral Step and Drive',
+    load: 'BW / light band',
+    notes: 'Step laterally as wide as possible, drive trailing knee up aggressively.',
+    desc: 'Step laterally off one leg as far as possible, then explosively drive the trailing leg\u2019s knee up to 90° as you reach the end range. No hop, no landing impact. The power is in the push-off and the explosive knee drive.',
+  },
+  'Single-Leg Pogo': {
+    name: 'Single-Leg Calf Raise — Explosive Tempo',
+    load: 'BW → KB hold',
+    notes: 'Rise as fast as possible. Lower in 2s. No pause at bottom.',
+    desc: 'Single-leg calf raise with maximum concentric speed. Same Achilles and plantar fascia elastic demand as the pogo, without ground impact. Progress by adding a KB hold or increasing the speed of the rise.',
+  },
+  'Single-Leg Calf Raise — Explosive Tempo': {
+    name: 'Single-Leg Pogo',
+    load: 'BW',
+    notes: 'Tiny rapid hops. Minimal knee bend. Elastic rebound from ankle.',
+    desc: 'Small rapid hops on one foot. Minimal knee bend — energy comes entirely from the ankle and Achilles. The primary version if knees feel good today.',
+  },
+};
+
+/* ── Swap state per live session ─────────────────────────────────
+   Keyed by exercise name, value = true if currently showing alt
+─────────────────────────────────────────────────────────────── */
+const _swapState = {};
+
+/* ── BUILD TRACKED BODY ───────────────────────────────────────────
+   Shared helper: builds full set-logging body for either the
+   primary or alternative exercise name, with prev-session lookup.
+────────────────────────────────────────────────────────────────── */
+function buildTrackedBody(displayName, logName, sessionId, exDef) {
+  // logName is what gets saved to history; may differ from display
+  const prev2 = getPrev2Sessions(sessionId, logName);
+  const prevRef = prev2.length > 0
+    ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
+    : 'No previous data for ' + logName;
+  const setCount = isDeloadWeek() ? 2 : 3;
+  const safeId   = logName.replace(/[^a-zA-Z0-9]/g, '_');
+  const initialSets = Array.from({length: setCount}, (_, i) => buildSetRow(i, exDef, isDeloadWeek()));
+  return `
+    <div class="prev-sessions-ref">${prevRef}</div>
+    <div class="set-rows" id="sets-${sessionId}-${safeId}">
+      ${initialSets.join('')}
+    </div>
+    <button class="add-set-btn" onclick="addSet('${sessionId}','${safeId}','${logName}')">+ Add Set</button>`;
+}
+
+/* ── SWAP ANIMATION ───────────────────────────────────────────────
+   Triggers the card-emerge animation then applies new content.
+────────────────────────────────────────────────────────────────── */
+function animateSwap(cardEl, applyFn) {
+  // Remove any ongoing animation first
+  cardEl.classList.remove('swapping-in');
+  // Force reflow so the class removal registers
+  void cardEl.offsetWidth;
+  // Apply content change
+  applyFn();
+  // Trigger animation
+  cardEl.classList.add('swapping-in');
+  // Clean up class after animation completes
+  cardEl.addEventListener('animationend', () => {
+    cardEl.classList.remove('swapping-in');
+  }, { once: true });
+}
+
+/* ── MAIN SWAP FUNCTION ───────────────────────────────────────────
+   Toggles between primary and alternative exercise.
+   Both are now fully tracked with identical set-logging UI.
+────────────────────────────────────────────────────────────────── */
+function toggleExerciseSwap(exName, cardEl, btnEl) {
+  const isAlt    = _swapState[exName] || false;
+  const newState = !isAlt;
+  _swapState[exName] = newState;
+
+  const altDef  = EXERCISE_SWAP_MAP[exName];
+  if (!altDef) return;
+
+  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  if (!session) return;
+
+  const nameEl   = cardEl.querySelector('.tracker-ex-name');
+  const bodyEl   = cardEl.querySelector('.tracker-ex-body');
+  const targetEl = cardEl.querySelector('.tracker-ex-target');
+
+  // Register alt desc for tooltip lookups
+  window._altDescs = window._altDescs || {};
+  window._altDescs[altDef.name] = altDef.desc;
+
+  // Build a synthetic exercise def for the alt (for buildSetRow)
+  const primaryEx = session.exercises.find(e => e.name === exName);
+  const altExDef  = {
+    ...(primaryEx || {}),
+    name: altDef.name,
+    load: altDef.load,
+    tags: (primaryEx?.tags || []),
+  };
+
+  if (newState) {
+    // ── Switch TO alternative ──────────────────────────────────
+    animateSwap(cardEl, () => {
+      cardEl.classList.add('is-alt');
+      btnEl.textContent = '← Primary';
+      btnEl.classList.add('is-alt');
+
+      // Update name with ALT badge and info icon
+      if (nameEl) {
+        nameEl.innerHTML = altDef.name
+          + ' <span class="alt-tag">ALT</span>'
+          + ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
+              onclick="showExerciseInfo(event,'${safeExName(altDef.name)}')">ℹ</sup>`;
+      }
+
+      // Update target load display
+      if (targetEl) {
+        const loadSpan = targetEl.querySelector('.range:last-child');
+        if (loadSpan) loadSpan.textContent = altDef.load;
+      }
+
+      // Build fully tracked body for the alt
+      if (bodyEl) {
+        bodyEl.innerHTML = buildTrackedBody(
+          altDef.name, altDef.name, session.id, altExDef
+        );
+      }
+    });
+
+  } else {
+    // ── Switch BACK to primary ─────────────────────────────────
+    animateSwap(cardEl, () => {
+      cardEl.classList.remove('is-alt');
+      btnEl.textContent = 'Alt ⇄';
+      btnEl.classList.remove('is-alt');
+
+      // Restore primary name with info icon
+      if (nameEl && primaryEx) {
+        nameEl.innerHTML = exName
+          + (primaryEx.desc
+              ? ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
+                  onclick="showExerciseInfo(event,'${safeExName(exName)}')">ℹ</sup>`
+              : '');
+      }
+
+      // Restore target load display
+      if (targetEl && primaryEx) {
+        const loadSpan = targetEl.querySelector('.range:last-child');
+        if (loadSpan) loadSpan.textContent = primaryEx.load || '';
+      }
+
+      // Restore fully tracked body for primary
+      if (bodyEl && primaryEx) {
+        bodyEl.innerHTML = buildTrackedBody(
+          exName, exName, session.id, primaryEx
+        );
+      }
+    });
+  }
+}
+
+// Override showExerciseInfo to also look up alt descs
+const _origShowInfo = showExerciseInfo;
+showExerciseInfo = function(event, exName) {
+  // Check if it's an alt exercise we registered
+  if (window._altDescs && window._altDescs[exName]) {
+    event.stopPropagation();
+    const tooltip = document.getElementById('info-tooltip');
+    document.getElementById('info-tooltip-name').textContent = exName;
+    document.getElementById('info-tooltip-desc').textContent = window._altDescs[exName];
+    tooltip.classList.remove('hidden');
+    const rect = event.target.getBoundingClientRect();
+    tooltip.style.left = Math.min(rect.left + 12, window.innerWidth - 310) + 'px';
+    tooltip.style.top  = (rect.bottom + 8) + 'px';
+    setTimeout(() => document.addEventListener('click', closeInfoTooltip, { once: true }), 10);
+    return;
+  }
+  _origShowInfo(event, exName);
+};
+
+</script>
+
+<script>
+/* ── SERVICE WORKER (PWA offline support) ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    try {
+      const swCode = "\nconst CACHE = 'workout-tracker-v1';\nconst APP_URL = self.location.href.replace('/sw-blob', '') || './';\n\nself.addEventListener('install', e => {\n  e.waitUntil(\n    caches.open(CACHE).then(c => c.addAll([APP_URL])).catch(() => {})\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n    )\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', e => {\n  const url = e.request.url;\n  // Pass through Drive API and Google auth requests — never cache these\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') ||\n      url.includes('fonts.googleapis.com') || url.includes('cdn.jsdelivr.net')) {\n    return;\n  }\n  // Cache-first for the app itself, stale-while-revalidate\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      const network = fetch(e.request).then(res => {\n        if (res && res.status === 200 && e.request.method === 'GET') {\n          const clone = res.clone();\n          caches.open(CACHE).then(c => c.put(e.request, clone));\n        }\n        return res;\n      }).catch(() => null);\n      return cached || network;\n    })\n  );\n});\n";
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl, { scope: './' })
+        .then(reg => {
+          console.log('[SW] Registered, scope:', reg.scope);
+          // Revoke blob URL after a moment — SW stays registered
+          setTimeout(() => URL.revokeObjectURL(swUrl), 5000);
+        })
+        .catch(err => console.warn('[SW] Registration failed:', err));
+    } catch(e) {
+      console.warn('[SW] Could not register service worker:', e);
+    }
+  });
+}
 </script>
 </body>
 </html>
