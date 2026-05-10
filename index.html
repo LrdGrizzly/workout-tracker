@@ -2732,7 +2732,9 @@ body::before {
         <div class="drive-dot" id="drive-dot"></div>
         <span id="drive-status-text">Google Drive — not connected</span>
         <button class="drive-connect-btn" id="drive-connect-btn" onclick="handleDriveConnect()">Connect</button>
+        <button class="drive-connect-btn" id="drive-sync-btn" onclick="syncSessionsFromDrive(true)" style="display:none;margin-left:4px">⟳ Sync</button>
       </div>
+      <div id="drive-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);padding:0 16px 4px;text-align:right"></div>
 
       <!-- Mesocycle settings -->
       <div class="section-label">Mesocycle</div>
@@ -2922,6 +2924,17 @@ body::before {
               <span style="font-family:'DM Mono',monospace;font-size:10px;flex:1" id="settings-drive-text">Not connected</span>
               <button class="settings-btn primary" onclick="handleDriveConnect()" id="settings-drive-btn">Connect</button>
             </div>
+            <div style="margin-top:8px" id="settings-sync-row">
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <button class="settings-btn" style="flex:1" id="settings-sync-btn"
+                  onclick="syncSessionsFromDrive(true)" disabled>⟳ Sync Now</button>
+                <button class="settings-btn" style="flex:1" id="settings-folder-btn"
+                  onclick="openFolderPicker()" disabled>📁 Choose folder</button>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">Sessions folder</div>
+              <div id="settings-folder-display" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);padding:4px 0">Default (WorkoutApp)</div>
+              <div id="settings-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center"></div>
+            </div>
             <div id="settings-client-id-row" style="margin-top:8px">
               <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">OAuth Client ID</div>
               <div style="display:flex;gap:6px;align-items:center">
@@ -2995,6 +3008,15 @@ body::before {
 <div class="toast-container" id="toast-container"></div>
 
 <script>
+/* ═══════════════════════════════════════════
+   APP VERSION
+   Increment this string on every deploy.
+   The service worker cache name is derived
+   from it, so old caches are busted
+   automatically on the next load.
+═══════════════════════════════════════════ */
+const APP_VERSION = '2.0.0';
+
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
 ═══════════════════════════════════════════ */
@@ -3378,24 +3400,58 @@ const GUIDE_SECTIONS = [
       <div class="guide-example"><strong>Example</strong>Floor Press target: 6–8 reps. Week 1 session 1: 6 reps at 3 RIR. Week 1 session 2: 7 reps at same RIR. Moving through the range naturally — no action needed yet.</div>
 
       <h4>Step 2 — Add a Set</h4>
-      <p>When you consistently hit the top of the rep range across all sets at 3+ RIR, and your weekly set ceiling hasn't been reached — add one set next session.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 3 sets, all sets at 3 RIR. Week 2 ceiling is 4 sets. Next session: 16 kg × 6–8 reps × 4 sets. Reps may drop back to 6 — that's normal.</div>
+      <p>When you consistently hit the top of the rep range across all sets at 3+ RIR, and your weekly set ceiling hasn’t been reached — add one set next session.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 3 sets, all sets at 3 RIR. Week 2 ceiling is 4 sets. Next session: 16 kg × 6–8 reps × 4 sets. Reps may drop back to 6 — that’s normal.</div>
 
       <h4>Step 3 — Increase Load</h4>
-      <p>When the set ceiling for the current week is reached and you're hitting the top of the rep range across all sets — increase load and reset sets to 3.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 5 sets, all at 3+ RIR. Set ceiling reached. Next session: 20 kg × 6 reps × 3 sets. Load is the overload. Sets restart from 3.</div>
+      <p>When the set ceiling for the current week is reached and you’re hitting the top of the rep range across all sets — increase load and reset sets to 3. The tracker pre-opens the next session with 3 sets and a blue note reminding you to increase the load before you start.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 5 sets, all at 3+ RIR. Set ceiling reached. Next session opens with 3 sets. Increase load to 20 kg before logging. Reps may drop back to 6 — that’s normal.</div>
 
       <h4>Step 4 — Tempo Manipulation</h4>
-      <p>When the heaviest available KB has been reached and the set ceiling is maxed — slow the eccentric to 3 seconds. Once manageable, add a 2-second pause at the stretched position.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press at max KB, 5 sets, all comfortable. Next session: same load with 3s eccentric. The slower descent makes the same weight significantly harder.</div>
+      <p>When the heaviest available KB is reached and the set ceiling is maxed, the app will suggest <strong>tempo manipulation</strong> instead of a load increase. Apply a 3-second eccentric (controlled lowering phase). The same weight becomes significantly harder.</p>
+      <p>After applying tempo in a session, tap <strong>“✓ Mark tempo applied this session”</strong> on the suggestion card. This is saved with the session so the app knows to escalate next time.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press at 28 kg × 8 reps × 5 sets — heaviest KB available. Suggestion card shows <em>tempo</em> in purple. Next session: 28 kg with 3s lowering phase. Mark tempo applied. If ceiling is still hit after 2 sessions, suggestion escalates to <em>equipment ceiling</em>.</div>
 
-      <h4>Banded Exercises</h4>
-      <p>Progress by moving to the next band colour or adding a lighter band on top of the heaviest available.</p>
-      <div class="guide-example"><strong>Example</strong>Chest Fly at Blue band × 15 reps × 5 sets, 3+ RIR. Next: Black band × 12 reps × 3 sets. Sets reset. When Black is maxed: Black + Yellow × 12 reps × 3 sets. Sets reset again.</div>
+      <h4>Step 5 — Equipment Ceiling</h4>
+      <p>Once tempo has been applied and you continue hitting the rep ceiling across 2 sessions, the app flags an <strong>equipment ceiling</strong> in red. This means you have genuinely outgrown the current kit for this exercise. No further automatic progression is possible.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press: 28 kg × 3s eccentric × 8 reps × 5 sets, still comfortable. Suggestion card shows <em>equipment ceiling</em> in red. Time to add a 32 kg KB, or find a heavier variation.</div>
+
+      <h4>Banded Exercises — Full Progression Ladder</h4>
+      <p>Progress by moving to the next band colour. Once you reach Black, combine it with a lighter band. Log combinations using the multi-select band pills in the tracker — tap two colours to log both simultaneously.</p>
+      <table class="guide-table">
+        <thead><tr><th>Step</th><th>Load</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Yellow</td></tr>
+          <tr><td>2</td><td>Green</td></tr>
+          <tr><td>3</td><td>Red</td></tr>
+          <tr><td>4</td><td>Blue</td></tr>
+          <tr><td>5</td><td>Black</td></tr>
+          <tr><td>6</td><td>Black + Yellow</td></tr>
+          <tr><td>7</td><td>Black + Green</td></tr>
+          <tr><td>8</td><td>Black + Red</td></tr>
+          <tr><td>9</td><td>Black + Blue</td></tr>
+          <tr><td>10</td><td>Black + Black</td></tr>
+        </tbody>
+      </table>
+      <div class="guide-example"><strong>Example</strong>Chest Fly at Black band × 15 reps × 5 sets, 3+ RIR. Sets reset to 3. Next: tap Black + Yellow in the band pills. When that’s maxed: Black + Green. Sets reset on each load jump.</div>
 
       <h4>Bodyweight Exercises</h4>
       <p>Progress by reducing support, increasing ROM, or adding load — not by adding reps indefinitely.</p>
       <div class="guide-example"><strong>Example</strong>Archer Push-up at BW × 10 × 5 sets comfortably. Next: feet elevated. Once mastered: band across back for resistance.</div>
+
+      <h4>How the Suggestion Card Works</h4>
+      <p>Before each session starts, a coloured card appears showing any progression actions due. It only fires when conditions are genuinely met across the last 2 complete sessions of that type.</p>
+      <table class="guide-table">
+        <thead><tr><th>Colour</th><th>Meaning</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--green)">Green</td><td>Add a set</td><td>Start with one more set than last time</td></tr>
+          <tr><td style="color:var(--pull)">Blue</td><td>Increase load</td><td>Session opens with 3 sets — increase load before starting</td></tr>
+          <tr><td style="color:var(--push-b)">Purple</td><td>Tempo</td><td>Apply 3s eccentric. Tap “Mark tempo applied” on the card</td></tr>
+          <tr><td style="color:var(--red)">Red</td><td>Equipment ceiling</td><td>No automatic progression — new kit needed</td></tr>
+          <tr><td style="color:var(--amber)">Amber</td><td>Support reduction</td><td>Reduce support grip (Je’s programme only — see section below)</td></tr>
+        </tbody>
+      </table>
+      <p>No card appears in week 1 or during deload. Those weeks are intentionally suppressed.</p>
 
       <h4>Deload Week — Week 5</h4>
       <p>No progression during deload. 2 sets, ~50% load, 5+ RIR. Treat every rep as a technique session. When week 1 of the new mesocycle begins, return to working weights and restart the set climb from 3.</p>
@@ -3410,8 +3466,8 @@ const GUIDE_SECTIONS = [
         <tbody>
           <tr><td>Top of rep range, sets below ceiling</td><td>Add a set</td></tr>
           <tr><td>Top of rep range, set ceiling reached</td><td>Increase load, reset to 3 sets</td></tr>
-          <tr><td>Equipment ceiling reached</td><td>Apply tempo manipulation</td></tr>
-          <tr><td>Tempo applied, no further progression</td><td>Flag — new equipment needed</td></tr>
+          <tr><td>At equipment ceiling, no tempo yet</td><td>Apply 3s eccentric tempo, mark it on the card</td></tr>
+          <tr><td>Tempo applied, ceiling still hit after 2 sessions</td><td>Equipment ceiling — new kit needed</td></tr>
           <tr><td>Week 5</td><td>Deload — no progression</td></tr>
         </tbody>
       </table>
@@ -3440,6 +3496,54 @@ const GUIDE_SECTIONS = [
       <div class="guide-example"><strong>Example</strong>Floor Press jumps from 16 kg to 20 kg. You fail to hit 6 reps on set 2. Drop back to 16 kg for today. Apply 3s eccentric. Attempt 20 kg again next session.</div>
 
       <div class="guide-rule">A simple rule: if you can't complete a set cleanly, the session has told you something. Listen to it, hold your position, and progress when the signal changes.</div>
+    `
+  }
+  ,{
+    num: '05',
+    title: "Je’s Programme — How Progression Works",
+    content: `
+      <p>Je’s programme uses a <strong>variant ladder</strong> system rather than load-driven progression. Each exercise has a defined sequence of variants, from easier to harder. The app tracks which rung you’re on and suggests the next step when conditions are met.</p>
+
+      <h4>Two Trigger Types</h4>
+      <table class="guide-table">
+        <thead><tr><th>Trigger</th><th>Condition</th><th>Card colour</th></tr></thead>
+        <tbody>
+          <tr><td>Support reduction</td><td>3 clean sessions at the current supported variant</td><td style="color:var(--amber)">Amber</td></tr>
+          <tr><td>Variant advancement</td><td>Rep ceiling hit in last 2 complete sessions at the same rung</td><td style="color:var(--push-b)">Purple</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Support Reduction (Squat and Reverse Lunge)</h4>
+      <p>These exercises start with a chair or wall for support. The goal is to gradually remove the support grip over time. A clean session means all sets hit the top of the rep range.</p>
+      <div class="guide-example"><strong>Example</strong>Supported Squat — full hand grip. Session 1: all sets hit 12 reps. Session 2: same. Session 3: same. Amber card appears: “Try fingertips only.” Switch grip next session.</div>
+
+      <h4>Variant Advancement (All Other Exercises)</h4>
+      <p>When you hit the rep ceiling across all sets in 2 consecutive complete sessions at the same rung, a purple card suggests moving to the next variant. The new variant name and a coaching cue are shown on the card.</p>
+      <div class="guide-example"><strong>Example</strong>Knee Push-up × 12 reps × 3 sets — both sessions hit ceiling. Purple card: “Progress to: Full push-up — Toes on floor. Full body tension throughout.” Next session: attempt full push-up.</div>
+
+      <h4>Example Ladders</h4>
+      <table class="guide-table">
+        <thead><tr><th>Exercise</th><th>Ladder (simplest → hardest)</th></tr></thead>
+        <tbody>
+          <tr><td>Supported Squat</td><td>Full grip → Fingertips → Freestanding → Goblet 4 kg → 8 kg</td></tr>
+          <tr><td>Knee Push-up</td><td>Incline high → Incline low → Knee push-up → Full push-up → + Yellow band</td></tr>
+          <tr><td>KB Romanian Deadlift</td><td>4 kg → 8 kg → 12 kg → 16 kg</td></tr>
+          <tr><td>Banded Row</td><td>Yellow → Green → Red → Blue band</td></tr>
+          <tr><td>Glute Bridge</td><td>BW bilateral → + 4 kg → + 8 kg → Single-leg BW → Single-leg + 4 kg</td></tr>
+          <tr><td>Reverse Lunge</td><td>Full grip → Fingertips → Freestanding → Goblet 4 kg → 8 kg</td></tr>
+          <tr><td>KB Sumo Deadlift</td><td>4 kg → 8 kg → 12 kg → 16 kg</td></tr>
+          <tr><td>Hip Thrust</td><td>BW → + 4 kg → + 8 kg</td></tr>
+        </tbody>
+      </table>
+
+      <h4>What “Clean” Means</h4>
+      <p>A clean session means all sets hit the top of the rep range for that exercise. If any set falls short, the session doesn’t count toward the trigger. The app checks this automatically — you don’t need to track it manually.</p>
+
+      <h4>At the Top of the Ladder</h4>
+      <p>When you reach the final rung, no suggestion card appears. This is intentional — the goal is quality and consistency at that level, not further complexity. Load increases for KB exercises at the top follow the same add-set → increase-load logic as Alex’s programme.</p>
+
+      <h4>No Deload Suppression for Je</h4>
+      <p>Je’s progression suggestions are suppressed during deload week, same as Alex’s. Week 5 sessions are logged normally but don’t count toward trigger conditions.</p>
     `
   }
 ];
@@ -3480,6 +3584,8 @@ function selectProfile(profile) {
 
   loadLocalState();
   tryRestoreToken();
+  // Check for new deployed version in background
+  setTimeout(checkForAppUpdate, 3000);
   renderProgramme();
   renderTracker();
   renderHistory();
@@ -3572,6 +3678,7 @@ function loadLocalState() {
       state.sessions = (data.sessions || []).filter(s => !s._dummy);
       state.mesoStartDate = data.mesoStartDate || null;
       state.mesoWeekOverride = data.mesoWeekOverride || null;
+      state.jeLadderKeyMap = data.jeLadderKeyMap || {};
       // Restore rest periods
       if (data.restPeriods) {
         state.programme.sessions.forEach(s => {
@@ -3599,7 +3706,8 @@ function saveLocalState() {
       sessions: state.sessions,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
-      restPeriods
+      restPeriods,
+      jeLadderKeyMap: state.jeLadderKeyMap || {}
     }));
   } catch(e) { console.warn('Could not save local state', e); }
 }
@@ -4351,7 +4459,20 @@ function endSession() {
     });
     const hasData = sets.some(s => s.reps || s.load);
     const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name]);
-    exerciseData.push({ name: ex.name, type: ex.type, repRange: ex.repRange, sets: hasData ? sets : [], ...(tempoApplied ? { tempoApplied: true } : {}) });
+    // For Je: store the ladder rung index explicitly so future reads don't need string matching
+    let ladderRungIndex = undefined;
+    if (state.profile === 'je') {
+      const _ladder = getJeLadder(ex.name);
+      if (_ladder) {
+        ladderRungIndex = getCurrentVariantIndex(ex.name, state.activeSessionId);
+      }
+    }
+    exerciseData.push({
+      name: ex.name, type: ex.type, repRange: ex.repRange,
+      sets: hasData ? sets : [],
+      ...(tempoApplied ? { tempoApplied: true } : {}),
+      ...(ladderRungIndex !== undefined ? { ladderRungIndex } : {})
+    });
   });
 
   // Check completeness
@@ -4574,6 +4695,7 @@ function buildHistoryCard(s) {
         <div>${totalSets} sets</div>
       </div>
       <span class="history-card-status ${statusCls}">${statusLabel}</span>
+      ${s._conflict ? `<span style="font-family:'DM Mono',monospace;font-size:9px;background:var(--amber)22;color:var(--amber);border:1px solid var(--amber)44;border-radius:4px;padding:1px 6px;margin-left:4px;cursor:pointer" onclick="reviewConflicts()">⚠ duplicate</span>` : ''}
       <span class="session-chevron" style="font-size:14px;color:var(--text-muted);transition:transform 0.18s">›</span>
     </div>
     <div class="history-card-body" id="hbody-${s.id}" style="display:none">
@@ -4879,11 +5001,13 @@ function deleteSession(id) {
     [
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Delete', cls: 'confirm', action: () => {
+        const deleted = state.sessions.find(s => s.id === id);
         state.sessions = state.sessions.filter(s => s.id !== id);
         saveLocalState();
         renderHistory();
         closeModal();
         toast('Session deleted', 'info');
+        if (deleted && state.driveConnected) deleteSessionFromDrive(deleted);
       }}
     ]
   );
@@ -4965,11 +5089,20 @@ function loadGIS() {
 
 async function handleDriveConnect() {
   if (state.driveConnected) {
+    const lastSynced = localStorage.getItem(`wt_last_synced_${state.profile}`);
+    const syncInfo = lastSynced
+      ? (() => { const m = Math.round((Date.now()-new Date(lastSynced).getTime())/60000); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : `${Math.round(m/60)}h ago`; })()
+      : 'not yet this session';
+    const folderKey  = `wt_drive_folder_${state.profile}`;
+    const folderSaved = localStorage.getItem(folderKey);
+    const folderName  = folderSaved ? JSON.parse(folderSaved).name : `${DRIVE_FOLDER}/${state.programme.name}`;
     showModal(
       'Google Drive',
-      `Connected. Sessions are saved automatically at end of each workout to <strong>/${DRIVE_FOLDER}/${state.programme.name}/sessions/</strong> in your Drive.`,
+      `Connected. Sessions sync to <strong>${folderName}/sessions/</strong><br><br>Last synced: ${syncInfo}`,
       [
         { label: 'Close', cls: 'cancel', action: closeModal },
+        { label: '📁 Folder', cls: 'modal-btn', action: () => { closeModal(); openFolderPicker(); } },
+        { label: '⟳ Sync Now', cls: 'modal-btn', action: () => { closeModal(); syncSessionsFromDrive(true); } },
         { label: 'Disconnect', cls: 'confirm', action: disconnectDrive }
       ]
     );
@@ -5023,10 +5156,11 @@ async function handleDriveToken(response) {
 
   updateDriveStatus(true);
   await ensureDriveFolder();
-  toast('Google Drive connected', 'success');
+  toast('Google Drive connected — syncing…', 'info');
 
-  // Load existing programme config from Drive if available
+  // Load programme config then pull all sessions
   await loadProgrammeFromDrive();
+  await syncSessionsFromDrive(true);
 }
 
 function disconnectDrive() {
@@ -5048,6 +5182,8 @@ function tryRestoreToken() {
       state.driveToken = token;
       state.driveTokenExpiry = expiry;
       updateDriveStatus(true);
+      // Auto-sync on load if token is still valid
+      ensureDriveFolder().then(() => syncSessionsFromDrive(false));
     } else {
       localStorage.removeItem('wt_drive_token');
     }
@@ -5090,13 +5226,99 @@ function clearDriveClientId() {
 }
 
 function updateDriveStatus(connected, message) {
-  const dot  = document.getElementById('drive-dot');
-  const text = document.getElementById('drive-status-text');
-  const btn  = document.getElementById('drive-connect-btn');
+  const dot     = document.getElementById('drive-dot');
+  const text    = document.getElementById('drive-status-text');
+  const btn     = document.getElementById('drive-connect-btn');
+  const syncBtn = document.getElementById('drive-sync-btn');
   state.driveConnected = connected;
-  if (dot)  dot.className  = `drive-dot ${connected ? 'connected' : ''}`;
-  if (text) text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
-  if (btn)  btn.textContent  = connected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
+  if (dot)     dot.className   = `drive-dot ${connected ? 'connected' : ''}`;
+  if (text)    text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
+  if (btn)     btn.textContent  = connected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
+  if (syncBtn) syncBtn.style.display = connected ? '' : 'none';
+  const folderBtn = document.getElementById('settings-folder-btn');
+  if (folderBtn) folderBtn.disabled = !connected;
+  if (connected) { renderLastSynced(null); updateFolderPickerDisplay(); }
+}
+
+// ── FOLDER PICKER ─────────────────────────
+function loadPickerAPI() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.picker) { resolve(); return; }
+    // gapi.load is needed for the Picker
+    const gapiScript = document.createElement('script');
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.onload = () => {
+      gapi.load('picker', { callback: resolve, onerror: reject });
+    };
+    gapiScript.onerror = reject;
+    document.head.appendChild(gapiScript);
+  });
+}
+
+async function openFolderPicker() {
+  if (!state.driveToken) {
+    toast('Connect Google Drive first', 'error');
+    return;
+  }
+  try {
+    toast('Loading folder picker…', 'info');
+    await loadPickerAPI();
+
+    const picker = new google.picker.PickerBuilder()
+      .setOAuthToken(state.driveToken)
+      .setTitle('Choose a folder for workout sessions')
+      .addView(
+        new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+          .setSelectFolderEnabled(true)
+          .setMimeTypes('application/vnd.google-apps.folder')
+      )
+      .setCallback(pickerCallback)
+      .build();
+    picker.setVisible(true);
+  } catch(e) {
+    console.error('Picker failed:', e);
+    toast('Could not open folder picker — check Picker API is enabled', 'error');
+  }
+}
+
+function pickerCallback(data) {
+  if (data.action !== google.picker.Action.PICKED) return;
+  const folder = data.docs?.[0];
+  if (!folder) return;
+
+  // Store the chosen folder ID and name
+  const key = `wt_drive_folder_${state.profile}`;
+  localStorage.setItem(key, JSON.stringify({ id: folder.id, name: folder.name }));
+
+  // Reset cached folder IDs so ensureDriveFolder picks up the new root
+  driveFolderId[state.profile] = null;
+
+  toast(`Sessions folder set to: ${folder.name}`, 'success');
+  updateFolderPickerDisplay();
+
+  // Re-run ensureDriveFolder so sessions subfolder is created inside chosen folder
+  ensureDriveFolder().then(() => {
+    // Offer to sync immediately
+    showModal(
+      'Folder updated',
+      `Sessions will now be saved to <strong>${folder.name}/sessions/</strong> in your Drive.<br><br>` +
+      `Existing sessions on Drive in the old location are not moved automatically.`,
+      [
+        { label: 'Close', cls: 'cancel', action: closeModal },
+        { label: '⟳ Sync Now', cls: 'save', action: () => { closeModal(); syncSessionsFromDrive(true); } }
+      ]
+    );
+  });
+}
+
+function updateFolderPickerDisplay() {
+  const el = document.getElementById('settings-folder-display');
+  if (!el) return;
+  const key    = `wt_drive_folder_${state.profile}`;
+  const saved  = localStorage.getItem(key);
+  const folder = saved ? JSON.parse(saved) : null;
+  el.textContent = folder ? folder.name : 'Default (WorkoutApp)';
+  el.style.color = folder ? 'var(--text)' : 'var(--text-muted)';
 }
 
 // ── FOLDER MANAGEMENT ──────────────────────
@@ -5118,13 +5340,27 @@ async function driveRequest(url, options = {}) {
 }
 
 async function ensureDriveFolder() {
-  // Find or create /WorkoutApp
-  let rootId = await findOrCreateFolder(DRIVE_FOLDER, 'root');
-  // Find or create /WorkoutApp/Alex or /WorkoutApp/Je
-  let profileId = await findOrCreateFolder(state.programme.name, rootId);
-  // Find or create /WorkoutApp/ProfileName/sessions
-  let sessionsId = await findOrCreateFolder('sessions', profileId);
-  driveFolderId[state.profile] = { root: rootId, profile: profileId, sessions: sessionsId };
+  // Check if user has chosen a custom root folder via the Picker
+  const key     = `wt_drive_folder_${state.profile}`;
+  const saved   = localStorage.getItem(key);
+  const custom  = saved ? JSON.parse(saved) : null;
+
+  let sessionsParent;
+  if (custom) {
+    // Use chosen folder directly — create a sessions/ subfolder inside it
+    sessionsParent = await findOrCreateFolder('sessions', custom.id);
+    driveFolderId[state.profile] = {
+      root:     custom.id,
+      profile:  custom.id,
+      sessions: sessionsParent
+    };
+  } else {
+    // Default: /WorkoutApp/ProfileName/sessions
+    let rootId     = await findOrCreateFolder(DRIVE_FOLDER, 'root');
+    let profileId  = await findOrCreateFolder(state.programme.name, rootId);
+    let sessionsId = await findOrCreateFolder('sessions', profileId);
+    driveFolderId[state.profile] = { root: rootId, profile: profileId, sessions: sessionsId };
+  }
 }
 
 async function findOrCreateFolder(name, parentId) {
@@ -5243,6 +5479,376 @@ async function loadProgrammeFromDrive() {
       toast('Programme synced from Drive', 'info');
     }
   } catch(e) { console.warn('Programme load from Drive failed:', e); }
+}
+
+/* ═══════════════════════════════════════════
+   DRIVE — FULL TWO-WAY SESSION SYNC
+═══════════════════════════════════════════ */
+
+// ── LIST ALL SESSION FILES ON DRIVE ────────
+async function listDriveSessionFiles() {
+  if (!driveFolderId[state.profile]) return [];
+  const folders = driveFolderId[state.profile];
+  let files = [];
+  let pageToken = null;
+  do {
+    const q = `'${folders.sessions}' in parents and trashed=false and name contains 'session_'`;
+    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)&pageSize=1000`;
+    if (pageToken) url += `&pageToken=${pageToken}`;
+    const res = await driveRequest(url);
+    files = files.concat(res.files || []);
+    pageToken = res.nextPageToken || null;
+  } while (pageToken);
+  return files;
+}
+
+// ── FETCH A SINGLE SESSION FILE CONTENT ────
+async function fetchDriveSessionFile(fileId) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { 'Authorization': `Bearer ${state.driveToken}` }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── DELETE SESSION FILE FROM DRIVE ─────────
+async function deleteSessionFromDrive(session) {
+  if (!state.driveToken || !driveFolderId[state.profile]) return;
+  try {
+    const folders = driveFolderId[state.profile];
+    // Find the file by session ID embedded in the filename
+    const q = `'${folders.sessions}' in parents and trashed=false and name contains '_${session.id}.json'`;
+    const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+    if (!res.files.length) return;
+    await fetch(`https://www.googleapis.com/drive/v3/files/${res.files[0].id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${state.driveToken}` }
+    });
+  } catch(e) { console.warn('Drive delete failed:', e); }
+}
+
+// ── MAIN SYNC FUNCTION ──────────────────────
+// showToast: true for manual sync, false for background auto-sync on load
+async function syncSessionsFromDrive(showToast) {
+  if (!state.driveToken || !driveFolderId[state.profile]) return;
+
+  try {
+    if (showToast) toast('Syncing with Google Drive…', 'info');
+
+    const driveFiles = await listDriveSessionFiles();
+    if (!driveFiles.length && showToast) {
+      toast('Drive is empty — nothing to sync', 'info');
+      updateLastSynced();
+      return;
+    }
+
+    // Build maps for conflict detection
+    const localById  = new Map(state.sessions.map(s => [s.id, s]));
+    const driveIdMap = new Map(); // driveId → driveFile metadata
+    driveFiles.forEach(f => {
+      const m = f.name.match(/_([^_]+)\.json$/);
+      if (m) driveIdMap.set(m[1], f);
+    });
+
+    // ── STEP 1: Fetch Drive sessions not present locally ──────────
+    let newCount = 0;
+    const toFetch = driveFiles.filter(f => {
+      const m = f.name.match(/_([^_]+)\.json$/);
+      return m && !localById.has(m[1]);
+    });
+
+    const fetched = await Promise.allSettled(toFetch.map(f => fetchDriveSessionFile(f.id)));
+
+    fetched.forEach((result, i) => {
+      if (result.status !== 'fulfilled' || !result.value?.id) return;
+      const remote = result.value;
+
+      // Guard: ID genuinely absent locally
+      if (localById.has(remote.id)) return;
+
+      // ── CONFLICT TYPE A: Same date + sessionId but different ID ──
+      // This means two devices independently logged the same session.
+      const duplicate = state.sessions.find(s =>
+        s.id !== remote.id &&
+        s.date === remote.date &&
+        s.sessionId === remote.sessionId
+      );
+
+      if (duplicate) {
+        // Flag both for user review — don't auto-resolve
+        duplicate._conflict = true;
+        remote._conflict    = true;
+        state.sessions.push(remote);
+        newCount++;
+      } else {
+        state.sessions.push(remote);
+        newCount++;
+      }
+      localById.set(remote.id, remote);
+    });
+
+    // ── STEP 2: Handle same-ID sessions where content may differ ──
+    // Drive file exists AND local copy exists → compare timestamps
+    const sharedIds = [...driveIdMap.keys()].filter(id => localById.has(id));
+    const contentChecks = await Promise.allSettled(
+      sharedIds
+        .filter(id => {
+          // Only fetch if Drive modifiedTime is newer than local endTime
+          const driveFile = driveIdMap.get(id);
+          const localSess = localById.get(id);
+          const driveTime = new Date(driveFile.modifiedTime).getTime();
+          const localTime = localSess.endTime ? new Date(localSess.endTime).getTime() : 0;
+          return driveTime > localTime + 5000; // 5s tolerance
+        })
+        .map(id => fetchDriveSessionFile(driveIdMap.get(id).id).then(data => ({ id, data })))
+    );
+
+    contentChecks.forEach(result => {
+      if (result.status !== 'fulfilled') return;
+      const { id, data } = result.value;
+      const local = localById.get(id);
+      if (!local || !data) return;
+
+      // Newer Drive version wins — replace local silently
+      const idx = state.sessions.findIndex(s => s.id === id);
+      if (idx !== -1) {
+        state.sessions[idx] = data;
+        localById.set(id, data);
+      }
+    });
+
+    // ── STEP 3: Push local sessions not on Drive ──────────────────
+    let uploadCount = 0;
+    for (const session of state.sessions) {
+      if (!driveIdMap.has(session.id)) {
+        await saveToDrive(session).catch(() => {});
+        uploadCount++;
+      }
+    }
+
+    // ── STEP 4: Sort, persist, render ────────────────────────────
+    if (newCount > 0 || uploadCount > 0 || contentChecks.some(r => r.status === 'fulfilled')) {
+      state.sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+      saveLocalState();
+      renderHistory();
+    }
+
+    updateLastSynced();
+
+    // ── STEP 5: Surface conflicts to the user ────────────────────
+    const conflicts = state.sessions.filter(s => s._conflict);
+    if (conflicts.length > 0) {
+      showConflictBanner(conflicts);
+    }
+
+    if (showToast) {
+      const parts = [];
+      if (newCount > 0)    parts.push(`${newCount} pulled`);
+      if (uploadCount > 0) parts.push(`${uploadCount} pushed`);
+      if (conflicts.length > 0) parts.push(`${conflicts.length / 2 | 0} conflict${conflicts.length > 2 ? 's' : ''} need review`);
+      toast(parts.length ? parts.join(' · ') : 'Already up to date', parts.length ? 'success' : 'success');
+    }
+
+  } catch(e) {
+    console.error('Sync failed:', e);
+    if (showToast) toast('Sync failed — check connection', 'error');
+  }
+}
+
+// ── CONFLICT BANNER ────────────────────────
+function showConflictBanner(conflicts) {
+  document.getElementById('sync-conflict-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'sync-conflict-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+    background:var(--surface2);border:1px solid var(--amber);border-radius:10px;
+    padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:9999;
+    font-family:'DM Mono',monospace;font-size:11px;color:var(--text);
+    box-shadow:0 4px 24px #00000066;white-space:nowrap;
+  `;
+  banner.innerHTML = `
+    <span style="color:var(--amber)">⚠</span>
+    <span>${conflicts.length} sessions flagged as possible duplicates</span>
+    <button onclick="reviewConflicts()" style="
+      background:var(--amber);color:#000;border:none;border-radius:6px;
+      padding:4px 12px;font-family:'DM Mono',monospace;font-size:11px;
+      font-weight:700;cursor:pointer">Review</button>
+    <button onclick="this.closest('#sync-conflict-banner').remove()" style="
+      background:none;border:none;color:var(--text-dim);font-size:14px;
+      cursor:pointer;padding:0 2px;line-height:1">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+// ── CONFLICT REVIEW MODAL ──────────────────
+function reviewConflicts() {
+  document.getElementById('sync-conflict-banner')?.remove();
+  const conflicts = state.sessions.filter(s => s._conflict);
+
+  // Group by date + sessionId
+  const groups = {};
+  conflicts.forEach(s => {
+    const key = `${s.date}_${s.sessionId}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+
+  let html = `<p style="font-size:12px;color:var(--text-dim);margin-bottom:12px">
+    These sessions were logged on different devices for the same workout. Keep one, delete the other.
+  </p>`;
+
+  Object.values(groups).forEach(group => {
+    html += `<div style="border:1px solid var(--border-h);border-radius:8px;padding:10px;margin-bottom:10px">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--amber);margin-bottom:8px">
+        ${group[0].date} — ${group[0].sessionName}
+      </div>`;
+    group.forEach(s => {
+      const sets = s.exercises.reduce((n, e) => n + e.sets.length, 0);
+      const time = s.startTime ? new Date(s.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—';
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:6px 8px;border-radius:6px;background:var(--surface3);margin-bottom:6px">
+        <span style="font-family:'DM Mono',monospace;font-size:10px">
+          Started ${time} · ${sets} sets · ${s.status}
+          ${s.notes ? `<br><span style="color:var(--text-dim)">${s.notes.substring(0,40)}${s.notes.length>40?'…':''}</span>` : ''}
+        </span>
+        <div style="display:flex;gap:6px">
+          <button onclick="resolveConflict('${s.id}','keep')" style="
+            background:var(--green);color:#000;border:none;border-radius:5px;
+            padding:3px 10px;font-family:'DM Mono',monospace;font-size:10px;
+            font-weight:700;cursor:pointer">Keep</button>
+          <button onclick="resolveConflict('${s.id}','delete')" style="
+            background:var(--surface2);color:var(--red);border:1px solid var(--red)33;
+            border-radius:5px;padding:3px 10px;font-family:'DM Mono',monospace;
+            font-size:10px;cursor:pointer">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  showModal('Duplicate Sessions', html, [
+    { label: 'Dismiss', cls: 'cancel', action: closeModal }
+  ]);
+}
+
+// ── RESOLVE A SINGLE CONFLICT ──────────────
+function resolveConflict(sessionId, action) {
+  if (action === 'delete') {
+    const session = state.sessions.find(s => s.id === sessionId);
+    if (session) {
+      state.sessions = state.sessions.filter(s => s.id !== sessionId);
+      if (state.driveConnected) deleteSessionFromDrive(session);
+    }
+  } else {
+    // Keep: just clear the conflict flag
+    const session = state.sessions.find(s => s.id === sessionId);
+    if (session) delete session._conflict;
+  }
+
+  // Check if all conflicts in this group are resolved
+  const remaining = state.sessions.filter(s => s._conflict);
+  saveLocalState();
+  renderHistory();
+
+  if (remaining.length === 0) {
+    closeModal();
+    toast('All conflicts resolved', 'success');
+  } else {
+    // Re-render the modal with remaining conflicts
+    closeModal();
+    reviewConflicts();
+  }
+}
+
+// ── LAST SYNCED TIMESTAMP ───────────────────
+function updateLastSynced() {
+  const now = new Date();
+  const key  = `wt_last_synced_${state.profile}`;
+  localStorage.setItem(key, now.toISOString());
+  renderLastSynced(now);
+}
+
+function renderLastSynced(date) {
+  const el = document.getElementById('drive-last-synced');
+  if (!el) return;
+  if (!date) {
+    const saved = localStorage.getItem(`wt_last_synced_${state.profile}`);
+    date = saved ? new Date(saved) : null;
+  }
+  if (!date) { el.textContent = ''; return; }
+  const mins = Math.round((Date.now() - date.getTime()) / 60000);
+  el.textContent = mins < 1 ? 'Last synced just now' :
+                   mins < 60 ? `Last synced ${mins}m ago` :
+                   `Last synced ${Math.round(mins/60)}h ago`;
+}
+
+
+/* ═══════════════════════════════════════════
+   AUTO-UPDATE CHECK
+   On load, fetches the deployed page HEAD to
+   compare APP_VERSION. If a newer version is
+   found, shows a dismissible update banner.
+═══════════════════════════════════════════ */
+async function checkForAppUpdate() {
+  try {
+    // Fetch the live page with a cache-busting param
+    const res = await fetch(location.href.split('?')[0] + '?v=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { 'Accept': 'text/html' }
+    });
+    if (!res.ok) return;
+    const text = await res.text();
+    const match = text.match(/const APP_VERSION = '([^']+)'/);
+    if (!match) return;
+    const remoteVersion = match[1];
+    if (remoteVersion !== APP_VERSION) {
+      showUpdateBanner(remoteVersion);
+    }
+  } catch(e) {
+    // Network unavailable — silent fail
+  }
+}
+
+function showUpdateBanner(newVersion) {
+  // Remove any existing banner
+  document.getElementById('update-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+    background:var(--surface2);border:1px solid var(--green);border-radius:10px;
+    padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:9999;
+    font-family:'DM Mono',monospace;font-size:11px;color:var(--text);
+    box-shadow:0 4px 24px #00000066;white-space:nowrap;
+  `;
+  banner.innerHTML = `
+    <span style="color:var(--green)">⟳</span>
+    <span>New version <strong>${newVersion}</strong> available</span>
+    <button onclick="applyAppUpdate()" style="
+      background:var(--green);color:#000;border:none;border-radius:6px;
+      padding:4px 12px;font-family:'DM Mono',monospace;font-size:11px;
+      font-weight:700;cursor:pointer">Update</button>
+    <button onclick="this.closest('#update-banner').remove()" style="
+      background:none;border:none;color:var(--text-dim);font-size:14px;
+      cursor:pointer;padding:0 2px;line-height:1">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+async function applyAppUpdate() {
+  // Unregister SW so it doesn't serve stale cache, then reload
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+    // Clear all caches
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  } catch(e) {}
+  location.reload(true);
 }
 
 /* ═══════════════════════════════════════════
@@ -5464,48 +6070,115 @@ const JE_LADDERS = {
 /* ── JE PROGRESSION HELPERS ─────────────────── */
 
 function getJeLadder(exerciseName) {
-  return JE_LADDERS[exerciseName] || null;
+  // Check for a key remap (set when exercise is renamed in Programme Editor)
+  const mapped = state.jeLadderKeyMap?.[exerciseName];
+  return JE_LADDERS[mapped || exerciseName] || null;
 }
 
 function getCurrentVariantIndex(exerciseName, sessionId) {
-  // Find the most recently logged variant for this exercise
+  const ladder = getJeLadder(exerciseName);
+  if (!ladder) return 0;
+
+  // Find the most recent complete session of this type that contains this exercise
   const recent = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
     .slice(-1)[0];
   if (!recent) return 0;
+
   const ex = recent.exercises.find(e => e.name === exerciseName);
   if (!ex || !ex.sets.length) return 0;
-  // Try to match load string to a ladder rung
-  const ladder = getJeLadder(exerciseName);
-  if (!ladder) return 0;
-  const load = (ex.sets[0].load || '').toString().toLowerCase();
-  for (let i = 0; i < ladder.length; i++) {
-    if (ladder[i].variant.toLowerCase().includes(load) || load.includes(ladder[i].variant.toLowerCase().split(' ')[0])) {
-      return i;
+
+  // ── Preferred: use explicitly stored rung index (set at save time) ──
+  if (typeof ex.ladderRungIndex === 'number') {
+    return Math.min(ex.ladderRungIndex, ladder.length - 1);
+  }
+
+  // ── Fallback for legacy sessions: match by load string ──
+  // Uses exact matching per type to avoid the false-match problem.
+  const load = (ex.sets[0].load || '').toString().toLowerCase().trim();
+  if (!load || load === 'bw') {
+    // Match BW rungs only — pick the highest BW rung that matches
+    // (avoids matching load-based rungs that contain 'bw')
+    for (let i = ladder.length - 1; i >= 0; i--) {
+      if (ladder[i].type === 'bw' || ladder[i].type === 'support') return i;
+    }
+    return 0;
+  }
+
+  // Numeric load: match exact kg value in variant string
+  const kg = parseFloat(load);
+  if (!isNaN(kg)) {
+    // Find the highest rung whose variant contains this exact kg value
+    for (let i = ladder.length - 1; i >= 0; i--) {
+      const v = ladder[i].variant.toLowerCase();
+      // Match "4 kg", "4kg", "4 kg / arm" etc. — exact number match
+      if (new RegExp(`\\b${kg}\\s*kg`).test(v)) return i;
     }
   }
+
+  // Band load: match colour exactly
+  const bandColors = ['yellow', 'green', 'red', 'blue', 'black'];
+  const matchedBand = bandColors.find(b => load.includes(b));
+  if (matchedBand) {
+    for (let i = ladder.length - 1; i >= 0; i--) {
+      const v = ladder[i].variant.toLowerCase();
+      // Only match if the variant's primary colour is the matched band
+      // (avoids matching "Full push-up + Yellow band" when load is "yellow")
+      const primaryBand = bandColors.find(b => v.startsWith(b) || v.includes(`${b} band`));
+      if (primaryBand === matchedBand) return i;
+    }
+  }
+
   return 0;
 }
 
 function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
-  // Count consecutive complete sessions at the same support/variant level
+  // Count consecutive complete sessions at the same rung (support or variant)
+  // "Clean" means: same rung AND all sets hit the rep ceiling
+  const ladder = getJeLadder(exerciseName);
+  const prog    = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
+  const repRange = prog?.repRange || [10, 12];
+
+  // Get last 5 complete sessions of this type, most recent first (no mutation)
   const sessions = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
     .slice(-5)
+    .slice()    // copy to avoid mutating
     .reverse();
+
   if (!sessions.length) return 0;
-  const lastLoad = sessions[0].exercises.find(e => e.name === exerciseName)?.sets[0]?.load || '';
+
+  // Get the rung of the most recent session
+  const latestEx = sessions[0].exercises.find(e => e.name === exerciseName);
+  if (!latestEx || !latestEx.sets.length) return 0;
+
+  const latestRung = typeof latestEx.ladderRungIndex === 'number'
+    ? latestEx.ladderRungIndex
+    : getCurrentVariantIndex(exerciseName, sessionId);
+
   let count = 0;
   for (const s of sessions) {
     const ex = s.exercises.find(e => e.name === exerciseName);
     if (!ex || !ex.sets.length) break;
-    const load = ex.sets[0].load || '';
-    if (load !== lastLoad) break;
-    // Check all sets hit rep range
-    const prog = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
-    const repRange = prog?.repRange || [10, 12];
+
+    // Check same rung — prefer stored index, fall back to string match
+    const rung = typeof ex.ladderRungIndex === 'number'
+      ? ex.ladderRungIndex
+      : (ladder ? (() => {
+          // inline fallback using load string
+          const load = (ex.sets[0].load || '').toString().toLowerCase().trim();
+          for (let i = ladder.length - 1; i >= 0; i--) {
+            if (ladder[i].variant.toLowerCase().includes(load.split(' ')[0])) return i;
+          }
+          return 0;
+        })() : 0);
+
+    if (rung !== latestRung) break;
+
+    // Check all sets hit rep ceiling
     const allHit = ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
     if (!allHit) break;
+
     count++;
   }
   return count;
@@ -5556,7 +6229,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     return null;
   }
 
-  // Variant advancement trigger: rep ceiling × 2 sessions
+  // Variant advancement trigger: rep ceiling × 2 complete sessions at same rung
   const completeSessions = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
     .slice(-2);
@@ -5565,6 +6238,9 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
   const bothHitCeiling = completeSessions.every(sess => {
     const ex = sess.exercises.find(e => e.name === exerciseName);
     if (!ex || !ex.sets.length) return false;
+    // Must be at the same rung
+    const rung = typeof ex.ladderRungIndex === 'number' ? ex.ladderRungIndex : currentIdx;
+    if (rung !== currentIdx) return false;
     return ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
   });
 
@@ -5576,7 +6252,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     type: typeLabel,
     rung: currentIdx,
     next: nextRung.variant,
-    message: `Rep ceiling hit for 2 sessions. Progress to: <em>${nextRung.variant}</em> — ${nextRung.cue}`
+    message: `Rep ceiling hit for 2 sessions at this level. Progress to: <em>${nextRung.variant}</em> — ${nextRung.cue}`
   };
 }
 
@@ -6407,6 +7083,26 @@ function openSettings() {
     text.textContent = state.driveConnected ? 'Connected to Google Drive' : 'Not connected';
     btn.textContent  = state.driveConnected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
   }
+  // Enable/disable Sync Now and Choose Folder buttons
+  const settingsSyncBtn   = document.getElementById('settings-sync-btn');
+  const settingsFolderBtn = document.getElementById('settings-folder-btn');
+  if (settingsSyncBtn)   settingsSyncBtn.disabled   = !state.driveConnected;
+  if (settingsFolderBtn) settingsFolderBtn.disabled = !state.driveConnected;
+  updateFolderPickerDisplay();
+  const settingsLastSynced = document.getElementById('settings-last-synced');
+  if (settingsLastSynced) {
+    const saved = localStorage.getItem(`wt_last_synced_${state.profile}`);
+    if (saved) {
+      const date = new Date(saved);
+      const mins = Math.round((Date.now() - date.getTime()) / 60000);
+      settingsLastSynced.textContent = mins < 1 ? 'Last synced just now' :
+        mins < 60 ? `Last synced ${mins}m ago` :
+        `Last synced ${Math.round(mins/60)}h ago`;
+    } else {
+      settingsLastSynced.textContent = state.driveConnected ? 'Not yet synced this session' : '';
+    }
+  }
+
   // Sync Client ID display
   const clientIdDisplay = document.getElementById('settings-client-id-display');
   if (clientIdDisplay) {
@@ -6664,16 +7360,44 @@ function saveExerciseEdit(sessionId, idx) {
     });
     toast(`Exercise "${newName}" added`, 'success');
   } else {
-    // Option A rename: propagate to history
+    // Option A rename: propagate to history and all dependent structures
     if (oldName !== newName) {
+      // 1. Update all historical session exercise names
       const affected = state.sessions.filter(s => s.sessionId === sessionId);
       affected.forEach(sess => {
         const histEx = sess.exercises.find(e => e.name === oldName);
         if (histEx) histEx.name = newName;
       });
-      // Update Je ladder key if applicable
-      if (JE_LADDERS[oldName]) { JE_LADDERS[newName] = JE_LADDERS[oldName]; delete JE_LADDERS[oldName]; }
-      toast(`Renamed "${oldName}" → "${newName}" in ${affected.length} sessions`, 'success');
+
+      // 2. Update Je ladder key map (persisted, survives reload)
+      if (!state.jeLadderKeyMap) state.jeLadderKeyMap = {};
+      // If oldName was already remapped, update the chain
+      const existingTarget = state.jeLadderKeyMap[oldName];
+      if (existingTarget || JE_LADDERS[oldName]) {
+        state.jeLadderKeyMap[newName] = existingTarget || oldName;
+        delete state.jeLadderKeyMap[oldName];
+      }
+
+      // 3. Update EXERCISE_SWAP_MAP if the renamed exercise has an alt
+      if (EXERCISE_SWAP_MAP[oldName]) {
+        EXERCISE_SWAP_MAP[newName] = EXERCISE_SWAP_MAP[oldName];
+        delete EXERCISE_SWAP_MAP[oldName];
+      }
+      // Also check if the renamed exercise appears as an alt target in the map
+      Object.keys(EXERCISE_SWAP_MAP).forEach(key => {
+        if (EXERCISE_SWAP_MAP[key].name === oldName) {
+          EXERCISE_SWAP_MAP[key].name = newName;
+        }
+      });
+
+      // 4. Re-push affected sessions to Drive so Drive files are consistent
+      if (state.driveConnected && affected.length > 0) {
+        // Fire and forget — don't block the UI
+        Promise.all(affected.map(sess => saveToDrive(sess).catch(() => {})))
+          .then(() => toast(`Drive updated (${affected.length} session${affected.length > 1 ? 's' : ''})`, 'info'));
+      }
+
+      toast(`Renamed "${oldName}" → "${newName}" across ${affected.length} sessions`, 'success');
     }
     Object.assign(ex, { name: newName, type: newType, tags: baseTags, sets: newSets, reps: newReps, repRange, load: newLoad, notes: newNotes, desc: newDesc, substitutions: newSubs });
   }
@@ -7294,7 +8018,8 @@ showExerciseInfo = function(event, exName) {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     try {
-      const swCode = "\nconst CACHE = 'workout-tracker-v1';\nconst APP_URL = self.location.href.replace('/sw-blob', '') || './';\n\nself.addEventListener('install', e => {\n  e.waitUntil(\n    caches.open(CACHE).then(c => c.addAll([APP_URL])).catch(() => {})\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n    )\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', e => {\n  const url = e.request.url;\n  // Pass through Drive API and Google auth requests — never cache these\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') ||\n      url.includes('fonts.googleapis.com') || url.includes('cdn.jsdelivr.net')) {\n    return;\n  }\n  // Cache-first for the app itself, stale-while-revalidate\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      const network = fetch(e.request).then(res => {\n        if (res && res.status === 200 && e.request.method === 'GET') {\n          const clone = res.clone();\n          caches.open(CACHE).then(c => c.put(e.request, clone));\n        }\n        return res;\n      }).catch(() => null);\n      return cached || network;\n    })\n  );\n});\n";
+      const _cacheKey = 'workout-tracker-' + APP_VERSION;
+      const swCode = "\nconst CACHE = '" + _cacheKey + "';\nconst APP_URL = self.location.href.replace('/sw-blob', '') || './';\n\nself.addEventListener('install', e => {\n  e.waitUntil(\n    caches.open(CACHE).then(c => c.addAll([APP_URL])).catch(() => {})\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n    )\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', e => {\n  const url = e.request.url;\n  // Pass through Drive API and Google auth requests — never cache these\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') ||\n      url.includes('fonts.googleapis.com') || url.includes('cdn.jsdelivr.net')) {\n    return;\n  }\n  // Cache-first for the app itself, stale-while-revalidate\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      const network = fetch(e.request).then(res => {\n        if (res && res.status === 200 && e.request.method === 'GET') {\n          const clone = res.clone();\n          caches.open(CACHE).then(c => c.put(e.request, clone));\n        }\n        return res;\n      }).catch(() => null);\n      return cached || network;\n    })\n  );\n});\n";
       const blob = new Blob([swCode], { type: 'application/javascript' });
       const swUrl = URL.createObjectURL(blob);
       navigator.serviceWorker.register(swUrl, { scope: './' })
