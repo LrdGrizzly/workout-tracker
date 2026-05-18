@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
-<meta name="theme-color" content="#080909">
+<meta name="theme-color" content="#181818">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -18,35 +18,57 @@
    DESIGN TOKENS
 ═══════════════════════════════════════════ */
 :root {
-  --bg:          #080909;
-  --surface:     #0f1011;
-  --surface2:    #161718;
-  --surface3:    #1d1e20;
-  --border:      rgba(255,255,255,0.06);
-  --border-h:    rgba(255,255,255,0.12);
-  --text:        #e8e9ea;
-  --text-dim:    #6b6d72;
-  --text-muted:  #3a3c40;
+  /* ── Base surfaces ── */
+  --bg:          #181818;
+  --surface:     rgba(30,30,30,0.85);
+  --surface2:    #242424;
+  --surface3:    #2a2a2a;
 
-  /* Session colours */
-  --push-a:      #00e5a0;
-  --pull:        #3dabff;
-  --legs-a:      #ffc233;
-  --push-b:      #b76fff;
-  --legs-b:      #ff4d6d;
-  --kb-flow:     #ff8c42;
-  --deload:      #00d4d4;
+  /* ── Borders ── */
+  --border:      rgba(255,255,255,0.07);
+  --border-h:    rgba(255,255,255,0.14);
+  --border-g:    rgba(255,255,255,0.18);  /* glass edge */
+
+  /* ── Text ── */
+  --text:        #f0ede8;
+  --text-dim:    #6e6b66;
+  --text-muted:  #3d3a36;
+
+  /* ── Session accent colours (refined) ── */
+  --push-a:      #00d4a0;
+  --pull:        #4db8ff;
+  --legs-a:      #f5b830;
+  --push-b:      #b87fff;
+  --legs-b:      #ff5c7a;
+  --kb-flow:     #ff9050;
+  --deload:      #00c8cc;
+  --transition-c:#00b4cc;
   --session-a:   #7ec8e3;
   --session-b:   #f9a875;
 
-  /* Status */
-  --green:       #00e5a0;
-  --green-glow:  rgba(0,229,160,0.15);
-  --red:         #ff4d6d;
-  --red-glow:    rgba(255,77,109,0.15);
-  --amber:       #ffc233;
+  /* ── Status / semantic ── */
+  --green:       #00d4a0;
+  --green-glow:  rgba(0,212,160,0.18);
+  --red:         #ff5c7a;
+  --red-glow:    rgba(255,92,122,0.18);
+  --amber:       #f5b830;
 
-  /* Band colours */
+  /* ── Per-tab page tints (applied to .main) ── */
+  --tint-programme: rgba(245,184,48,0.025);
+  --tint-track:     rgba(0,184,200,0.022);
+  --tint-history:   rgba(184,127,255,0.025);
+  --tint-guide:     rgba(0,212,160,0.02);
+
+  /* ── Glass ── */
+  --glass-bg:    rgba(24,24,24,0.72);
+  --glass-blur:  blur(20px) saturate(1.6);
+
+  /* ── Glow levels ── */
+  --glow-sm:     0 0 12px;
+  --glow-md:     0 0 20px;
+  --glow-lg:     0 0 40px;
+
+  /* ── Band colours ── */
   --band-yellow: #f5d020;
   --band-green:  #4caf50;
   --band-red:    #f44336;
@@ -63,11 +85,17 @@
 ═══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  background: #181818;
+  background-color: #181818;
+}
 
 body {
   background: var(--bg);
+  background-color: #181818;
   color: var(--text);
+  color: #f0ede8;
   font-family: 'Barlow', sans-serif;
   font-size: 15px;
   min-height: 100vh;
@@ -82,7 +110,7 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
-  opacity: 0.4;
+  opacity: 0.55;
 }
 
 /* ═══════════════════════════════════════════
@@ -139,13 +167,16 @@ body::before {
   width: 200px;
   padding: 32px 24px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--border-g);
+  background: rgba(28,28,28,0.75);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   cursor: pointer;
   transition: all var(--transition);
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 .profile-card::before {
@@ -157,13 +188,13 @@ body::before {
 }
 
 .profile-card.alex::before { background: radial-gradient(circle at top, rgba(0,229,160,0.08), transparent 70%); }
-.profile-card.je::before   { background: radial-gradient(circle at top, rgba(255,140,66,0.08), transparent 70%); }
+.profile-card.je::before   { background: radial-gradient(circle at top, rgba(255,160,190,0.1), transparent 70%); }
 
 .profile-card:hover { border-color: var(--border-h); transform: translateY(-2px); }
 .profile-card:hover::before { opacity: 1; }
 
-.profile-card:hover.alex { border-color: rgba(0,229,160,0.3); box-shadow: 0 8px 32px rgba(0,229,160,0.08); }
-.profile-card:hover.je   { border-color: rgba(255,140,66,0.3); box-shadow: 0 8px 32px rgba(255,140,66,0.08); }
+.profile-card:hover.alex { border-color: rgba(0,212,160,0.35); box-shadow: 0 8px 40px rgba(0,212,160,0.12), inset 0 0 30px rgba(0,212,160,0.05); }
+.profile-card:hover.je   { border-color: rgba(255,160,190,0.4); box-shadow: 0 8px 40px rgba(255,160,190,0.14), inset 0 0 30px rgba(255,160,190,0.06); }
 
 .profile-avatar {
   width: 64px;
@@ -179,7 +210,7 @@ body::before {
 }
 
 .alex .profile-avatar { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: var(--push-a); }
-.je .profile-avatar  { background: rgba(255,140,66,0.1); border: 1px solid rgba(255,140,66,0.2); color: var(--kb-flow); font-size: 22px; }
+.je .profile-avatar  { background: rgba(255,160,190,0.1); border: 1px solid rgba(255,160,190,0.25); color: #ffb3c6; font-size: 22px; }
 
 .profile-name {
   font-family: 'Barlow Condensed', sans-serif;
@@ -208,6 +239,8 @@ body::before {
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  background: #181818;
+  background-color: #181818;
 }
 
 /* ═══════════════════════════════════════════
@@ -219,9 +252,11 @@ body::before {
   left: 0;
   right: 0;
   height: 56px;
-  background: rgba(8,9,9,0.92);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--border-g);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -281,17 +316,20 @@ body::before {
 }
 
 /* ═══════════════════════════════════════════
-   TAB NAVIGATION
+   BOTTOM NAV
 ═══════════════════════════════════════════ */
 .tabnav {
   position: fixed;
-  top: 56px;
+  bottom: 0;
   left: 0;
   right: 0;
-  height: 48px;
-  background: rgba(8,9,9,0.92);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  height: 58px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--border-g);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 -4px 24px rgba(0,0,0,0.25);
   display: flex;
   align-items: stretch;
   z-index: 99;
@@ -300,47 +338,63 @@ body::before {
 .tab-btn {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 3px;
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-dim);
   cursor: pointer;
   border: none;
   background: none;
-  border-bottom: 2px solid transparent;
+  border-top: 2px solid transparent;
   transition: all var(--transition);
   position: relative;
+  padding-bottom: 2px;
 }
 
-.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+.tab-btn:hover { color: var(--text); }
 
-.tab-btn.active {
-  color: var(--text);
-  border-bottom-color: var(--green);
-}
+.tab-btn.active { color: var(--text); }
 
-.tab-icon { font-size: 14px; }
+/* Per-tab active indicator colours — top border */
+#tab-dashboard.active  { border-top-color: var(--green);  color: var(--green); }
+#tab-programme.active  { border-top-color: var(--legs-a); color: var(--legs-a); }
+#tab-tracker.active    { border-top-color: var(--deload); color: var(--deload); }
+#tab-history.active    { border-top-color: var(--push-b); color: var(--push-b); }
+#tab-guide.active      { border-top-color: var(--green);  color: var(--green); }
+
+.tab-icon { font-size: 18px; line-height: 1; }
+.tab-label { font-size: 9px; }
 
 /* ═══════════════════════════════════════════
    MAIN CONTENT AREA
 ═══════════════════════════════════════════ */
 .main {
-  margin-top: 100px;
+  margin-top: 60px;
   padding: 24px 20px 80px;
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
-  margin-top: 110px;
 }
 
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tab-panel { display: none; background: #181818; }
+.tab-panel.active { display: block; background: #181818; }
+.main { background: #181818; }
+
+/* Per-tab background tints */
+#tab-programme.active ~ * #panel-programme,
+body[data-tab="programme"] .main { background: var(--tint-programme); }
+
+body[data-tab="programme"] { background-image: radial-gradient(ellipse at 60% 0%, rgba(245,184,48,0.04) 0%, transparent 60%); }
+body[data-tab="track"]     { background-image: radial-gradient(ellipse at 40% 0%, rgba(0,200,204,0.04) 0%, transparent 60%); }
+body[data-tab="history"]   { background-image: radial-gradient(ellipse at 50% 0%, rgba(184,127,255,0.04) 0%, transparent 60%); }
+body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%, rgba(0,212,160,0.03) 0%, transparent 60%); }
 
 /* ═══════════════════════════════════════════
    SECTION LABELS
@@ -373,8 +427,10 @@ body::before {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .session-card:hover { border-color: var(--border-h); }
@@ -442,29 +498,29 @@ body::before {
 .session-card.open .session-body { display: block; }
 
 /* Session colour variants */
-.s-push-a .session-pip  { background: var(--push-a); }
-.s-push-a .session-tag  { color: var(--push-a); border-color: rgba(0,229,160,0.25); background: rgba(0,229,160,0.07); }
-.s-push-a:hover         { border-color: rgba(0,229,160,0.2); }
+.s-push-a .session-pip  { background: var(--push-a); box-shadow: var(--glow-sm) rgba(0,212,160,0.6); }
+.s-push-a .session-tag  { color: var(--push-a); border-color: rgba(0,212,160,0.28); background: rgba(0,212,160,0.08); }
+.s-push-a:hover         { border-color: rgba(0,212,160,0.28); box-shadow: inset 0 0 20px rgba(0,212,160,0.04), 0 0 0 1px rgba(0,212,160,0.1); }
 
-.s-pull .session-pip    { background: var(--pull); }
-.s-pull .session-tag    { color: var(--pull); border-color: rgba(61,171,255,0.25); background: rgba(61,171,255,0.07); }
-.s-pull:hover           { border-color: rgba(61,171,255,0.2); }
+.s-pull .session-pip    { background: var(--pull); box-shadow: var(--glow-sm) rgba(77,184,255,0.6); }
+.s-pull .session-tag    { color: var(--pull); border-color: rgba(77,184,255,0.28); background: rgba(77,184,255,0.08); }
+.s-pull:hover           { border-color: rgba(77,184,255,0.28); box-shadow: inset 0 0 20px rgba(77,184,255,0.04), 0 0 0 1px rgba(77,184,255,0.1); }
 
-.s-legs-a .session-pip  { background: var(--legs-a); }
-.s-legs-a .session-tag  { color: var(--legs-a); border-color: rgba(255,194,51,0.25); background: rgba(255,194,51,0.07); }
-.s-legs-a:hover         { border-color: rgba(255,194,51,0.2); }
+.s-legs-a .session-pip  { background: var(--legs-a); box-shadow: var(--glow-sm) rgba(245,184,48,0.6); }
+.s-legs-a .session-tag  { color: var(--legs-a); border-color: rgba(245,184,48,0.28); background: rgba(245,184,48,0.08); }
+.s-legs-a:hover         { border-color: rgba(245,184,48,0.28); box-shadow: inset 0 0 20px rgba(245,184,48,0.04), 0 0 0 1px rgba(245,184,48,0.1); }
 
-.s-push-b .session-pip  { background: var(--push-b); }
-.s-push-b .session-tag  { color: var(--push-b); border-color: rgba(183,111,255,0.25); background: rgba(183,111,255,0.07); }
-.s-push-b:hover         { border-color: rgba(183,111,255,0.2); }
+.s-push-b .session-pip  { background: var(--push-b); box-shadow: var(--glow-sm) rgba(184,127,255,0.6); }
+.s-push-b .session-tag  { color: var(--push-b); border-color: rgba(184,127,255,0.28); background: rgba(184,127,255,0.08); }
+.s-push-b:hover         { border-color: rgba(184,127,255,0.28); box-shadow: inset 0 0 20px rgba(184,127,255,0.04), 0 0 0 1px rgba(184,127,255,0.1); }
 
-.s-legs-b .session-pip  { background: var(--legs-b); }
-.s-legs-b .session-tag  { color: var(--legs-b); border-color: rgba(255,77,109,0.25); background: rgba(255,77,109,0.07); }
-.s-legs-b:hover         { border-color: rgba(255,77,109,0.2); }
+.s-legs-b .session-pip  { background: var(--legs-b); box-shadow: var(--glow-sm) rgba(255,92,122,0.6); }
+.s-legs-b .session-tag  { color: var(--legs-b); border-color: rgba(255,92,122,0.28); background: rgba(255,92,122,0.08); }
+.s-legs-b:hover         { border-color: rgba(255,92,122,0.28); box-shadow: inset 0 0 20px rgba(255,92,122,0.04), 0 0 0 1px rgba(255,92,122,0.1); }
 
-.s-kb-flow .session-pip { background: var(--kb-flow); }
-.s-kb-flow .session-tag { color: var(--kb-flow); border-color: rgba(255,140,66,0.25); background: rgba(255,140,66,0.07); }
-.s-kb-flow:hover        { border-color: rgba(255,140,66,0.2); }
+.s-kb-flow .session-pip { background: var(--kb-flow); box-shadow: var(--glow-sm) rgba(255,144,80,0.6); }
+.s-kb-flow .session-tag { color: var(--kb-flow); border-color: rgba(255,144,80,0.28); background: rgba(255,144,80,0.08); }
+.s-kb-flow:hover        { border-color: rgba(255,144,80,0.28); box-shadow: inset 0 0 20px rgba(255,144,80,0.04), 0 0 0 1px rgba(255,144,80,0.1); }
 
 .s-sess-a .session-pip  { background: var(--session-a); }
 .s-sess-a .session-tag  { color: var(--session-a); border-color: rgba(126,200,227,0.25); background: rgba(126,200,227,0.07); }
@@ -721,6 +777,987 @@ body::before {
 
 .prog-chart-canvas { height: 80px; }
 
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+.dashboard-card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-g);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 32px rgba(0,0,0,0.25);
+}
+
+/* Mobile: single column */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+/* Desktop: 2-column */
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .dashboard-col-left  { grid-column: 1; }
+  .dashboard-col-right { grid-column: 2; grid-row: 1 / span 4; }
+  .main { max-width: 1100px; }
+}
+
+.dash-section {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.dash-section:last-child { border-bottom: none; }
+
+.dash-section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Greeting */
+.dash-greeting {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.dash-greeting-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* Mesocycle timeline */
+.dash-meso-blocks {
+  display: flex;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.dash-meso-block {
+  flex: 1;
+  border-radius: 6px;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.dash-meso-block.past {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+  opacity: 0.5;
+}
+
+.dash-meso-block.current {
+  border-color: rgba(0,212,160,0.4);
+  background: rgba(0,212,160,0.07);
+  box-shadow: inset 0 0 16px rgba(0,212,160,0.06), 0 0 0 1px rgba(0,212,160,0.15);
+}
+
+.dash-meso-block.future {
+  opacity: 0.3;
+}
+
+.dash-meso-block.deload {
+  border-color: rgba(0,200,204,0.3);
+  background: rgba(0,200,204,0.05);
+}
+
+.dash-meso-block.deload.current {
+  border-color: rgba(0,200,204,0.5);
+  box-shadow: inset 0 0 16px rgba(0,200,204,0.07), 0 0 0 1px rgba(0,200,204,0.2);
+}
+
+.dash-meso-block-week {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 3px;
+}
+
+.dash-meso-block.current .dash-meso-block-week { color: var(--green); }
+.dash-meso-block.deload .dash-meso-block-week  { color: var(--deload); }
+
+.dash-meso-block-sets {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-dim);
+  line-height: 1;
+}
+
+.dash-meso-block.current .dash-meso-block-sets { color: var(--green); }
+.dash-meso-block.deload  .dash-meso-block-sets { color: var(--deload); }
+
+.dash-meso-block-rir {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* This week dots */
+.dash-week-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dash-day-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 36px;
+}
+
+.dash-day-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dash-day-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  transition: all var(--transition);
+}
+
+.dash-day-dot.done {
+  background: rgba(0,212,160,0.12);
+  border-color: rgba(0,212,160,0.35);
+  box-shadow: inset 0 0 8px rgba(0,212,160,0.1), 0 0 6px rgba(0,212,160,0.15);
+}
+
+.dash-day-dot.rest {
+  opacity: 0.25;
+}
+
+.dash-week-summary {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 10px;
+}
+
+.dash-week-summary strong { color: var(--text); }
+
+/* Volume sparkline */
+.dash-volume-total {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--green);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.dash-volume-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+}
+
+.dash-volume-bars {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  height: 80px;
+}
+
+.dash-volume-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.dash-volume-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: rgba(0,212,160,0.25);
+  border: 1px solid rgba(0,212,160,0.2);
+  transition: height 0.4s cubic-bezier(0.4,0,0.2,1);
+  min-height: 2px;
+  position: relative;
+}
+
+.dash-volume-bar.current {
+  background: rgba(0,212,160,0.45);
+  border-color: rgba(0,212,160,0.5);
+  box-shadow: 0 0 12px rgba(0,212,160,0.2);
+}
+
+.dash-volume-bar.deload-bar {
+  background: rgba(0,200,204,0.2);
+  border-color: rgba(0,200,204,0.3);
+}
+
+.dash-volume-bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.dash-volume-bar.current + .dash-volume-bar-label,
+.dash-volume-bar-wrap.current-wrap .dash-volume-bar-label {
+  color: var(--green);
+}
+
+/* Progression pending */
+.dash-prog-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+}
+
+.dash-prog-item:last-child { border-bottom: none; }
+
+.dash-prog-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-prog-name { flex: 1; color: var(--text); }
+.dash-prog-type { font-size: 9px; opacity: 0.7; }
+
+/* Next session */
+.dash-next-session-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.dash-next-session-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.dash-start-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all var(--transition);
+}
+
+/* Je ladder progress */
+.dash-ladder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.dash-ladder-item:last-child { border-bottom: none; }
+
+.dash-ladder-name {
+  font-size: 11px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-ladder-rung {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.dash-ladder-bar-bg {
+  width: 60px;
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dash-ladder-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--push-b);
+  transition: width 0.4s ease;
+}
+
+.dash-ladder-bar-fill.complete { background: var(--green); }
+
+/* Empty dashboard */
+.dash-empty {
+  text-align: center;
+  padding: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Right column tall on desktop */
+@media (min-width: 768px) {
+  .dash-section.volume-section {
+    min-height: 240px;
+  }
+  .dash-volume-bars { height: 130px; }
+}
+
+/* ═══════════════════════════════════════════
+   PILL INPUT SYSTEM
+═══════════════════════════════════════════ */
+.pill-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pill-group.load-pills { max-width: 180px; }
+.pill-group.rep-pills  { max-width: 220px; }
+.pill-group.rir-pills  { max-width: 180px; }
+
+.input-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-h);
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Tighter on mobile */
+@media (max-width: 480px) {
+  .input-pill { font-size: 10px; padding: 4px 7px; }
+  .pill-section-label { font-size: 7px; }
+  .tracker-ex-card .ex-header { padding: 10px 12px 8px; }
+}
+
+.input-pill:hover {
+  border-color: var(--border-g);
+  color: var(--text);
+  background: var(--surface3);
+}
+
+.input-pill.selected {
+  background: rgba(0,212,160,0.15);
+  border-color: rgba(0,212,160,0.45);
+  color: var(--green);
+  box-shadow: inset 0 0 8px rgba(0,212,160,0.08);
+}
+
+/* Target range pills — highlighted accent */
+.input-pill.in-range {
+  border-color: rgba(255,255,255,0.14);
+  color: var(--text);
+  background: var(--surface3);
+}
+
+.input-pill.in-range.selected {
+  background: rgba(0,212,160,0.18);
+  border-color: rgba(0,212,160,0.5);
+  color: var(--green);
+}
+
+/* RIR pill accent */
+.input-pill.rir-pill.selected {
+  background: rgba(184,127,255,0.15);
+  border-color: rgba(184,127,255,0.45);
+  color: var(--push-b);
+}
+
+/* Custom / manual input toggle */
+.pill-custom-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  border: 1px dashed var(--border-h);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  line-height: 1;
+}
+
+.pill-custom-btn:hover { color: var(--text-dim); border-color: var(--border-g); }
+
+.pill-custom-input {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--surface3);
+  border: 1px solid var(--border-h);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 4px 7px;
+  width: 56px;
+  text-align: center;
+  display: none;
+}
+
+.pill-custom-input.visible { display: inline-block; }
+.pill-custom-input:focus { outline: none; border-color: var(--green); }
+
+/* Set row pill layout */
+.set-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  flex-wrap: wrap;
+}
+
+.set-row-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.set-row-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-left: 22px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+/* Each pill group with label sits in its own row on mobile */
+.pill-labeled-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.pill-section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+  align-self: center;
+}
+
+/* ═══════════════════════════════════════════
+   COLLAPSIBLE EXERCISE CARDS & SET ROWS
+═══════════════════════════════════════════ */
+
+/* Exercise card collapse */
+.tracker-ex-body {
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1),
+              opacity 0.25s ease;
+  max-height: 1200px;
+  opacity: 1;
+}
+
+.tracker-ex-card.collapsed .tracker-ex-body {
+  max-height: 0;
+  opacity: 0;
+}
+
+.tracker-ex-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tracker-ex-collapse-btn:hover { color: var(--text); background: var(--surface3); }
+.tracker-ex-card.collapsed .tracker-ex-collapse-btn { transform: rotate(-90deg); }
+
+/* Set row collapse */
+.set-row {
+  transition: max-height 0.25s cubic-bezier(0.4,0,0.2,1),
+              opacity 0.2s ease,
+              border-color var(--transition),
+              box-shadow var(--transition),
+              padding 0.2s ease;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.set-row.set-collapsed {
+  max-height: 36px;
+  opacity: 0.7;
+  overflow: hidden;
+}
+
+.set-row.set-collapsed .set-row-pills { display: none; }
+
+/* Collapsed set summary line */
+.set-collapsed-summary {
+  display: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: auto;
+  align-items: center;
+  gap: 6px;
+}
+.set-row.set-collapsed .set-collapsed-summary { display: flex; }
+.set-row.set-collapsed .set-row-main { opacity: 0.6; }
+
+/* Next exercise prompt */
+.next-ex-prompt {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border-radius: 7px;
+  border: 1px solid rgba(0,212,160,0.25);
+  background: rgba(0,212,160,0.05);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--green);
+}
+.next-ex-prompt.visible { display: flex; }
+
+.next-ex-prompt button {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s ease;
+  background: none;
+}
+
+.prompt-add-set {
+  border-color: rgba(0,212,160,0.4);
+  color: var(--green);
+}
+.prompt-add-set:hover { background: rgba(0,212,160,0.1); }
+
+.prompt-next-ex {
+  border-color: rgba(255,255,255,0.15);
+  color: var(--text-dim);
+}
+.prompt-next-ex:hover { background: var(--surface3); color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD SESSION PICKER
+═══════════════════════════════════════════ */
+.session-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-h) transparent;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+  padding: 2px 2px 4px;
+  margin: 4px 0 0;
+}
+.session-picker::-webkit-scrollbar { width: 3px; }
+.session-picker::-webkit-scrollbar-track { background: transparent; }
+.session-picker::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 2px; }
+
+.session-picker-group-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: 6px 4px 3px;
+  flex-shrink: 0;
+}
+
+.session-picker-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.session-picker-chip::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: rgb(var(--picker-rgb, 120,120,120));
+  border-radius: 0 2px 2px 0;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.session-picker-chip:hover {
+  border-color: var(--border-h);
+  background: var(--surface3);
+}
+.session-picker-chip:hover::before { opacity: 0.7; }
+
+.session-picker-chip.selected {
+  background: rgba(var(--picker-rgb, 0,212,160), 0.1);
+  border-color: rgba(var(--picker-rgb, 0,212,160), 0.4);
+  box-shadow: inset 0 0 14px rgba(var(--picker-rgb, 0,212,160), 0.07);
+}
+.session-picker-chip.selected::before { opacity: 1; }
+
+.session-picker-chip-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  flex: 1;
+  transition: color 0.15s ease;
+}
+.session-picker-chip.selected .session-picker-chip-name {
+  color: rgb(var(--picker-rgb, 0,212,160));
+  font-weight: 600;
+}
+
+.session-picker-chip-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.session-picker-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   SESSION NOTES QUICK-SELECT
+═══════════════════════════════════════════ */
+.notes-quick-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.notes-quick-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 40px;
+}
+
+.notes-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border-h);
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.notes-pill:hover { color: var(--text); border-color: var(--border-g); }
+
+.notes-pill.selected {
+  background: rgba(184,127,255,0.12);
+  border-color: rgba(184,127,255,0.4);
+  color: var(--push-b);
+}
+
+/* Session template toggle */
+.session-template-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  user-select: none;
+}
+
+.session-template-row:hover { border-color: var(--border-h); }
+.session-template-row.active {
+  border-color: rgba(0,212,160,0.35);
+  background: rgba(0,212,160,0.05);
+}
+
+.session-template-toggle {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--surface3);
+  border: 1px solid var(--border-h);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.session-template-toggle::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  top: 2px; left: 2px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.session-template-row.active .session-template-toggle {
+  background: rgba(0,212,160,0.2);
+  border-color: rgba(0,212,160,0.4);
+}
+
+.session-template-row.active .session-template-toggle::after {
+  transform: translateX(14px);
+  background: var(--green);
+}
+
+.session-template-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.session-template-row.active .session-template-text { color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   DELOAD REVIEW MODAL
+═══════════════════════════════════════════ */
+.review-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.review-stat {
+  background: var(--surface3);
+  border-radius: 7px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.review-stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--green);
+  line-height: 1;
+}
+
+.review-stat-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.review-feel-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0 4px;
+}
+
+.review-feel-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-h);
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.review-feel-pill:hover { color: var(--text); border-color: var(--border-g); }
+.review-feel-pill.selected {
+  background: rgba(0,212,160,0.12);
+  border-color: rgba(0,212,160,0.4);
+  color: var(--green);
+}
+
+/* ═══════════════════════════════════════════
+   JE MILESTONE CELEBRATION
+═══════════════════════════════════════════ */
+.milestone-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.milestone-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.milestone-emoji {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: milestonePopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes milestonePopIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.milestone-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.milestone-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.milestone-rung {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--push-b);
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.milestone-dismiss {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border-h);
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.milestone-dismiss:hover { color: var(--text); border-color: var(--border-g); }
 /* ═══════════════════════════════════════════
    WEEK SCHEDULE STRIP
 ═══════════════════════════════════════════ */
@@ -812,8 +1849,9 @@ body::before {
 }
 
 .meso-week.current {
-  border-color: rgba(0,229,160,0.3);
-  background: rgba(0,229,160,0.04);
+  border-color: rgba(0,212,160,0.35);
+  background: rgba(0,212,160,0.05);
+  box-shadow: inset 0 0 20px rgba(0,212,160,0.06), 0 0 0 1px rgba(0,212,160,0.12);
 }
 
 .meso-week.current .meso-week-sets { color: var(--green); }
@@ -877,7 +1915,7 @@ body::before {
   gap: 6px;
 }
 
-.tracker-session-btn:hover { border-color: var(--border-h); background: var(--surface2); }
+.tracker-session-btn:hover { border-color: var(--border-h); background: var(--surface2); box-shadow: inset 0 0 16px rgba(255,255,255,0.02); }
 
 .tracker-session-name {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1023,8 +2061,17 @@ body::before {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 480px) {
+  .tracker-ex-card { margin-bottom: 6px; border-radius: 8px; }
+  .tracker-ex-head { padding: 10px 12px !important; }
+  .set-rows { padding: 4px 8px 8px !important; }
 }
 
 .tracker-ex-head {
@@ -1152,9 +2199,15 @@ body::before {
 .set-rir:focus { outline: none; border-color: rgba(183,111,255,0.4); }
 .set-rir::placeholder { color: var(--text-muted); font-size: 9px; }
 
-/* Glow states */
-.set-row.hit-target   { border-color: rgba(0,229,160,0.35); box-shadow: 0 0 8px rgba(0,229,160,0.08); }
-.set-row.miss-target  { border-color: rgba(255,77,109,0.35); box-shadow: 0 0 8px rgba(255,77,109,0.08); }
+/* Glow states — two levels */
+.set-row.hit-target  {
+  border-color: rgba(0,212,160,0.4);
+  box-shadow: inset 0 0 12px rgba(0,212,160,0.07), 0 0 10px rgba(0,212,160,0.12);
+}
+.set-row.miss-target {
+  border-color: rgba(255,92,122,0.4);
+  box-shadow: inset 0 0 12px rgba(255,92,122,0.07), 0 0 10px rgba(255,92,122,0.12);
+}
 
 .set-indicator {
   width: 6px;
@@ -1195,9 +2248,15 @@ body::before {
 
 .add-set-btn:hover { border-color: var(--green); color: var(--green); background: rgba(0,229,160,0.04); }
 
-/* Set range glow on exercise card */
-.tracker-ex-card.sets-hit   { border-color: rgba(0,229,160,0.25); }
-.tracker-ex-card.sets-miss  { border-color: rgba(255,77,109,0.25); }
+/* Set range glow on exercise card — inner glow for 3D effect */
+.tracker-ex-card.sets-hit {
+  border-color: rgba(0,212,160,0.3);
+  box-shadow: inset 0 0 24px rgba(0,212,160,0.06), inset 0 1px 0 rgba(0,212,160,0.12);
+}
+.tracker-ex-card.sets-miss {
+  border-color: rgba(255,92,122,0.3);
+  box-shadow: inset 0 0 24px rgba(255,92,122,0.06), inset 0 1px 0 rgba(255,92,122,0.12);
+}
 
 /* Session notes */
 .session-notes-wrap {
@@ -1353,11 +2412,16 @@ body::before {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.history-card:hover { border-color: var(--border-h); }
+.history-card:hover {
+  border-color: var(--border-h);
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.015);
+}
 
 .history-card.partial { opacity: 0.65; border-style: dashed; }
 
@@ -1461,8 +2525,14 @@ body::before {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
+
+.guide-section:hover { box-shadow: inset 0 0 20px rgba(0,212,160,0.03); }
+.guide-section.open  { border-color: var(--border-h); box-shadow: inset 0 0 30px rgba(0,212,160,0.04); }
 
 .guide-head {
   display: flex;
@@ -1631,13 +2701,15 @@ body::before {
 .modal-overlay.visible { display: flex; }
 
 .modal {
-  background: var(--surface);
-  border: 1px solid var(--border-h);
+  background: rgba(28,28,28,0.88);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border: 1px solid var(--border-g);
   border-radius: var(--radius-lg);
   padding: 28px;
   max-width: 420px;
   width: 100%;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .modal-title {
@@ -1697,11 +2769,13 @@ body::before {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
   border: 1px solid;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   animation: toastIn 0.2s ease;
   pointer-events: auto;
   max-width: 300px;
   line-height: 1.5;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .toast.success { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.25); color: var(--green); }
@@ -1789,7 +2863,7 @@ body::before {
   background: var(--text-muted);
 }
 
-.drive-dot.connected { background: var(--green); box-shadow: 0 0 6px rgba(0,229,160,0.4); }
+.drive-dot.connected { background: var(--green); box-shadow: 0 0 8px rgba(0,212,160,0.6), 0 0 14px rgba(0,212,160,0.3); }
 .drive-dot.error     { background: var(--red); }
 
 .drive-connect-btn {
@@ -2078,7 +3152,9 @@ body::before {
   position: relative;
   z-index: 1;
   width: min(480px, 100vw);
-  background: var(--surface);
+  background: rgba(24,24,24,0.88);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
   border-left: 1px solid var(--border-h);
   display: flex;
   flex-direction: column;
@@ -2705,27 +3781,46 @@ body::before {
     <button class="gear-btn" onclick="openSettings()" title="Settings">⚙</button>
   </div>
 
-  <!-- Tab Navigation -->
+  <!-- Bottom Nav -->
   <div class="tabnav">
-    <button class="tab-btn active" onclick="switchTab('programme')" id="tab-programme">
-      <span class="tab-icon">📋</span><span>Programme</span>
+    <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard">
+      <span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('programme')" id="tab-programme">
+      <span class="tab-icon">📋</span><span class="tab-label">Programme</span>
     </button>
     <button class="tab-btn" onclick="switchTab('tracker')" id="tab-tracker">
-      <span class="tab-icon">⚡</span><span>Track</span>
+      <span class="tab-icon">⚡</span><span class="tab-label">Track</span>
     </button>
     <button class="tab-btn" onclick="switchTab('history')" id="tab-history">
-      <span class="tab-icon">📈</span><span>History</span>
+      <span class="tab-icon">📈</span><span class="tab-label">History</span>
     </button>
     <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide">
-      <span class="tab-icon">📖</span><span>Guide</span>
+      <span class="tab-icon">📖</span><span class="tab-label">Guide</span>
     </button>
   </div>
 
   <!-- Main Content -->
   <div class="main">
 
+    <!-- ══════════ MILESTONE OVERLAY ══════════ -->
+    <div class="milestone-overlay" id="milestone-overlay" onclick="dismissMilestone()">
+      <div class="milestone-emoji" id="milestone-emoji">🏆</div>
+      <div class="milestone-title" id="milestone-title">New Level!</div>
+      <div class="milestone-sub" id="milestone-sub"></div>
+      <div class="milestone-rung" id="milestone-rung"></div>
+      <button class="milestone-dismiss" onclick="dismissMilestone()">Continue →</button>
+    </div>
+
+    <!-- ══════════ TAB 0: DASHBOARD ══════════ -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="dashboard-card" id="dashboard-card">
+        <!-- Rendered by renderDashboard() -->
+      </div>
+    </div>
+
     <!-- ══════════ TAB 1: PROGRAMME ══════════ -->
-    <div class="tab-panel active" id="panel-programme">
+    <div class="tab-panel" id="panel-programme">
 
       <!-- Drive status -->
       <div class="drive-status">
@@ -2795,13 +3890,44 @@ body::before {
           <button class="time-btn secondary" onclick="cancelSession()" style="font-size:9px;padding:4px 8px;">✕ Cancel</button>
         </div>
 
+        <!-- Template toggle — shown below toolbar when prev session exists -->
+        <div class="session-template-row" id="template-toggle-row" onclick="toggleSessionTemplate()"
+          title="Pre-fill loads from your last session" style="display:none;margin:8px 0 4px">
+          <div class="session-template-toggle"></div>
+          <span class="session-template-text">Use last session's loads</span>
+        </div>
+
         <!-- Exercise list -->
         <div class="tracker-ex-list" id="tracker-ex-list"></div>
 
         <!-- Session notes -->
         <div class="session-notes-wrap mt-16">
-          <div class="session-notes-label">Session Notes <span style="color:var(--text-muted)">(optional — fatigue, sleep, etc.)</span></div>
-          <textarea class="session-notes-input" id="session-notes-input" placeholder="e.g. poor sleep, felt strong, skipped last set due to time..."></textarea>
+          <div class="session-notes-label">Session Notes <span style="color:var(--text-muted)">(optional)</span></div>
+
+          <!-- Quick-select pills -->
+          <div class="notes-quick-row">
+            <span class="notes-quick-label">Feel</span>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt fresh" onclick="toggleNotesPill(this)">Fresh</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt good" onclick="toggleNotesPill(this)">Good</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt fatigued" onclick="toggleNotesPill(this)">Fatigued</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt wrecked" onclick="toggleNotesPill(this)">Wrecked</div>
+          </div>
+          <div class="notes-quick-row">
+            <span class="notes-quick-label">Sleep</span>
+            <div class="notes-pill" data-group="sleep" data-value="5h sleep" onclick="toggleNotesPill(this)">5h</div>
+            <div class="notes-pill" data-group="sleep" data-value="6h sleep" onclick="toggleNotesPill(this)">6h</div>
+            <div class="notes-pill" data-group="sleep" data-value="7h sleep" onclick="toggleNotesPill(this)">7h</div>
+            <div class="notes-pill" data-group="sleep" data-value="8h+ sleep" onclick="toggleNotesPill(this)">8h+</div>
+          </div>
+          <div class="notes-quick-row">
+            <span class="notes-quick-label">Mood</span>
+            <div class="notes-pill" data-group="mood" data-value="Confident" onclick="toggleNotesPill(this)">Confident</div>
+            <div class="notes-pill" data-group="mood" data-value="Neutral" onclick="toggleNotesPill(this)">Neutral</div>
+            <div class="notes-pill" data-group="mood" data-value="Low motivation" onclick="toggleNotesPill(this)">Low</div>
+          </div>
+
+          <textarea class="session-notes-input" id="session-notes-input"
+            placeholder="Add any extra notes..."></textarea>
         </div>
 
         <!-- End session -->
@@ -2875,8 +4001,12 @@ body::before {
             <input class="settings-input" id="s-name" type="text" placeholder="Your name">
           </div>
           <div class="settings-field">
-            <label>Bodyweight (kg) — used for BW exercise context</label>
-            <input class="settings-input" id="s-bw" type="number" step="0.5" placeholder="e.g. 80">
+            <label>Bodyweight (kg)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="settings-input" id="s-bw" type="number" step="0.1" placeholder="e.g. 80" style="flex:1">
+              <button class="settings-btn primary" onclick="logBodyweight()" style="white-space:nowrap">Log</button>
+            </div>
+            <div id="weight-log-list" style="margin-top:8px"></div>
           </div>
           <div class="settings-field">
             <label>Mesocycle Start Date</label>
@@ -3015,7 +4145,7 @@ body::before {
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.6.1';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -3024,16 +4154,16 @@ const APP_VERSION = '2.0.0';
 const PROGRAMMES = {
   alex: {
     name: 'Alex',
-    color: '#00e5a0',
+    color: 'var(--push-a)',
     goal: 'Mass & Strength',
     frequency: '5 days / week',
     schedule: [
-      { day: 'Mon', session: 'Push A', color: '#00e5a0' },
-      { day: 'Tue', session: 'Pull',   color: '#3dabff' },
-      { day: 'Wed', session: 'Legs A', color: '#ffc233' },
-      { day: 'Thu', session: 'Push B', color: '#b76fff' },
-      { day: 'Fri', session: 'Legs B', color: '#ff4d6d' },
-      { day: 'Sat', session: 'KB Flow (opt)', color: '#ff8c42' },
+      { day: 'Mon', session: 'Push A', color: 'var(--push-a)' },
+      { day: 'Tue', session: 'Pull',   color: 'var(--pull)' },
+      { day: 'Wed', session: 'Legs A', color: 'var(--legs-a)' },
+      { day: 'Thu', session: 'Push B', color: 'var(--push-b)' },
+      { day: 'Fri', session: 'Legs B', color: 'var(--legs-b)' },
+      { day: 'Sat', session: 'KB Flow (opt)', color: 'var(--kb-flow)' },
       { day: 'Sun', session: 'Rest / Run', color: null },
     ],
     mesoWeeks: [
@@ -3049,7 +4179,8 @@ const PROGRAMMES = {
         name: 'Push A',
         subtitle: 'Chest & Triceps',
         class: 's-push-a',
-        color: '#00e5a0',
+        color: 'var(--push-a)',
+        colorRgb: '0,212,160',
         rest: 60,
         note: 'Floor press leads as the heaviest compound. Incline press adds upper chest stimulus. Archer push-up bridges chest compounds before isolation. Fly pre-fatigues the pec for the tricep finisher.',
         exercises: [
@@ -3074,7 +4205,8 @@ const PROGRAMMES = {
         name: 'Pull',
         subtitle: 'Back, Biceps & Rear Delt',
         class: 's-pull',
-        color: '#3dabff',
+        color: 'var(--pull)',
+        colorRgb: '77,184,255',
         rest: 60,
         note: 'Bent-over row leads as the primary horizontal compound. Face pull hits rear delt as a mass movement while back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Zottman targets brachialis. Rear delt fly is a prehab buffer. Supinated curl finishes with short head emphasis.',
         exercises: [
@@ -3097,7 +4229,8 @@ const PROGRAMMES = {
         name: 'Legs A',
         subtitle: 'Quad Focus',
         class: 's-legs-a',
-        color: '#ffc233',
+        color: 'var(--legs-a)',
+        colorRgb: '245,184,48',
         rest: 120,
         note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Nordic curl closes as the eccentric finisher — always last.',
         exercises: [
@@ -3118,7 +4251,8 @@ const PROGRAMMES = {
         name: 'Push B',
         subtitle: 'Shoulders & Triceps',
         class: 's-push-b',
-        color: '#b76fff',
+        color: 'var(--push-b)',
+        colorRgb: '184,127,255',
         rest: 60,
         note: 'Single-arm press leads strict. Banded overhead press from low anchor adds lengthened-position shoulder stimulus. Lateral raise isolates medial delt. Upright row hits medial and upper trap. Skullcrusher provides direct tricep isolation. Rotator cuff ER is prehab — always last, never skipped.',
         exercises: [
@@ -3143,7 +4277,8 @@ const PROGRAMMES = {
         name: 'Legs B',
         subtitle: 'Hip Hinge, Hamstrings & Glutes',
         class: 's-legs-b',
-        color: '#ff4d6d',
+        color: 'var(--legs-b)',
+        colorRgb: '255,92,122',
         rest: 120,
         note: 'KB deadlift leads as the primary bilateral hinge. Single-leg RDL follows immediately while the hinge pattern is warm. Hip thrust shifts to glute dominant. KB swing is ballistic hip extension. Banded hamstring curl closes as the eccentric finisher.',
         exercises: [
@@ -3164,7 +4299,8 @@ const PROGRAMMES = {
         name: 'KB Flow',
         subtitle: 'Full Body (Optional / Saturday)',
         class: 's-kb-flow',
-        color: '#ff8c42',
+        color: 'var(--kb-flow)',
+        colorRgb: '255,144,80',
         rest: 60,
         note: 'Sporadic session — use as a Saturday bonus or replacement for any PPL session. Best substitution for Push B or Legs B. Not a substitute for Pull or Legs A. Quality over speed throughout.',
         exercises: [
@@ -3189,7 +4325,8 @@ const PROGRAMMES = {
         name: 'Transition T1',
         subtitle: 'Hip & Power',
         class: 's-transition',
-        color: '#00bcd4',
+        color: 'var(--transition-c)',
+        colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
         note: 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. Explosive alternatives available per exercise if knees are uncomfortable.',
@@ -3220,7 +4357,8 @@ const PROGRAMMES = {
         name: 'Transition T2',
         subtitle: 'Stability & Control',
         class: 's-transition',
-        color: '#00bcd4',
+        color: 'var(--transition-c)',
+        colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
         note: 'Between-mesocycle session. Slow, deliberate, mobility and stability focus. No explosive movements. Focus on movement quality and range.',
@@ -3248,7 +4386,8 @@ const PROGRAMMES = {
         name: 'Transition T3',
         subtitle: 'Athletic Full Body',
         class: 's-transition',
-        color: '#00bcd4',
+        color: 'var(--transition-c)',
+        colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
         note: 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
@@ -3279,7 +4418,7 @@ const PROGRAMMES = {
 
   je: {
     name: 'Je',
-    color: '#ff8c42',
+    color: 'var(--kb-flow)',
     goal: 'Fat Loss & Tone',
     frequency: '3 days / week',
     schedule: [
@@ -3304,7 +4443,8 @@ const PROGRAMMES = {
         name: 'Session A',
         subtitle: 'Full Body — Monday / Friday',
         class: 's-sess-a',
-        color: '#7ec8e3',
+        color: 'var(--session-a)',
+        colorRgb: '126,200,227',
         rest: 60,
         note: 'Full body session. Squat pattern leads with support. Push and pull balanced. Hinge via RDL. Glute bridge requires no squat pattern. Dead bug teaches spinal stability.',
         exercises: [
@@ -3326,7 +4466,8 @@ const PROGRAMMES = {
         name: 'Session B',
         subtitle: 'Full Body — Wednesday',
         class: 's-sess-b',
-        color: '#f9a875',
+        color: 'var(--session-b)',
+        colorRgb: '249,168,117',
         rest: 60,
         note: 'Full body session alternating with Session A. Reverse lunge is more accessible than bilateral squat for those with mobility restrictions. Incline push-up reduces load. Sumo deadlift offers a wider, more stable stance. Hip thrust maximises glute activation.',
         exercises: [
@@ -3575,6 +4716,7 @@ function selectProfile(profile) {
   document.getElementById('profile-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('app').style.flexDirection = 'column';
+  switchTab('dashboard');
 
   document.getElementById('topbar-username').textContent = state.programme.name;
   document.getElementById('topbar-dot').style.background = state.programme.color;
@@ -3584,6 +4726,8 @@ function selectProfile(profile) {
 
   loadLocalState();
   tryRestoreToken();
+  // Render dashboard if already on dashboard tab
+  if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
   // Check for new deployed version in background
   setTimeout(checkForAppUpdate, 3000);
   renderProgramme();
@@ -3660,9 +4804,6 @@ function resetTrackerState() {
   // Clear tracker exercise list so no stale content remains
   const exList = document.getElementById('tracker-ex-list');
   if (exList) exList.innerHTML = '';
-
-  // Always switch to programme tab — tracker tab will be clean when revisited
-  switchTab('programme');
 }
 
 /* ═══════════════════════════════════════════
@@ -3679,6 +4820,12 @@ function loadLocalState() {
       state.mesoStartDate = data.mesoStartDate || null;
       state.mesoWeekOverride = data.mesoWeekOverride || null;
       state.jeLadderKeyMap = data.jeLadderKeyMap || {};
+      state.weightLog = data.weightLog || [];
+      // Backwards compat: if old static bodyweight exists but no log, seed it
+      if (data.bodyweight && !state.weightLog.length) {
+        state.weightLog = [{ date: new Date().toISOString().split('T')[0], kg: data.bodyweight }];
+      }
+      state.bodyweight = state.weightLog.length ? state.weightLog[state.weightLog.length - 1].kg : null;
       // Restore rest periods
       if (data.restPeriods) {
         state.programme.sessions.forEach(s => {
@@ -3707,7 +4854,9 @@ function saveLocalState() {
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
       restPeriods,
-      jeLadderKeyMap: state.jeLadderKeyMap || {}
+      jeLadderKeyMap: state.jeLadderKeyMap || {},
+      weightLog: state.weightLog || [],
+      bodyweight: state.bodyweight || null
     }));
   } catch(e) { console.warn('Could not save local state', e); }
 }
@@ -3980,6 +5129,8 @@ function selectTrackerSession(sessionId) {
 
   state.activeSessionId = sessionId;
   state.startTime = null;
+  updateTemplateToggleVisibility(sessionId);
+  clearNotesPills();
   state.endTime = null;
 
   document.getElementById('session-select-view').style.display = 'none';
@@ -4066,15 +5217,29 @@ function buildTrackerExercises(session) {
       ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
       : 'No previous data';
 
-    const initialSets = Array.from({length: setCount}, (_, i) => buildSetRow(i, ex, deload));
+    // Pass previous load/reps/RIR for pill pre-selection
+    const _prevSess = state.sessions
+      .filter(s => s.sessionId === session.id && s.status === 'complete')
+      .slice(-1)[0];
+    const _prevExData = _prevSess?.exercises?.find(e => e.name === ex.name) || null;
+
+    const initialSets = Array.from({length: setCount}, (_, i) => {
+      const _prevSet  = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
+      // Template mode: always use prev load; load increase: clear unless template active
+      const _prevLoad = (_loadIncreaseSignalled && !state._useTemplate)
+        ? '' : (_prevSet?.load || '');
+      const _prevReps = _prevSet?.reps || '';
+      const _prevRIR  = _prevSet?.rir  || '';
+      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR);
+    });
 
     const deloadNote = deload
       ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--deload);margin-bottom:8px">Deload: 2 sets · ~50% load · 5+ RIR target</div>`
       : '';
 
     return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
-      <div class="tracker-ex-head">
-        <span class="drag-handle">⋮⋮</span>
+      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" style="cursor:pointer">
+        <span class="drag-handle" onclick="event.stopPropagation()">⋮⋮</span>
         <div style="flex:1">
           <div class="tracker-ex-name">
             ${ex.name}
@@ -4091,15 +5256,21 @@ function buildTrackerExercises(session) {
           ? `<button class="swap-btn" id="swap-btn-${idx}" onclick="toggleExerciseSwap('${ex.name}',this.closest('.tracker-ex-card'),this)">Alt ⇄</button>`
           : `<button class="tracker-sub-btn" onclick="showSubstitution('${ex.name}')">Sub</button>`
         }
+        <button class="tracker-ex-collapse-btn" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" title="Collapse">▾</button>
       </div>
-      <div class="tracker-ex-body">
+      <div class="tracker-ex-body" id="tex-body-${session.id}-${idx}">
         <div class="prev-sessions-ref">${prevRef}</div>
         ${deloadNote}${loadResetNote}
         <div class="set-rows" id="sets-${session.id}-${idx}">
           ${initialSets.join('')}
         </div>
         <button class="add-set-btn" onclick="addSet('${session.id}',${idx},'${ex.name}')">+ Add Set</button>
-      </div>
+        <div class="next-ex-prompt" id="next-prompt-${session.id}-${idx}">
+          <span style="flex:1">All sets done —</span>
+          <button class="prompt-add-set" onclick="addSet('${session.id}',${idx},'${ex.name}');hideNextPrompt('${session.id}',${idx})">+ Add set</button>
+          <button class="prompt-next-ex" onclick="collapseExerciseCard('tex-${session.id}-${idx}')">Next exercise ›</button>
+        </div>
+      </div><!-- end tracker-ex-body -->
     </div>`;
   }).join('');
 }
@@ -4210,6 +5381,206 @@ function selectBandPill(btn, band) {
   }
 }
 
+
+/* ═══════════════════════════════════════════
+   PILL INPUT BUILDERS
+═══════════════════════════════════════════ */
+
+// Get recent distinct load values for an exercise (last 5 sessions)
+function getRecentLoads(sessionId, exName) {
+  const seen = new Set();
+  const loads = [];
+  const relevant = state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .slice(-8)
+    .reverse();
+
+  for (const sess of relevant) {
+    const ex = sess.exercises.find(e => e.name === exName);
+    if (!ex) continue;
+    for (const set of ex.sets) {
+      const l = (set.load || '').toString().trim();
+      if (l && l !== 'BW' && !seen.has(l)) {
+        seen.add(l);
+        loads.push(l);
+        if (loads.length >= 4) break;
+      }
+    }
+    if (loads.length >= 4) break;
+  }
+  return loads;
+}
+
+// Build load pills for KB exercises
+function buildLoadPills(setIdx, exIdx, sessionId, exName, repRange, currentLoad) {
+  const recentLoads = getRecentLoads(sessionId, exName);
+
+  // Add suggested next load if there's a progression suggestion
+  const suggestion = state.profile === 'alex'
+    ? getProgressionSuggestion(sessionId, exName, repRange)
+    : null;
+
+  // Build unique pill values: recent loads (most recent first)
+  const pillValues = [...recentLoads];
+
+  const pillsHtml = pillValues.map(load => {
+    const isSel = load === currentLoad;
+    return `<button class="input-pill${isSel ? ' selected' : ''}"
+      onclick="selectLoadPill(this, '${load.replace(/'/g,"\'")}', ${exIdx}, ${setIdx})"
+      data-load="${load.replace(/"/g,'&quot;')}">${load}</button>`;
+  }).join('');
+
+  const customVal = currentLoad && !pillValues.includes(currentLoad) ? currentLoad : '';
+  const customVisible = customVal ? ' visible' : '';
+
+  return `<div class="pill-group load-pills" id="load-pills-${exIdx}-${setIdx}">
+    ${pillsHtml}
+    <button class="pill-custom-btn" onclick="toggleCustomLoad(this, ${exIdx}, ${setIdx})"
+      title="Enter custom load">+ kg</button>
+    <input class="pill-custom-input${customVisible}" id="load-custom-${exIdx}-${setIdx}"
+      type="number" step="0.5" min="0" value="${customVal}"
+      placeholder="kg"
+      onchange="customLoadChanged(this, ${exIdx}, ${setIdx}, ${JSON.stringify(repRange)})"
+      oninput="customLoadChanged(this, ${exIdx}, ${setIdx}, ${JSON.stringify(repRange)})">
+  </div>
+  <input type="hidden" class="set-load-val" id="load-val-${exIdx}-${setIdx}" value="${currentLoad || ''}">`;
+}
+
+// Build rep pills spanning repRange ± 2
+function buildRepPills(setIdx, exIdx, repRange, currentReps) {
+  const [lo, hi] = repRange || [8, 12];
+  const min = Math.max(1, lo - 2);
+  const max = hi + 3;
+  const pills = [];
+  for (let r = min; r <= max; r++) {
+    const inRange = r >= lo && r <= hi;
+    const isSel   = r === parseInt(currentReps);
+    pills.push(`<button class="input-pill${inRange ? ' in-range' : ''}${isSel ? ' selected' : ''}"
+      onclick="selectRepPill(this, ${r}, ${exIdx}, ${setIdx}, ${JSON.stringify(repRange)})"
+      data-reps="${r}">${r}</button>`);
+  }
+  return `<div class="pill-group rep-pills" id="rep-pills-${exIdx}-${setIdx}">
+    ${pills.join('')}
+  </div>
+  <input type="hidden" class="set-reps-val" id="rep-val-${exIdx}-${setIdx}" value="${currentReps || ''}">`;
+}
+
+// Build RIR pills
+function buildRIRPills(setIdx, exIdx, isUnilateral, currentRIR) {
+  const rirVals = ['0','1','2','3','4','5+'];
+  const placeholder = isUnilateral ? 'RIR L/R' : 'RIR';
+  const pills = rirVals.map(r => {
+    const isSel = r === (currentRIR || '').toString();
+    return `<button class="input-pill rir-pill${isSel ? ' selected' : ''}"
+      onclick="selectRIRPill(this, '${r}', ${exIdx}, ${setIdx})"
+      data-rir="${r}">${r}</button>`;
+  }).join('');
+  return `<div class="pill-group rir-pills" id="rir-pills-${exIdx}-${setIdx}">
+    ${pills}
+  </div>
+  <input type="hidden" class="set-rir" id="rir-val-${exIdx}-${setIdx}" value="${currentRIR || ''}">`;
+}
+
+// Pill selection handlers
+function selectLoadPill(btn, load, exIdx, setIdx) {
+  const container = btn.closest('.pill-group');
+  const wasSelected = btn.classList.contains('selected');
+  container.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+  const hiddenEl = document.getElementById(`load-val-${exIdx}-${setIdx}`);
+  if (wasSelected) {
+    // Deselect — clear value
+    if (hiddenEl) hiddenEl.value = '';
+  } else {
+    btn.classList.add('selected');
+    if (hiddenEl) hiddenEl.value = load;
+    // Hide custom input
+    const customInput = document.getElementById(`load-custom-${exIdx}-${setIdx}`);
+    if (customInput) customInput.classList.remove('visible');
+  }
+  const row = btn.closest('.set-row');
+  if (row) {
+    const repsEl = row.querySelector('.set-reps-val');
+    const currentLoad = hiddenEl ? hiddenEl.value : '';
+    evaluateSetByValues(row, parseInt(repsEl?.value), currentLoad);
+    checkSetCompletion(row);
+  }
+}
+
+function toggleCustomLoad(btn, exIdx, setIdx) {
+  const input = document.getElementById(`load-custom-${exIdx}-${setIdx}`);
+  if (!input) return;
+  input.classList.toggle('visible');
+  if (input.classList.contains('visible')) {
+    input.focus();
+    // Deselect pills
+    btn.closest('.pill-group').querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+  }
+}
+
+function customLoadChanged(input, exIdx, setIdx, repRange) {
+  const val = input.value.trim();
+  const hiddenEl = document.getElementById(`load-val-${exIdx}-${setIdx}`);
+  if (hiddenEl) hiddenEl.value = val;
+  const row = input.closest('.set-row');
+  if (row) {
+    const repsEl = row.querySelector('.set-reps-val');
+    if (repsEl) evaluateSetByValues(row, parseInt(repsEl.value), val);
+  }
+}
+
+function selectRepPill(btn, reps, exIdx, setIdx, repRange) {
+  const container = btn.closest('.pill-group');
+  const wasSelected = btn.classList.contains('selected');
+  container.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+  const hiddenEl = document.getElementById(`rep-val-${exIdx}-${setIdx}`);
+  const row = btn.closest('.set-row');
+  if (wasSelected) {
+    if (hiddenEl) hiddenEl.value = '';
+    if (row) evaluateSetByValues(row, null, null, repRange);
+  } else {
+    btn.classList.add('selected');
+    if (hiddenEl) hiddenEl.value = reps;
+    if (row) {
+      const loadEl = row.querySelector('.set-load-val');
+      evaluateSetByValues(row, reps, loadEl?.value || '', repRange);
+      checkSetCompletion(row);
+    }
+  }
+}
+
+function selectRIRPill(btn, rir, exIdx, setIdx) {
+  const container = btn.closest('.pill-group');
+  const wasSelected = btn.classList.contains('selected');
+  container.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+  const hiddenEl = document.getElementById(`rir-val-${exIdx}-${setIdx}`);
+  if (wasSelected) {
+    if (hiddenEl) hiddenEl.value = '';
+  } else {
+    btn.classList.add('selected');
+    if (hiddenEl) hiddenEl.value = rir;
+  }
+  // RIR alone doesn't trigger set completion — RIR is optional
+}
+
+// Evaluate set row glow from values directly (no DOM input event needed)
+function evaluateSetByValues(row, reps, load, repRange) {
+  if (!repRange) {
+    const card = row.closest('.tracker-ex-card');
+    if (!card) return;
+    const rangeEl = card.querySelector('.ex-rep-range');
+    if (rangeEl) {
+      const text = rangeEl.textContent.replace(/[^0-9–-]/g,'');
+      const parts = text.split(/[–-]/);
+      repRange = parts.length === 2 ? [parseInt(parts[0]), parseInt(parts[1])] : [8,12];
+    } else repRange = [8,12];
+  }
+  const [lo, hi] = repRange;
+  row.classList.remove('hit-target','miss-target');
+  if (!reps || isNaN(reps)) return;
+  if (reps >= hi) row.classList.add('hit-target');
+  else if (reps < lo) row.classList.add('miss-target');
+}
+
 function isBandExercise(ex) {
   // Pure band exercise (not BW+band): load field contains a band colour but no 'BW'
   const load = (ex.load || '').toString().toLowerCase();
@@ -4218,35 +5589,52 @@ function isBandExercise(ex) {
   return hasBand && !isBW;
 }
 
-function buildSetRow(setIdx, ex, isDeload) {
-  const rirPlaceholder = ex.tags.includes('unilateral') ? 'RIR L / R' : 'RIR';
+function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR) {
+  const isUnilateral = ex.tags.includes('unilateral');
   const isBW   = isBWExercise(ex);
   const isBand = isBandExercise(ex);
 
-  const loadInput = isBW
-    ? `<div class="bw-band-wrap">
-        <span class="bw-label">BW</span>
-        <input type="hidden" class="bw-load-store set-load-val" value="BW">
-        ${buildBandPills(setIdx, 0, 'ex', true)}
-       </div>`
-    : isBand
-      ? `<div class="bw-band-wrap">
-          <input type="hidden" class="set-load-val" value="">
-          ${buildBandPills(setIdx, 0, 'ex', false)}
-         </div>`
-      : `<input class="set-input set-load-val" type="number" placeholder="kg" min="0" step="0.5"
-          onchange="evaluateSet(this, ${JSON.stringify(ex.repRange)})">`;
+  // Load section
+  let loadSection = '';
+  if (isBW) {
+    loadSection = `<div class="bw-band-wrap">
+      <span class="bw-label">BW</span>
+      <input type="hidden" class="set-load-val bw-load-store" value="BW">
+      ${buildBandPills(setIdx, exIdx, sessionId, true)}
+    </div>`;
+  } else if (isBand) {
+    loadSection = `<div class="bw-band-wrap">
+      <input type="hidden" class="set-load-val" value="${prevLoad || ''}">
+      ${buildBandPills(setIdx, exIdx, sessionId, false)}
+    </div>`;
+  } else {
+    // KB / numeric — use load pills
+    loadSection = buildLoadPills(setIdx, exIdx, sessionId, ex.name, ex.repRange, prevLoad || '');
+  }
+
+  const repSection = buildRepPills(setIdx, exIdx, ex.repRange, prevReps || '');
+  const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR || '');
 
   return `<div class="set-row">
-    <div class="set-indicator"></div>
-    <span class="set-num">${setIdx + 1}</span>
-    ${loadInput}
-    <span class="set-sep">×</span>
-    <input class="set-input set-reps-val" type="number" placeholder="reps" min="0" max="50"
-      onchange="evaluateSet(this, ${JSON.stringify(ex.repRange)})">
-    <input class="set-rir" type="text" placeholder="${rirPlaceholder}">
-    <span class="set-glow-label"></span>
-    <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set">✕</button>
+    <div class="set-row-main">
+      <div class="set-indicator"></div>
+      <span class="set-num">${setIdx + 1}</span>
+      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" style="margin-left:auto">✕</button>
+    </div>
+    <div class="set-row-pills">
+      <div class="pill-labeled-group">
+        <span class="pill-section-label">Load</span>
+        ${loadSection}
+      </div>
+      <div class="pill-labeled-group">
+        <span class="pill-section-label">Reps</span>
+        ${repSection}
+      </div>
+      <div class="pill-labeled-group">
+        <span class="pill-section-label">RIR</span>
+        ${rirSection}
+      </div>
+    </div>
   </div>`;
 }
 function deleteSetRow(btn) {
@@ -4299,18 +5687,23 @@ function addSet(sessionId, exIdx, exName) {
   const ex = session.exercises.find(e => e.name === exName);
   const container = document.getElementById(`sets-${sessionId}-${exIdx}`);
   const currentSets = container.querySelectorAll('.set-row').length;
+  // Copy last row's values for pill pre-selection
+  const lastRow = container.querySelectorAll('.set-row');
+  const lastLoadEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-load-val') : null;
+  const lastRepsEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-reps-val') : null;
+  const lastRIREl  = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-rir') : null;
   const newRow = document.createElement('div');
-  newRow.innerHTML = buildSetRow(currentSets, ex, isDeloadWeek());
+  newRow.innerHTML = buildSetRow(
+    currentSets, ex, isDeloadWeek(), sessionId, exIdx,
+    lastLoadEl?.value || '', lastRepsEl?.value || '', lastRIREl?.value || ''
+  );
   container.appendChild(newRow.firstElementChild);
   const countEl = document.getElementById(`set-count-${sessionId}-${exIdx}`);
   if (countEl) countEl.textContent = `${currentSets + 1} sets`;
-  // Wire input events on new row
+  // Wire input events on new row (hidden inputs fire change on pill select)
   const newSetRow = container.lastElementChild;
-  newSetRow.querySelectorAll('.set-input').forEach(input => {
-    input.addEventListener('change', () => {
-      evaluateSet(input, ex.repRange);
-      updateExerciseSetGlow(sessionId, exIdx);
-    });
+  newSetRow.querySelectorAll('.set-load-val, .set-reps-val').forEach(input => {
+    input.addEventListener('change', () => updateExerciseSetGlow(sessionId, exIdx));
   });
   updateExerciseSetGlow(sessionId, exIdx);
 }
@@ -4508,21 +5901,34 @@ function saveSession(exerciseData, status) {
   state.sessions.push(session);
   saveLocalState();
   renderHistory();
+
+  // ── Post-save hooks ──────────────────────────
+  // 1. Je milestone check (before cancelSession clears state)
+  if (status === 'complete') checkJeMilestones(exerciseData);
+
+  // 2. Deload review prompt (week 5, complete session, Alex only)
+  if (status === 'complete' && isDeloadWeek() && state.profile === 'alex') {
+    setTimeout(() => showDeloadReview(), 400);
+  }
+
   cancelSession();
 
   // Try Drive save
   if (state.driveConnected) {
     saveToDrive(session);
   } else {
-    toast(`Session saved ${status === 'partial' ? '(partial)' : ''}`, status === 'partial' ? 'info' : 'success');
+    toast(`Session saved${status === 'partial' ? ' (partial)' : ''}`, status === 'partial' ? 'info' : 'success');
     toast('Connect Google Drive to back up your data', 'info');
   }
 }
 
 function cancelSession() {
-  // Clear swap state and tempo flags for next session
+  // Clear swap state, tempo flags, session override, template state
   Object.keys(_swapState).forEach(k => delete _swapState[k]);
   state._tempoFlags = {};
+  state._nextSessionOverride = null;
+  state._useTemplate = false;
+  clearNotesPills();
   state.activeSessionId = null;
   state.activeSession = null;
   state.startTime = null;
@@ -4627,7 +6033,7 @@ function getRepRange(exName) {
 
 function getSessionAccentColor(sessionId) {
   const sess = state.programme.sessions.find(s => s.id === sessionId);
-  return sess?.color || '#00e5a0';
+  return sess?.color || 'var(--push-a)';
 }
 
 function get2MesoCycleSessions(sessionId) {
@@ -4771,7 +6177,7 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   // Update pill active states
   const pillsContainer = document.getElementById(`chart-pills-${sessionId}`);
   if (pillsContainer) {
-    const accent = _chartState[sessionId]?.accentColor || '#00e5a0';
+    const accent = _chartState[sessionId]?.accentColor || 'var(--push-a)';
     pillsContainer.querySelectorAll('.chart-ex-pill').forEach(p => {
       p.classList.remove('active');
       p.style.background = '';
@@ -4785,7 +6191,7 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   }
 
   if (_chartState[sessionId]) _chartState[sessionId].activeEx = exName;
-  const accent = _chartState[sessionId]?.accentColor || '#00e5a0';
+  const accent = _chartState[sessionId]?.accentColor || 'var(--push-a)';
   renderExerciseChart(sessionId, exName, accent);
 }
 
@@ -5785,6 +7191,798 @@ function renderLastSynced(date) {
 }
 
 
+
+/* ═══════════════════════════════════════════
+   WEIGHT LOG
+═══════════════════════════════════════════ */
+function logBodyweight() {
+  const val = parseFloat(document.getElementById('s-bw').value);
+  if (!val || val < 20 || val > 300) { toast('Enter a valid weight (20–300 kg)', 'error'); return; }
+  if (!state.weightLog) state.weightLog = [];
+  const today = new Date().toISOString().split('T')[0];
+  // Replace today's entry if exists, otherwise append
+  const idx = state.weightLog.findIndex(e => e.date === today);
+  if (idx !== -1) state.weightLog[idx].kg = val;
+  else state.weightLog.push({ date: today, kg: val });
+  state.bodyweight = val;
+  saveLocalState();
+  renderWeightLog();
+  toast(`Weight logged: ${val} kg`, 'success');
+}
+
+function renderWeightLog() {
+  const el = document.getElementById('weight-log-list');
+  if (!el) return;
+  const log = (state.weightLog || []).slice(-5).reverse();
+  if (!log.length) {
+    el.innerHTML = "<div style='font-size:9px;color:var(--text-muted)'>No entries yet</div>";
+    return;
+  }
+  el.innerHTML = log.map(function(e) {
+    return "<div style='display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:9px'>" +
+      "<span style='color:var(--text-dim)'>" + formatDateIT(e.date) + "</span>" +
+      "<span style='color:var(--text)'>" + e.kg + " kg</span>" +
+      "</div>";
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   VOLUME CALCULATION
+═══════════════════════════════════════════ */
+function calcSessionVolume(session) {
+  let total = 0;
+  const bw = state.bodyweight || 0;
+  (session.exercises || []).forEach(ex => {
+    // Skip optional/core and prehab from volume (same as progression)
+    const exConfig = state.programme.sessions
+      .flatMap(s => s.exercises)
+      .find(e => e.name === ex.name);
+    if (exConfig?.tags?.includes('optional')) return;
+    if (exConfig?.tags?.includes('prehab'))  return;
+
+    (ex.sets || []).forEach(set => {
+      const reps = parseInt(set.reps) || 0;
+      if (!reps) return;
+      const loadStr = (set.load || '').toString().toLowerCase().trim();
+      let kg = 0;
+      if (!loadStr || loadStr === '') {
+        kg = 0;
+      } else if (loadStr === 'bw') {
+        kg = bw;
+      } else if (loadStr.startsWith('bw+') || loadStr.startsWith('bw ')) {
+        kg = bw + parseBandLoad(loadStr.replace(/^bw\+?/i, ''));
+      } else {
+        const num = parseFloat(loadStr);
+        if (!isNaN(num)) kg = num;
+        else kg = parseBandLoad(loadStr);
+      }
+      total += reps * kg;
+    });
+  });
+  return Math.round(total);
+}
+
+function calcWeekVolume(weekNum) {
+  if (!state.mesoStartDate) return 0;
+  const start = new Date(state.mesoStartDate);
+  const weekStart = new Date(start);
+  weekStart.setDate(start.getDate() + (weekNum - 1) * 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  return state.sessions
+    .filter(s => {
+      if (s.status === 'partial') return false;
+      if (!s.date) return false;
+      const d = new Date(s.date);
+      return d >= weekStart && d < weekEnd;
+    })
+    .reduce((sum, s) => sum + calcSessionVolume(s), 0);
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD RENDERER
+═══════════════════════════════════════════ */
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getNextSession() {
+  const allSessions = state.programme.sessions;
+
+  // PPL sequence for auto-inference (excludes KB Flow and transitions)
+  const pplIds = ['push-a', 'pull', 'legs-a', 'push-b', 'legs-b'];
+  const pplSessions = allSessions.filter(s => pplIds.includes(s.id));
+  if (!pplSessions.length) return null;
+
+  // ── Sequence-aware: find what comes after the last completed PPL session ──
+  const completed = state.sessions
+    .filter(s => s.status === 'complete')
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let nextId = pplSessions[0].id; // default: first PPL
+
+  if (completed.length > 0) {
+    // Find last completed session that is in the PPL sequence
+    for (let i = completed.length - 1; i >= 0; i--) {
+      const lastId = completed[i].sessionId;
+      const lastIdx = pplSessions.findIndex(s => s.id === lastId);
+      if (lastIdx !== -1) {
+        nextId = pplSessions[(lastIdx + 1) % pplSessions.length].id;
+        break;
+      }
+    }
+  }
+
+  // User override from picker (any session, including KB Flow and transitions)
+  if (state._nextSessionOverride) {
+    const found = allSessions.find(s => s.id === state._nextSessionOverride);
+    if (found) {
+      const today = new Date();
+      const lastDate = completed.length ? completed[completed.length - 1].date : null;
+      const label = lastDate === today.toISOString().split('T')[0] ? 'Next up' : 'Up next';
+      return { session: found, label, allSessions };
+    }
+  }
+
+  const sess = allSessions.find(s => s.id === nextId) || pplSessions[0];
+
+  const today = new Date();
+  const lastDate = completed.length ? completed[completed.length - 1].date : null;
+  const label = lastDate === today.toISOString().split('T')[0] ? 'Next up' : 'Up next';
+
+  return { session: sess, label, allSessions };
+}
+
+function setNextSessionOverride(sessionId) {
+  state._nextSessionOverride = sessionId;
+  renderDashboard();
+}
+
+function getThisWeekSessions() {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  monday.setHours(0,0,0,0);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const logged = state.sessions.filter(s => s.date === dateStr && s.status !== 'partial');
+    days.push({ date: d, dateStr, logged, dayName: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i] });
+  }
+  return days;
+}
+
+function getPendingProgressions() {
+  const suggestions = [];
+  if (state.profile !== 'alex') return [];
+  const week = getCurrentMesoWeek();
+  if (week === 1 || isDeloadWeek()) return [];
+
+  state.programme.sessions.forEach(sess => {
+    sess.exercises.forEach(ex => {
+      if (ex.tags?.includes('optional') || ex.tags?.includes('prehab')) return;
+      const s = getProgressionSuggestion(sess.id, ex.name, ex.repRange);
+      if (s) suggestions.push({ ...s, sessionName: sess.name, sessionColor: sess.color });
+    });
+  });
+  return suggestions;
+}
+
+function renderDashboard() {
+  const card = document.getElementById('dashboard-card');
+  if (!card) return;
+
+  const week       = getCurrentMesoWeek();
+  const isDeload   = isDeloadWeek();
+  const profile    = state.programme;
+  const today      = new Date();
+  const dateStr    = today.toLocaleDateString('it-IT', { weekday:'short', day:'numeric', month:'short' });
+  const greeting   = getGreeting();
+  const weekDays   = getThisWeekSessions();
+  const doneDays   = weekDays.filter(d => d.logged.length > 0);
+  const nextSess   = getNextSession();
+  const pending    = getPendingProgressions();
+
+  // Week volumes for meso
+  const MESO_WEEKS = [
+    { w:1, sets:'3',   rir:'3–4' },
+    { w:2, sets:'4',   rir:'2–3' },
+    { w:3, sets:'4–5', rir:'2'   },
+    { w:4, sets:'5',   rir:'1–2' },
+    { w:5, sets:'2',   rir:'5+', deload: true },
+  ];
+
+  const weekVolumes = MESO_WEEKS.map(wk => ({
+    ...wk,
+    vol: calcWeekVolume(wk.w)
+  }));
+  const maxVol = Math.max(...weekVolumes.map(w => w.vol), 1);
+  const totalVol = weekVolumes.reduce((s, w) => s + w.vol, 0);
+
+  // Next session accent colour
+  const nextColor    = nextSess?.session?.color    || 'var(--green)';
+  const nextColorRgb = nextSess?.session?.colorRgb || '0,212,160';
+
+  /* ── LEFT COLUMN ── */
+  const leftCol = `
+    <!-- Greeting -->
+    <div class="dash-section dashboard-col-left">
+      <div class="dash-greeting">${greeting}, ${profile.name}</div>
+      <div class="dash-greeting-sub">${dateStr} · Week ${week} of 5${isDeload ? ' · Deload' : ''}</div>
+    </div>
+
+    <!-- Mesocycle timeline -->
+    <div class="dash-section dashboard-col-left">
+      <div class="dash-section-label">Mesocycle</div>
+      <div class="dash-meso-blocks">
+        ${MESO_WEEKS.map(wk => {
+          const cls = wk.w < week ? 'past' : wk.w === week ? 'current' : 'future';
+          const deloadCls = wk.deload ? ' deload' : '';
+          return `<div class="dash-meso-block ${cls}${deloadCls}">
+            <div class="dash-meso-block-week">W${wk.w}</div>
+            <div class="dash-meso-block-sets">${wk.sets}</div>
+            <div class="dash-meso-block-rir">${wk.rir}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- This week -->
+    <div class="dash-section dashboard-col-left">
+      <div class="dash-section-label">This Week</div>
+      <div class="dash-week-row">
+        ${weekDays.map(d => {
+          const isToday = d.dateStr === today.toISOString().split('T')[0];
+          const done = d.logged.length > 0;
+          const isWeekend = d.date.getDay() === 0 || d.date.getDay() === 6;
+          const dotCls = done ? 'done' : isWeekend ? 'rest' : '';
+          const icon = done ? (d.logged[0]?.sessionName?.[0] || '✓') : isWeekend ? '—' : '';
+          return `<div class="dash-day-chip">
+            <div class="dash-day-label" style="${isToday ? 'color:var(--text)' : ''}">${d.dayName}</div>
+            <div class="dash-day-dot ${dotCls}" title="${done ? d.logged.map(s=>s.sessionName).join(', ') : ''}">${icon}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="dash-week-summary">
+        <strong>${doneDays.length}</strong> of ${state.profile === 'je' ? '3' : '5'} sessions this week
+        ${doneDays.length > 0 ? '· ' + doneDays.flatMap(d => d.logged.map(s => s.sessionName?.split(' ')[0] || '')).filter(Boolean).join(', ') : ''}
+      </div>
+    </div>
+
+    <!-- Next session -->
+    <div class="dash-section dashboard-col-left">
+      <div class="dash-section-label">Next Session</div>
+      ${nextSess ? (() => {
+        const allS = nextSess.allSessions || [];
+        // Group sessions: PPL, KB Flow, Transition
+        const pplIds = ['push-a','pull','legs-a','push-b','legs-b'];
+        const pplGroup        = allS.filter(s => pplIds.includes(s.id));
+        const kbGroup         = allS.filter(s => s.id === 'kb-flow');
+        const transitionGroup = allS.filter(s => s.id.startsWith('transition'));
+        const jeGroup         = allS.filter(s => s.id.startsWith('session-'));
+
+        function makeChip(s) {
+          const isSelected = s.id === nextSess.session.id;
+          const rgb = s.colorRgb || '0,212,160';
+          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
+            style="--picker-rgb:${rgb}"
+            onclick="setNextSessionOverride('${s.id}')"
+            data-session-id="${s.id}">
+            <div class="session-picker-chip-name">${s.name}</div>
+            ${s.subtitle ? `<div class="session-picker-chip-sub">${s.subtitle}</div>` : ''}
+          </div>`;
+        }
+
+        function makeGroup(label, sessions) {
+          if (!sessions.length) return '';
+          return `<div class="session-picker-group-label">${label}</div>` +
+            sessions.map(makeChip).join('');
+        }
+
+        const chips = state.profile === 'je'
+          ? makeGroup('Sessions', jeGroup)
+          : makeGroup('Programme', pplGroup) +
+            makeGroup('Saturday', kbGroup) +
+            makeGroup('Transition', transitionGroup);
+
+        const pendingForNext = pending.filter(p =>
+          p.exercise && nextSess.session.exercises?.some(e => e.name === p.exercise)
+        );
+
+        return `
+          <div class="dash-next-session-name" style="color:${nextColor}">${nextSess.session.name}</div>
+          <div class="dash-next-session-meta" style="margin-bottom:8px">${nextSess.label}${
+            pendingForNext.length > 0
+              ? ` · <span style="color:var(--amber)">${pendingForNext.length} suggestion${pendingForNext.length > 1 ? 's' : ''} pending</span>`
+              : ' · Ready to train'
+          }</div>
+
+          <!-- Session picker — vertical scroll -->
+          <div class="session-picker" id="dash-session-picker">${chips}</div>
+          <div class="session-picker-hint">Scroll · tap to select</div>
+
+          <button class="dash-start-btn" style="margin-top:10px;background:rgba(${nextColorRgb},0.1);border-color:rgba(${nextColorRgb},0.35);color:${nextColor}"
+            onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${nextSess.session.id}')">
+            ▶ Start ${nextSess.session.name}
+          </button>
+        `;
+      })() : `<div class="dash-empty">No sessions yet — start your first session from the Track tab</div>`}
+    </div>
+  `;
+
+  /* ── RIGHT COLUMN — Alex: volume / Je: ladder ── */
+  let rightCol = '';
+
+  if (state.profile === 'alex') {
+    const volFmt = (v) => v >= 1000 ? `${(v/1000).toFixed(1)}t` : `${v}kg`;
+    rightCol = `
+      <div class="dash-section volume-section dashboard-col-right" style="height:100%">
+        <div class="dash-section-label">Volume — Mesocycle ${state.mesoStartDate ? new Date(state.mesoStartDate).getFullYear() : ''}</div>
+        <div class="dash-volume-total">${volFmt(totalVol)}</div>
+        <div class="dash-volume-sub">Total · ${state.bodyweight ? `BW ${state.bodyweight}kg` : 'Set bodyweight in settings for full accuracy'}</div>
+        <div class="dash-volume-bars">
+          ${weekVolumes.map(wk => {
+            const pct = maxVol > 0 ? Math.max((wk.vol / maxVol) * 100, wk.vol > 0 ? 4 : 0) : 0;
+            const isCurrent = wk.w === week;
+            const barCls = wk.deload ? 'deload-bar' : isCurrent ? 'current' : '';
+            return `<div class="dash-volume-bar-wrap ${isCurrent ? 'current-wrap' : ''}">
+              <div class="dash-volume-bar ${barCls}" style="height:${pct}%"></div>
+              <div class="dash-volume-bar-label">${wk.deload ? 'DL' : 'W'+wk.w}</div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        ${pending.length > 0 ? `
+          <div class="dash-section-label" style="margin-top:18px">Progression Pending</div>
+          ${pending.slice(0,5).map(p => {
+            const typeColors = { add_set:'var(--green)', increase_load:'var(--pull)', tempo:'var(--push-b)', equipment_ceiling:'var(--red)' };
+            const col = typeColors[p.type] || 'var(--text-dim)';
+            return `<div class="dash-prog-item">
+              <div class="dash-prog-dot" style="background:${col};box-shadow:0 0 6px ${col}88"></div>
+              <div class="dash-prog-name">${p.exercise}</div>
+              <div class="dash-prog-type" style="color:${col}">${p.type.replace(/_/g,' ')}</div>
+            </div>`;
+          }).join('')}
+        ` : `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:16px">No progressions pending</div>`}
+      </div>
+    `;
+  } else {
+    // Je — ladder progress
+    const ladderExercises = state.programme.sessions.flatMap(s => s.exercises)
+      .filter(ex => getJeLadder(ex.name));
+
+    rightCol = `
+      <div class="dash-section dashboard-col-right" style="height:100%">
+        <div class="dash-section-label">Ladder Progress</div>
+        ${ladderExercises.length === 0
+          ? '<div class="dash-empty">Log sessions to track progress</div>'
+          : ladderExercises.map(ex => {
+              const ladder = getJeLadder(ex.name);
+              const sessId = state.programme.sessions.find(s => s.exercises.some(e => e.name === ex.name))?.id;
+              const rungIdx = getCurrentVariantIndex(ex.name, sessId);
+              const pct = ladder ? Math.round((rungIdx / (ladder.length - 1)) * 100) : 0;
+              const atTop = rungIdx === (ladder?.length || 1) - 1;
+              return `<div class="dash-ladder-item">
+                <div class="dash-ladder-name">${ex.name}</div>
+                <div class="dash-ladder-rung">${rungIdx + 1}/${ladder?.length || '?'}</div>
+                <div class="dash-ladder-bar-bg">
+                  <div class="dash-ladder-bar-fill ${atTop ? 'complete' : ''}" style="width:${pct}%"></div>
+                </div>
+              </div>`;
+            }).join('')
+        }
+
+        ${pending.length > 0 ? `
+          <div class="dash-section-label" style="margin-top:18px">Triggers Approaching</div>
+          ${pending.map(p => `
+            <div class="dash-prog-item">
+              <div class="dash-prog-dot" style="background:var(--amber);box-shadow:0 0 6px rgba(245,184,48,0.5)"></div>
+              <div class="dash-prog-name">${p.exercise}</div>
+              <div class="dash-prog-type" style="color:var(--amber)">${p.type.replace(/_/g,' ')}</div>
+            </div>`).join('')}
+        ` : ''}
+      </div>
+    `;
+  }
+
+  card.innerHTML = `<div class="dashboard-grid">${leftCol}${rightCol}</div>`;
+}
+
+
+
+/* ═══════════════════════════════════════════
+   COLLAPSIBLE EXERCISE CARDS & SET AUTO-COLLAPSE
+═══════════════════════════════════════════ */
+
+function toggleExerciseCard(cardId, event) {
+  // Don't collapse if clicking a button/input inside the card
+  if (event && event.target.closest('button, input, select')) return;
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.toggle('collapsed');
+}
+
+function collapseExerciseCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) card.classList.add('collapsed');
+}
+
+function expandExerciseCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) card.classList.remove('collapsed');
+}
+
+function hideNextPrompt(sessionId, exIdx) {
+  const el = document.getElementById(`next-prompt-${sessionId}-${exIdx}`);
+  if (el) el.classList.remove('visible');
+}
+
+// Called after a rep pill or load pill is selected — check if set is complete
+function checkSetCompletion(row) {
+  const loadEl = row.querySelector('.set-load-val');
+  const repsEl = row.querySelector('.set-reps-val');
+  const load   = loadEl ? loadEl.value.trim() : '';
+  const reps   = repsEl ? repsEl.value.trim() : '';
+
+  // Set is complete when both load and reps have values
+  const isComplete = load !== '' && reps !== '' && !isNaN(parseInt(reps));
+  if (!isComplete) return;
+
+  const container = row.closest('.set-rows');
+  if (!container) return;
+
+  const allRows = Array.from(container.querySelectorAll('.set-row'));
+  const rowIndex = allRows.indexOf(row);
+  const isLast   = rowIndex === allRows.length - 1;
+
+  // Add summary to the set row before collapsing
+  let summary = row.querySelector('.set-collapsed-summary');
+  if (!summary) {
+    summary = document.createElement('span');
+    summary.className = 'set-collapsed-summary';
+    row.querySelector('.set-row-main')?.appendChild(summary);
+  }
+  // Format load display
+  const loadDisplay = load === 'BW' ? 'BW' : `${load}`;
+  summary.textContent = `${loadDisplay} × ${reps}`;
+
+  if (!isLast) {
+    // Auto-collapse after a short delay
+    setTimeout(() => {
+      row.classList.add('set-collapsed');
+      // Focus next set's first rep pill
+      const nextRow = allRows[rowIndex + 1];
+      if (nextRow) {
+        const firstRepPill = nextRow.querySelector('.input-pill[data-reps]');
+        if (firstRepPill) firstRepPill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 320);
+  } else {
+    // Last set — show next exercise prompt
+    const card = row.closest('.tracker-ex-card');
+    if (!card) return;
+    const cardId  = card.id; // tex-sessionId-idx
+    const parts   = cardId.split('-');
+    // cardId format: tex-{sessionId}-{idx}
+    // sessionId may contain hyphens, idx is last part
+    const exIdx   = parts[parts.length - 1];
+    const sessionId = parts.slice(1, -1).join('-');
+
+    const prompt = document.getElementById(`next-prompt-${sessionId}-${exIdx}`);
+    if (prompt) {
+      setTimeout(() => prompt.classList.add('visible'), 300);
+    }
+  }
+}
+
+// Re-expand a collapsed set when tapped
+document.addEventListener('click', function(e) {
+  const row = e.target.closest('.set-row.set-collapsed');
+  if (!row) return;
+  // Don't re-expand if clicking the summary itself (that's just reading)
+  row.classList.remove('set-collapsed');
+  hideNextPromptForCard(row);
+});
+
+function hideNextPromptForCard(row) {
+  const card = row.closest('.tracker-ex-card');
+  if (!card) return;
+  const prompt = card.querySelector('.next-ex-prompt');
+  if (prompt) prompt.classList.remove('visible');
+}
+
+
+/* ═══════════════════════════════════════════
+   SESSION NOTES QUICK-SELECT
+═══════════════════════════════════════════ */
+function toggleNotesPill(pill) {
+  const group = pill.dataset.group;
+  const wasSelected = pill.classList.contains('selected');
+
+  // Deselect all in this group
+  pill.closest('.session-notes-wrap')
+    .querySelectorAll(`.notes-pill[data-group="${group}"]`)
+    .forEach(p => p.classList.remove('selected'));
+
+  if (!wasSelected) pill.classList.add('selected');
+
+  // Build sentence from all selected pills
+  rebuildNotesFromPills();
+}
+
+function rebuildNotesFromPills() {
+  const wrap    = document.querySelector('.session-notes-wrap');
+  const textarea = document.getElementById('session-notes-input');
+  if (!wrap || !textarea) return;
+
+  const selected = Array.from(wrap.querySelectorAll('.notes-pill.selected'))
+    .map(p => p.dataset.value);
+
+  if (!selected.length) {
+    // Don't wipe manual additions — only clear if text was auto-generated
+    if (textarea.dataset.autoGenerated === 'true') textarea.value = '';
+    return;
+  }
+
+  const sentence = selected.join(' · ') + '.';
+  textarea.value = sentence;
+  textarea.dataset.autoGenerated = 'true';
+}
+
+// If user manually edits textarea, stop auto-overwriting
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('session-notes-input')?.addEventListener('input', function() {
+    this.dataset.autoGenerated = 'false';
+  });
+});
+
+function clearNotesPills() {
+  document.querySelectorAll('.notes-pill.selected').forEach(p => p.classList.remove('selected'));
+  const ta = document.getElementById('session-notes-input');
+  if (ta) { ta.value = ''; ta.dataset.autoGenerated = 'false'; }
+}
+
+/* ═══════════════════════════════════════════
+   SESSION TEMPLATE
+═══════════════════════════════════════════ */
+// state._useTemplate: boolean — toggled by user
+
+function toggleSessionTemplate() {
+  state._useTemplate = !state._useTemplate;
+  const row = document.getElementById('template-toggle-row');
+  if (row) row.classList.toggle('active', state._useTemplate);
+}
+
+// Call this when building tracker exercises — applied in buildTrackerExercises
+// Already handled: _prevLoad is used when _loadIncreaseSignalled is false.
+// Template mode forces _prevLoad to be used even when there's no suggestion.
+// The key hook is already there — we just need to respect state._useTemplate
+// when deciding whether to clear the load on a load-increase suggestion.
+
+// When a session is selected in the tracker, show/hide template row
+function updateTemplateToggleVisibility(sessionId) {
+  const row = document.getElementById('template-toggle-row');
+  if (!row) return;
+
+  // Show only if there's a previous complete session of this type
+  const hasPrev = state.sessions.some(
+    s => s.sessionId === sessionId && s.status === 'complete'
+  );
+  row.style.display = hasPrev ? 'flex' : 'none';
+
+  // Reset toggle state on session change
+  state._useTemplate = false;
+  row.classList.remove('active');
+}
+
+
+/* ═══════════════════════════════════════════
+   DELOAD REVIEW (end of week 5)
+═══════════════════════════════════════════ */
+function buildMesoReviewStats() {
+  // Gather stats for the current mesocycle (weeks 1–5)
+  if (!state.mesoStartDate) return null;
+  const start = new Date(state.mesoStartDate);
+  const mesoEnd = new Date(start);
+  mesoEnd.setDate(start.getDate() + 35); // 5 weeks
+
+  const mesoSessions = state.sessions.filter(s => {
+    if (!s.date) return false;
+    const d = new Date(s.date);
+    return d >= start && d <= mesoEnd && s.status === 'complete';
+  });
+
+  if (!mesoSessions.length) return null;
+
+  const totalSessions = mesoSessions.length;
+  const totalVolume   = mesoSessions.reduce((sum, s) => sum + calcSessionVolume(s), 0);
+
+  // Count load increases: sessions where a load-increase suggestion was pending
+  // (approximated as sessions where at least one exercise had 3 sets after a multi-set block)
+  // Simpler: count distinct session types logged
+  const sessionTypes = new Set(mesoSessions.map(s => s.sessionId)).size;
+
+  // Peak week volume (week 4)
+  const peakVol = calcWeekVolume(4);
+
+  const fmt = v => v >= 1000 ? `${(v/1000).toFixed(1)}t` : `${Math.round(v)}kg`;
+
+  return { totalSessions, totalVolume, sessionTypes, peakVol, fmt };
+}
+
+function showDeloadReview() {
+  const stats = buildMesoReviewStats();
+  const fmt = stats?.fmt || (v => `${v}`);
+
+  let selectedFeel = '';
+
+  const statsHtml = stats ? `
+    <div class="review-stat-grid">
+      <div class="review-stat">
+        <div class="review-stat-val">${stats.totalSessions}</div>
+        <div class="review-stat-lbl">Sessions</div>
+      </div>
+      <div class="review-stat">
+        <div class="review-stat-val">${fmt(stats.totalVolume)}</div>
+        <div class="review-stat-lbl">Total Volume</div>
+      </div>
+      <div class="review-stat">
+        <div class="review-stat-val">${stats.sessionTypes}</div>
+        <div class="review-stat-lbl">Session Types</div>
+      </div>
+      <div class="review-stat">
+        <div class="review-stat-val">${fmt(stats.peakVol)}</div>
+        <div class="review-stat-lbl">Peak Week Vol</div>
+      </div>
+    </div>` : '';
+
+  const html = `
+    <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px">
+      Mesocycle complete. Recover well — new block starts next week.
+    </p>
+    ${statsHtml}
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:0.08em">How did this block feel?</div>
+    <div class="review-feel-row" id="review-feel-row">
+      <div class="review-feel-pill" onclick="selectReviewFeel(this,'Great block')">Great block</div>
+      <div class="review-feel-pill" onclick="selectReviewFeel(this,'Solid')">Solid</div>
+      <div class="review-feel-pill" onclick="selectReviewFeel(this,'Tough')">Tough</div>
+    </div>`;
+
+  showModal('Mesocycle Complete 🎯', html, [
+    { label: 'Done', cls: 'save', action: () => {
+      const feel = document.querySelector('.review-feel-pill.selected')?.textContent;
+      if (feel) {
+        // Append feel note to last session
+        const lastSess = state.sessions[state.sessions.length - 1];
+        if (lastSess) {
+          lastSess.notes = [lastSess.notes, `Block review: ${feel}`].filter(Boolean).join(' · ');
+          saveLocalState();
+          if (state.driveConnected) saveToDrive(lastSess);
+        }
+      }
+      closeModal();
+      renderDashboard();
+    }}
+  ]);
+}
+
+function selectReviewFeel(pill, value) {
+  document.querySelectorAll('.review-feel-pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+}
+
+/* ═══════════════════════════════════════════
+   JE MILESTONE CELEBRATION
+═══════════════════════════════════════════ */
+function checkJeMilestones(exerciseData) {
+  if (state.profile !== 'je') return;
+
+  const milestones = [];
+
+  exerciseData.forEach(ex => {
+    if (typeof ex.ladderRungIndex !== 'number') return;
+    const ladder = getJeLadder(ex.name);
+    if (!ladder) return;
+
+    // Check if this rung is higher than any previously logged rung for this exercise
+    const prevSessions = state.sessions
+      .filter(s => s.status === 'complete')
+      .flatMap(s => s.exercises)
+      .filter(e => e.name === ex.name);
+
+    const prevMaxRung = prevSessions.reduce((max, e) =>
+      typeof e.ladderRungIndex === 'number' ? Math.max(max, e.ladderRungIndex) : max, -1);
+
+    if (ex.ladderRungIndex > prevMaxRung) {
+      milestones.push({
+        exercise: ex.name,
+        rung: ex.ladderRungIndex,
+        variant: ladder[ex.ladderRungIndex]?.variant || '',
+        isTop: ex.ladderRungIndex === ladder.length - 1,
+        total: ladder.length
+      });
+    }
+  });
+
+  if (milestones.length > 0) {
+    // Show first milestone (queue others if multiple)
+    setTimeout(() => showMilestone(milestones[0]), 600);
+  }
+}
+
+function showMilestone(m) {
+  const overlay  = document.getElementById('milestone-overlay');
+  const emoji    = document.getElementById('milestone-emoji');
+  const title    = document.getElementById('milestone-title');
+  const sub      = document.getElementById('milestone-sub');
+  const rung     = document.getElementById('milestone-rung');
+  if (!overlay) return;
+
+  emoji.textContent = m.isTop ? '🏆' : '⭐';
+  title.textContent = m.isTop ? 'Ladder Complete!' : 'New Level Unlocked';
+  sub.textContent   = `${m.exercise}`;
+  rung.textContent  = `${m.variant} · Level ${m.rung + 1} of ${m.total}`;
+
+  overlay.classList.add('visible');
+}
+
+function dismissMilestone() {
+  document.getElementById('milestone-overlay')?.classList.remove('visible');
+}
+
+/* ═══════════════════════════════════════════
+   LONG PRESS FOR REP PILLS (MOBILE)
+═══════════════════════════════════════════ */
+(function() {
+  let _lpTimer = null;
+  let _lpTarget = null;
+  let _lpMoved = false;
+
+  function startLongPress(e) {
+    const pill = e.currentTarget;
+    if (!pill.dataset.reps) return;
+    _lpMoved = false;
+    _lpTarget = pill;
+    _lpTimer = setTimeout(() => {
+      if (!_lpMoved && _lpTarget === pill) {
+        // Trigger selection
+        pill.click();
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+    }, 380);
+  }
+
+  function cancelLongPress() {
+    if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+    _lpTarget = null;
+  }
+
+  function moveLongPress() {
+    _lpMoved = true;
+    cancelLongPress();
+  }
+
+  // Attach to rep pills dynamically via event delegation
+  document.addEventListener('touchstart', function(e) {
+    const pill = e.target.closest('.input-pill[data-reps]');
+    if (pill) {
+      startLongPress({ currentTarget: pill });
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend',   cancelLongPress, { passive: true });
+  document.addEventListener('touchcancel',cancelLongPress, { passive: true });
+  document.addEventListener('touchmove',  moveLongPress,   { passive: true });
+})();
+
 /* ═══════════════════════════════════════════
    AUTO-UPDATE CHECK
    On load, fetches the deployed page HEAD to
@@ -6497,8 +8695,10 @@ function toast(message, type = 'info') {
 function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`panel-${tab}`).classList.add('active');
-  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`panel-${tab}`)?.classList.add('active');
+  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  document.body.dataset.tab = tab;
+  if (tab === 'dashboard') renderDashboard();
 }
 
 /* ═══════════════════════════════════════════
@@ -6527,9 +8727,11 @@ function formatTime(date) {
 
 function getDuration(start, end) {
   const diff = Math.floor((new Date(end) - new Date(start)) / 1000);
-  const mins = Math.floor(diff / 60);
-  const secs = diff % 60;
-  return `${mins}m ${secs}s`;
+  const totalMins = Math.round(diff / 60);
+  if (totalMins < 60) return `${totalMins} min`;
+  const hrs  = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  return mins > 0 ? `${hrs}h ${mins} min` : `${hrs}h`;
 }
 
 /* ═══════════════════════════════════════════
@@ -7083,6 +9285,7 @@ function openSettings() {
     text.textContent = state.driveConnected ? 'Connected to Google Drive' : 'Not connected';
     btn.textContent  = state.driveConnected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
   }
+  renderWeightLog();
   // Enable/disable Sync Now and Choose Folder buttons
   const settingsSyncBtn   = document.getElementById('settings-sync-btn');
   const settingsFolderBtn = document.getElementById('settings-folder-btn');
@@ -7157,6 +9360,13 @@ function saveProfileSettings() {
   const week = parseInt(document.getElementById('s-meso-week').value) || null;
 
   if (name) state.programme.name = name;
+  if (bw) {
+    if (!state.weightLog) state.weightLog = [];
+    const today = new Date().toISOString().split('T')[0];
+    const idx = state.weightLog.findIndex(e => e.date === today);
+    if (idx !== -1) state.weightLog[idx].kg = bw;
+    else state.weightLog.push({ date: today, kg: bw });
+  }
   state.bodyweight = bw;
 
   // If week override changed, back-calculate a consistent start date
