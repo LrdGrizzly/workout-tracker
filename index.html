@@ -4055,15 +4055,9 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
               <button class="settings-btn primary" onclick="handleDriveConnect()" id="settings-drive-btn">Connect</button>
             </div>
             <div style="margin-top:8px" id="settings-sync-row">
-              <div style="display:flex;gap:6px;margin-bottom:6px">
-                <button class="settings-btn" style="flex:1" id="settings-sync-btn"
-                  onclick="syncSessionsFromDrive(true)" disabled>⟳ Sync Now</button>
-                <button class="settings-btn" style="flex:1" id="settings-folder-btn"
-                  onclick="openFolderPicker()" disabled>📁 Choose folder</button>
-              </div>
-              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">Sessions folder</div>
-              <div id="settings-folder-display" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);padding:4px 0">Default (WorkoutApp)</div>
-              <div id="settings-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center"></div>
+              <button class="settings-btn" style="width:100%" id="settings-sync-btn"
+                onclick="syncSessionsFromDrive(true)" disabled>⟳ Sync Now</button>
+              <div id="settings-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:6px;text-align:center"></div>
             </div>
             <div id="settings-client-id-row" style="margin-top:8px">
               <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">OAuth Client ID</div>
@@ -4145,7 +4139,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.6.1';
+const APP_VERSION = '2.7.0';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -6475,7 +6469,7 @@ function toggleGuide(id) {
 // It is persisted in localStorage under 'wt_drive_client_id'.
 // No source-code edit needed.
 let DRIVE_CLIENT_ID = localStorage.getItem('wt_drive_client_id') || '';
-const DRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FOLDER    = 'WorkoutApp';
 
 let driveTokenClient  = null;
@@ -6499,15 +6493,11 @@ async function handleDriveConnect() {
     const syncInfo = lastSynced
       ? (() => { const m = Math.round((Date.now()-new Date(lastSynced).getTime())/60000); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : `${Math.round(m/60)}h ago`; })()
       : 'not yet this session';
-    const folderKey  = `wt_drive_folder_${state.profile}`;
-    const folderSaved = localStorage.getItem(folderKey);
-    const folderName  = folderSaved ? JSON.parse(folderSaved).name : `${DRIVE_FOLDER}/${state.programme.name}`;
     showModal(
       'Google Drive',
-      `Connected. Sessions sync to <strong>${folderName}/sessions/</strong><br><br>Last synced: ${syncInfo}`,
+      `Connected. Sessions are saved privately — only this app can access them.<br><br>Last synced: ${syncInfo}`,
       [
         { label: 'Close', cls: 'cancel', action: closeModal },
-        { label: '📁 Folder', cls: 'modal-btn', action: () => { closeModal(); openFolderPicker(); } },
         { label: '⟳ Sync Now', cls: 'modal-btn', action: () => { closeModal(); syncSessionsFromDrive(true); } },
         { label: 'Disconnect', cls: 'confirm', action: disconnectDrive }
       ]
@@ -6641,9 +6631,7 @@ function updateDriveStatus(connected, message) {
   if (text)    text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
   if (btn)     btn.textContent  = connected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
   if (syncBtn) syncBtn.style.display = connected ? '' : 'none';
-  const folderBtn = document.getElementById('settings-folder-btn');
-  if (folderBtn) folderBtn.disabled = !connected;
-  if (connected) { renderLastSynced(null); updateFolderPickerDisplay(); }
+  if (connected) renderLastSynced(null);
 }
 
 // ── FOLDER PICKER ─────────────────────────
@@ -6746,104 +6734,83 @@ async function driveRequest(url, options = {}) {
 }
 
 async function ensureDriveFolder() {
-  // Check if user has chosen a custom root folder via the Picker
-  const key     = `wt_drive_folder_${state.profile}`;
-  const saved   = localStorage.getItem(key);
-  const custom  = saved ? JSON.parse(saved) : null;
-
-  let sessionsParent;
-  if (custom) {
-    // Use chosen folder directly — create a sessions/ subfolder inside it
-    sessionsParent = await findOrCreateFolder('sessions', custom.id);
-    driveFolderId[state.profile] = {
-      root:     custom.id,
-      profile:  custom.id,
-      sessions: sessionsParent
-    };
-  } else {
-    // Default: /WorkoutApp/ProfileName/sessions
-    let rootId     = await findOrCreateFolder(DRIVE_FOLDER, 'root');
-    let profileId  = await findOrCreateFolder(state.programme.name, rootId);
-    let sessionsId = await findOrCreateFolder('sessions', profileId);
-    driveFolderId[state.profile] = { root: rootId, profile: profileId, sessions: sessionsId };
-  }
+  // appDataFolder needs no folder creation — mark as ready
+  driveFolderId[state.profile] = { ready: true };
 }
 
-async function findOrCreateFolder(name, parentId) {
-  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
-  const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
-  if (res.files.length > 0) return res.files[0].id;
-  // Create it
-  const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
-    method: 'POST',
-    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
-  });
-  return created.id;
-}
-
-// ── SAVE SESSION TO DRIVE ──────────────────
+// ── SAVE SESSION TO DRIVE (appDataFolder) ──
 async function saveToDrive(sessionData) {
   try {
-    if (!driveFolderId[state.profile]) await ensureDriveFolder();
-    const folders = driveFolderId[state.profile];
-    const filename = `session_${sessionData.date}_${sessionData.sessionName.replace(/\s+/g,'_')}_${sessionData.id}.json`;
-    const content = JSON.stringify(sessionData, null, 2);
+    if (!state.driveToken) return;
+    // Filename namespaced by profile so Alex and Je don't collide
+    const filename = `${state.profile}_session_${sessionData.id}.json`;
+    const body     = JSON.stringify(sessionData);
 
-    const meta = JSON.stringify({ name: filename, parents: [folders.sessions] });
-    const form = new FormData();
-    form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', new Blob([content], { type: 'application/json' }));
+    // Check if file already exists (update vs create)
+    const q   = `name='${filename}' and 'appDataFolder' in parents and trashed=false`;
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=appDataFolder`
+    );
 
-    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${state.driveToken}` },
-      body: form
-    });
+    if (res.files?.length > 0) {
+      // Update existing file
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${res.files[0].id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${state.driveToken}`, 'Content-Type': 'application/json' },
+        body
+      });
+    } else {
+      // Create new file in appDataFolder
+      const meta = JSON.stringify({ name: filename, parents: ['appDataFolder'] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file',     new Blob([body],  { type: 'application/json' }));
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${state.driveToken}` },
+        body: form
+      });
+    }
 
-    // Also save/update programme config
     await saveProgrammeToDrive();
     toast('Saved to Google Drive ✓', 'success');
   } catch(e) {
     console.error('Drive save failed:', e);
-    toast('Drive save failed — data kept locally. Retry on next session.', 'error');
+    toast('Drive save failed — data kept locally.', 'error');
   }
 }
 
 // ── SAVE PROGRAMME CONFIG TO DRIVE ─────────
 async function saveProgrammeToDrive() {
-  if (!state.driveToken || !driveFolderId[state.profile]) return;
+  if (!state.driveToken) return;
   try {
-    const folders = driveFolderId[state.profile];
+    const filename = `${state.profile}_programme.json`;
     const config = {
       version: Date.now(),
       profile: state.profile,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
       sessions: state.programme.sessions.map(s => ({
-        id: s.id,
-        rest: s.rest,
+        id: s.id, rest: s.rest,
         exercises: s.exercises.map(e => ({ num: e.num, name: e.name, sets: e.sets, reps: e.reps, load: e.load }))
       }))
     };
-    const content = JSON.stringify(config, null, 2);
-
-    // Check if programme.json already exists
-    const q = `name='programme.json' and '${folders.profile}' in parents and trashed=false`;
-    const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-
-    if (res.files.length > 0) {
-      // Update existing
+    const body = JSON.stringify(config);
+    const q    = `name='${filename}' and 'appDataFolder' in parents and trashed=false`;
+    const res  = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=appDataFolder`
+    );
+    if (res.files?.length > 0) {
       await fetch(`https://www.googleapis.com/upload/drive/v3/files/${res.files[0].id}?uploadType=media`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${state.driveToken}`, 'Content-Type': 'application/json' },
-        body: content
+        body
       });
     } else {
-      // Create new
-      const meta = JSON.stringify({ name: 'programme.json', parents: [folders.profile] });
+      const meta = JSON.stringify({ name: filename, parents: ['appDataFolder'] });
       const form = new FormData();
       form.append('metadata', new Blob([meta], { type: 'application/json' }));
-      form.append('file', new Blob([content], { type: 'application/json' }));
+      form.append('file',     new Blob([body],  { type: 'application/json' }));
       await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${state.driveToken}` },
@@ -6855,36 +6822,31 @@ async function saveProgrammeToDrive() {
 
 // ── LOAD PROGRAMME CONFIG FROM DRIVE ───────
 async function loadProgrammeFromDrive() {
-  if (!state.driveToken || !driveFolderId[state.profile]) return;
+  if (!state.driveToken) return;
   try {
-    const folders = driveFolderId[state.profile];
-    const q = `name='programme.json' and '${folders.profile}' in parents and trashed=false`;
-    const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`);
-    if (!res.files.length) return;
-
+    const filename = `${state.profile}_programme.json`;
+    const q   = `name='${filename}' and 'appDataFolder' in parents and trashed=false`;
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=appDataFolder`
+    );
+    if (!res.files?.length) return;
     const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${res.files[0].id}?alt=media`, {
       headers: { 'Authorization': `Bearer ${state.driveToken}` }
     });
     const config = await fileRes.json();
-
-    // Apply remote config (newer version wins)
     if (config.version && config.sessions) {
       config.sessions.forEach(remote => {
         const local = state.programme.sessions.find(s => s.id === remote.id);
         if (local) {
           local.rest = remote.rest;
-          remote.exercises.forEach(rex => {
+          remote.exercises?.forEach(rex => {
             const lex = local.exercises.find(e => e.num === rex.num);
             if (lex) { lex.sets = rex.sets; lex.reps = rex.reps; lex.load = rex.load; }
           });
         }
       });
-      if (config.mesoStartDate) state.mesoStartDate = config.mesoStartDate;
-      renderProgramme();
-      updateMesoDisplay();
-      toast('Programme synced from Drive', 'info');
     }
-  } catch(e) { console.warn('Programme load from Drive failed:', e); }
+  } catch(e) { console.warn('Programme config load failed:', e); }
 }
 
 /* ═══════════════════════════════════════════
@@ -6936,7 +6898,7 @@ async function deleteSessionFromDrive(session) {
 // ── MAIN SYNC FUNCTION ──────────────────────
 // showToast: true for manual sync, false for background auto-sync on load
 async function syncSessionsFromDrive(showToast) {
-  if (!state.driveToken || !driveFolderId[state.profile]) return;
+  if (!state.driveToken) return;
 
   try {
     if (showToast) toast('Syncing with Google Drive…', 'info');
@@ -9286,12 +9248,9 @@ function openSettings() {
     btn.textContent  = state.driveConnected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
   }
   renderWeightLog();
-  // Enable/disable Sync Now and Choose Folder buttons
-  const settingsSyncBtn   = document.getElementById('settings-sync-btn');
-  const settingsFolderBtn = document.getElementById('settings-folder-btn');
-  if (settingsSyncBtn)   settingsSyncBtn.disabled   = !state.driveConnected;
-  if (settingsFolderBtn) settingsFolderBtn.disabled = !state.driveConnected;
-  updateFolderPickerDisplay();
+  // Enable/disable Sync Now button
+  const settingsSyncBtn = document.getElementById('settings-sync-btn');
+  if (settingsSyncBtn) settingsSyncBtn.disabled = !state.driveConnected;
   const settingsLastSynced = document.getElementById('settings-last-synced');
   if (settingsLastSynced) {
     const saved = localStorage.getItem(`wt_last_synced_${state.profile}`);
