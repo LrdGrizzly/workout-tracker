@@ -4139,7 +4139,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.8.0';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -6473,6 +6473,9 @@ const DRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FOLDER    = 'WorkoutApp';
 
 let driveTokenClient  = null;
+let _driveRefreshTimer = null;   // setTimeout for silent token refresh
+let _driveSyncInterval = null;   // setInterval for periodic background sync
+let _driveAuthBannerShown = false; // prevent duplicate banners
 let driveFolderId     = { alex: null, je: null };
 
 // Load Google Identity Services script on demand
@@ -6552,11 +6555,17 @@ async function handleDriveToken(response) {
 
   updateDriveStatus(true);
   await ensureDriveFolder();
+  _driveAuthBannerShown = false;
+  hideDriveAuthBanner();
   toast('Google Drive connected — syncing…', 'info');
 
   // Load programme config then pull all sessions
   await loadProgrammeFromDrive();
   await syncSessionsFromDrive(true);
+
+  // Schedule silent refresh and start periodic sync
+  scheduleDriveRefresh();
+  startDriveSyncInterval();
 }
 
 function disconnectDrive() {
@@ -6564,9 +6573,16 @@ function disconnectDrive() {
   state.driveToken = null;
   state.driveTokenExpiry = null;
   localStorage.removeItem('wt_drive_token');
+  clearDriveTimers();
+  hideDriveAuthBanner();
   updateDriveStatus(false);
   closeModal();
   toast('Google Drive disconnected', 'info');
+}
+
+function clearDriveTimers() {
+  if (_driveRefreshTimer)  { clearTimeout(_driveRefreshTimer);  _driveRefreshTimer  = null; }
+  if (_driveSyncInterval)  { clearInterval(_driveSyncInterval); _driveSyncInterval  = null; }
 }
 
 function tryRestoreToken() {
@@ -6579,7 +6595,11 @@ function tryRestoreToken() {
       state.driveTokenExpiry = expiry;
       updateDriveStatus(true);
       // Auto-sync on load if token is still valid
-      ensureDriveFolder().then(() => syncSessionsFromDrive(false));
+      ensureDriveFolder().then(() => {
+        syncSessionsFromDrive(false);
+        scheduleDriveRefresh();
+        startDriveSyncInterval();
+      });
     } else {
       localStorage.removeItem('wt_drive_token');
     }
@@ -7898,6 +7918,193 @@ function showMilestone(m) {
 function dismissMilestone() {
   document.getElementById('milestone-overlay')?.classList.remove('visible');
 }
+
+
+/* ═══════════════════════════════════════════
+   DRIVE AUTO-SYNC & SILENT TOKEN REFRESH
+═══════════════════════════════════════════ */
+
+// ── SILENT TOKEN REFRESH ────────────────────
+// Called 5 minutes before expiry. Uses prompt:''
+// so no popup appears if Google session is active.
+function scheduleDriveRefresh() {
+  if (_driveRefreshTimer) clearTimeout(_driveRefreshTimer);
+  if (!state.driveTokenExpiry) return;
+
+  // Fire 5 minutes before expiry
+  const msUntilRefresh = state.driveTokenExpiry - Date.now() - (5 * 60 * 1000);
+  const delay = Math.max(msUntilRefresh, 10000); // at least 10s from now
+
+  _driveRefreshTimer = setTimeout(() => {
+    attemptSilentRefresh();
+  }, delay);
+
+  console.log(`[Drive] Token refresh scheduled in ${Math.round(delay/60000)} min`);
+}
+
+async function attemptSilentRefresh() {
+  if (!DRIVE_CLIENT_ID || !driveTokenClient) {
+    showDriveAuthBanner('session_expired');
+    return;
+  }
+  try {
+    // Try silent re-auth — if Google session is active, no popup appears
+    await new Promise((resolve, reject) => {
+      const original = driveTokenClient.callback;
+      driveTokenClient.callback = (response) => {
+        driveTokenClient.callback = original;
+        if (response.error) {
+          reject(response.error);
+        } else {
+          // Update token silently
+          state.driveToken = response.access_token;
+          state.driveTokenExpiry = Date.now() + (response.expires_in * 1000);
+          localStorage.setItem('wt_drive_token', JSON.stringify({
+            token: state.driveToken,
+            expiry: state.driveTokenExpiry
+          }));
+          _driveAuthBannerShown = false;
+          hideDriveAuthBanner();
+          resolve();
+        }
+      };
+      // prompt: '' = silent, no UI shown
+      driveTokenClient.requestAccessToken({ prompt: '' });
+    });
+
+    // Reschedule for the new token
+    scheduleDriveRefresh();
+    console.log('[Drive] Token silently refreshed ✓');
+
+  } catch(err) {
+    console.warn('[Drive] Silent refresh failed:', err);
+    // Google session may have expired — show banner
+    showDriveAuthBanner('session_expired');
+  }
+}
+
+// ── PERIODIC BACKGROUND SYNC ────────────────
+const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+function startDriveSyncInterval() {
+  if (_driveSyncInterval) clearInterval(_driveSyncInterval);
+  _driveSyncInterval = setInterval(async () => {
+    if (!state.driveConnected || !state.driveToken) return;
+
+    // Check token is still valid before syncing
+    const minsLeft = (state.driveTokenExpiry - Date.now()) / 60000;
+
+    if (minsLeft < 2) {
+      // Token about to expire — attempt silent refresh first
+      await attemptSilentRefresh();
+      if (!state.driveToken) return; // refresh failed, don't sync
+    }
+
+    // Silent background sync — no toast
+    await syncSessionsFromDrive(false);
+  }, SYNC_INTERVAL_MS);
+
+  console.log('[Drive] Background sync interval started (every 5 min)');
+}
+
+// ── DRIVE AUTH BANNER ───────────────────────
+// Shown when token expires and silent refresh fails.
+// Persistent, dismissible only by reconnecting.
+
+function showDriveAuthBanner(reason) {
+  if (_driveAuthBannerShown) return;
+  _driveAuthBannerShown = true;
+
+  // Mark Drive as disconnected locally
+  state.driveToken = null;
+  localStorage.removeItem('wt_drive_token');
+  updateDriveStatus(false);
+
+  // Remove any existing banner
+  document.getElementById('drive-auth-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'drive-auth-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:70px;left:12px;right:12px;
+    background:rgba(28,28,28,0.96);
+    border:1px solid rgba(245,184,48,0.5);
+    border-radius:12px;
+    padding:14px 16px;
+    z-index:9999;
+    box-shadow:0 4px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+  `;
+
+  banner.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:18px;flex-shrink:0">⚠️</span>
+      <div style="flex:1">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
+          text-transform:uppercase;letter-spacing:0.04em;color:var(--amber);margin-bottom:4px">
+          Drive Session Expired
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);
+          line-height:1.6;margin-bottom:10px">
+          Your Google Drive connection has expired. <strong style="color:var(--text)">Your data is safe</strong>
+          — all sessions are stored locally. Reconnect to resume automatic backup and sync.
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);
+          margin-bottom:10px;line-height:1.5">
+          What to do: tap <strong style="color:var(--text)">Reconnect</strong> below.
+          Google will ask you to sign in again — this takes about 10 seconds.
+          No data will be lost.
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="hideDriveAuthBanner();handleDriveConnect();" style="
+            font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+            text-transform:uppercase;letter-spacing:0.06em;
+            padding:7px 18px;border-radius:7px;cursor:pointer;
+            background:rgba(245,184,48,0.15);border:1px solid rgba(245,184,48,0.45);
+            color:var(--amber);transition:all 0.15s ease">
+            Reconnect
+          </button>
+          <button onclick="dismissDriveAuthBanner()" style="
+            font-family:'DM Mono',monospace;font-size:10px;
+            padding:7px 14px;border-radius:7px;cursor:pointer;
+            background:none;border:1px solid var(--border-h);
+            color:var(--text-muted);transition:all 0.15s ease">
+            Remind me later
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(banner);
+}
+
+function hideDriveAuthBanner() {
+  document.getElementById('drive-auth-banner')?.remove();
+}
+
+function dismissDriveAuthBanner() {
+  // Hide for this session but don't mark as shown — will reappear on next load
+  _driveAuthBannerShown = false;
+  hideDriveAuthBanner();
+  toast('Reminder: reconnect Drive in Settings → Data when ready', 'info');
+}
+
+// ── VISIBILITY-BASED SYNC ───────────────────
+// Sync when user returns to the app tab (covers phone-to-desktop scenario)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.driveConnected && state.driveToken) {
+    const minsLeft = (state.driveTokenExpiry - Date.now()) / 60000;
+    if (minsLeft < 2) {
+      attemptSilentRefresh().then(() => {
+        if (state.driveToken) syncSessionsFromDrive(false);
+      });
+    } else {
+      syncSessionsFromDrive(false);
+    }
+  }
+});
 
 /* ═══════════════════════════════════════════
    LONG PRESS FOR REP PILLS (MOBILE)
