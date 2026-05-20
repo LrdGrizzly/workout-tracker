@@ -1758,6 +1758,16 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
   transition: all 0.15s ease;
 }
 .milestone-dismiss:hover { color: var(--text); border-color: var(--border-g); }
+
+.set-ghost-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  margin-left: 4px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
 /* ═══════════════════════════════════════════
    WEEK SCHEDULE STRIP
 ═══════════════════════════════════════════ */
@@ -4139,7 +4149,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.9.0';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -5218,13 +5228,16 @@ function buildTrackerExercises(session) {
     const _prevExData = _prevSess?.exercises?.find(e => e.name === ex.name) || null;
 
     const initialSets = Array.from({length: setCount}, (_, i) => {
-      const _prevSet  = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
-      // Template mode: always use prev load; load increase: clear unless template active
-      const _prevLoad = (_loadIncreaseSignalled && !state._useTemplate)
-        ? '' : (_prevSet?.load || '');
-      const _prevReps = _prevSet?.reps || '';
-      const _prevRIR  = _prevSet?.rir  || '';
-      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR);
+      const _prevSet = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
+      // Template mode: pre-select load from last session
+      // Normal mode: clean slate — show prev as ghost hint only, no pre-selection
+      const _prevLoad = state._useTemplate ? (_prevSet?.load || '') : '';
+      const _prevReps = ''; // always clean — prev shown as ghost
+      const _prevRIR  = ''; // always clean
+      // Ghost reference values for the hint line
+      const _ghostLoad = _prevSet?.load || '';
+      const _ghostReps = _prevSet?.reps || '';
+      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps);
     });
 
     const deloadNote = deload
@@ -5307,14 +5320,31 @@ function parseBandLoad(loadStr) {
   return parseFloat(loadStr) || 0;
 }
 
-function buildBandPills(setIdx, exIdx, sessionId, isBWContext) {
+function buildBandPills(setIdx, exIdx, sessionId, isBWContext, preselectedLoad) {
   // isBWContext: pills are an add-on to a BW exercise (single-select, None clears)
   // !isBWContext: pure band exercise — multi-select, combinations allowed (e.g. Black+Yellow)
   const bands = ['None','Yellow','Green','Red','Blue','Black'];
   const ctx   = isBWContext ? 'bw' : 'band';
+
+  // Parse preselectedLoad to determine which pills to activate
+  // e.g. 'Blue' → ['blue'], 'Black+Yellow' → ['black','yellow'], 'BW+Blue' → ['blue']
+  const preActive = new Set();
+  if (preselectedLoad) {
+    const s = preselectedLoad.toLowerCase().replace(/^bw[+]?/, '');
+    s.split('+').forEach(part => {
+      const trimmed = part.trim();
+      if (['yellow','green','red','blue','black'].includes(trimmed)) preActive.add(trimmed);
+    });
+  }
+  const noneActive = preActive.size === 0;
+
   return `<div class="band-pills" id="bpills-${sessionId}-${exIdx}-${setIdx}" data-ctx="${ctx}">
-    ${bands.map(b => `<button class="band-pill${b==='None'?' active-none':''}"
-      onclick="selectBandPill(this,'${b.toLowerCase()}')">${b==='None'?'—':b}</button>`).join('')}
+    ${bands.map(b => {
+      const bl = b.toLowerCase();
+      const isActive = bl === 'none' ? noneActive : preActive.has(bl);
+      const cls = isActive ? (bl === 'none' ? ' active-none' : ` active-${bl}`) : '';
+      return `<button class="band-pill${cls}" onclick="selectBandPill(this,'${bl}')">${b==='None'?'—':b}</button>`;
+    }).join('')}
   </div>`;
 }
 
@@ -5583,10 +5613,15 @@ function isBandExercise(ex) {
   return hasBand && !isBW;
 }
 
-function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR) {
+function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR, ghostLoad, ghostReps) {
   const isUnilateral = ex.tags.includes('unilateral');
   const isBW   = isBWExercise(ex);
   const isBand = isBandExercise(ex);
+
+  // Ghost hint — muted previous session reference shown above pills
+  const ghostHint = (ghostLoad || ghostReps)
+    ? `<div class="set-ghost-hint">Last: ${ghostLoad ? ghostLoad : '—'} × ${ghostReps ? ghostReps : '—'}</div>`
+    : '';
 
   // Load section
   let loadSection = '';
@@ -5594,15 +5629,15 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
     loadSection = `<div class="bw-band-wrap">
       <span class="bw-label">BW</span>
       <input type="hidden" class="set-load-val bw-load-store" value="BW">
-      ${buildBandPills(setIdx, exIdx, sessionId, true)}
+      ${buildBandPills(setIdx, exIdx, sessionId, true, ghostLoad)}
     </div>`;
   } else if (isBand) {
+    // Restore multi-band pill selections from prevLoad if in template mode
     loadSection = `<div class="bw-band-wrap">
       <input type="hidden" class="set-load-val" value="${prevLoad || ''}">
-      ${buildBandPills(setIdx, exIdx, sessionId, false)}
+      ${buildBandPills(setIdx, exIdx, sessionId, false, prevLoad)}
     </div>`;
   } else {
-    // KB / numeric — use load pills
     loadSection = buildLoadPills(setIdx, exIdx, sessionId, ex.name, ex.repRange, prevLoad || '');
   }
 
@@ -5613,6 +5648,7 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
     <div class="set-row-main">
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
+      ${ghostHint}
       <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" style="margin-left:auto">✕</button>
     </div>
     <div class="set-row-pills">
@@ -6534,7 +6570,8 @@ async function handleDriveConnect() {
       scope: DRIVE_SCOPE,
       callback: handleDriveToken
     });
-    driveTokenClient.requestAccessToken({ prompt: 'consent' });
+    // Try without consent prompt first — shows UI only if needed
+    driveTokenClient.requestAccessToken({ prompt: '' });
   } catch(e) {
     toast('Failed to load Google sign-in. Check connection.', 'error');
   }
@@ -6588,22 +6625,72 @@ function clearDriveTimers() {
 function tryRestoreToken() {
   try {
     const saved = localStorage.getItem('wt_drive_token');
-    if (!saved) return;
-    const { token, expiry } = JSON.parse(saved);
-    if (Date.now() < expiry - 60000) { // 1 min buffer
-      state.driveToken = token;
-      state.driveTokenExpiry = expiry;
-      updateDriveStatus(true);
-      // Auto-sync on load if token is still valid
-      ensureDriveFolder().then(() => {
-        syncSessionsFromDrive(false);
+    if (saved) {
+      const { token, expiry } = JSON.parse(saved);
+      if (Date.now() < expiry - 60000) {
+        // Token still valid — restore immediately
+        state.driveToken = token;
+        state.driveTokenExpiry = expiry;
+        updateDriveStatus(true);
+        ensureDriveFolder().then(() => {
+          syncSessionsFromDrive(false);
+          scheduleDriveRefresh();
+          startDriveSyncInterval();
+        });
+        return;
+      } else {
+        // Token expired — clear it, attempt silent re-auth below
+        localStorage.removeItem('wt_drive_token');
+      }
+    }
+
+    // No valid token — attempt silent re-auth if Client ID is saved
+    // This runs on every load and reconnects automatically when possible
+    if (DRIVE_CLIENT_ID) {
+      initTokenClientSilent();
+    }
+  } catch(e) {
+    console.warn('[Drive] tryRestoreToken error:', e);
+  }
+}
+
+async function initTokenClientSilent() {
+  // Initialise GIS and attempt a silent token request (prompt:'').
+  // If Google session is active on device, this succeeds with no UI.
+  // If not, it fails silently — user must connect manually.
+  try {
+    await loadGIS();
+    driveTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: DRIVE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: async (response) => {
+        if (response.error) {
+          // Silent auth failed — don't show any error, just stay disconnected
+          console.log('[Drive] Silent auth failed:', response.error);
+          return;
+        }
+        // Success — wire up exactly like handleDriveToken but without toasts
+        state.driveToken = response.access_token;
+        state.driveTokenExpiry = Date.now() + (response.expires_in * 1000);
+        localStorage.setItem('wt_drive_token', JSON.stringify({
+          token: state.driveToken,
+          expiry: state.driveTokenExpiry
+        }));
+        _driveAuthBannerShown = false;
+        hideDriveAuthBanner();
+        updateDriveStatus(true);
+        await ensureDriveFolder();
+        await syncSessionsFromDrive(false);
         scheduleDriveRefresh();
         startDriveSyncInterval();
-      });
-    } else {
-      localStorage.removeItem('wt_drive_token');
-    }
-  } catch(e) {}
+        toast('Google Drive connected ✓', 'success');
+      }
+    });
+    // prompt:'' = silent, no popup — fails gracefully if session expired
+    driveTokenClient.requestAccessToken({ prompt: '' });
+  } catch(e) {
+    console.log('[Drive] Silent init failed:', e);
+  }
 }
 
 function promptDriveClientId() {
@@ -6850,7 +6937,8 @@ async function loadProgrammeFromDrive() {
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=appDataFolder`
     );
     if (!res.files?.length) return;
-    const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${res.files[0].id}?alt=media`, {
+    const fileRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${res.files[0].id}?alt=media&spaces=appDataFolder`, {
       headers: { 'Authorization': `Bearer ${state.driveToken}` }
     });
     const config = await fileRes.json();
@@ -6892,7 +6980,9 @@ async function listDriveSessionFiles() {
 
 // ── FETCH A SINGLE SESSION FILE CONTENT ────
 async function fetchDriveSessionFile(fileId) {
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+  // alt=media fetches file content by ID — works fine with appDataFolder
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&spaces=appDataFolder`, {
     headers: { 'Authorization': `Bearer ${state.driveToken}` }
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7357,6 +7447,95 @@ function getPendingProgressions() {
   return suggestions;
 }
 
+function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending) {
+  const thisWeekVol = calcWeekVolume(week);
+  const lastWeekVol = week > 1 ? calcWeekVolume(week - 1) : 0;
+  const volChange   = lastWeekVol > 0
+    ? Math.round(((thisWeekVol - lastWeekVol) / lastWeekVol) * 100)
+    : null;
+  const volArrow = volChange === null ? '' : volChange >= 0 ? '↑' : '↓';
+  const volColor = volChange === null ? 'var(--text-dim)'
+    : volChange >= 0 ? 'var(--green)' : 'var(--legs-b)';
+
+  const mesoSessions = state.sessions.filter(s => {
+    if (!s.date || s.status !== 'complete') return false;
+    if (!state.mesoStartDate) return false;
+    return new Date(s.date) >= new Date(state.mesoStartDate);
+  });
+  const sessionCount = mesoSessions.length;
+
+  const sortedDates = [...new Set(
+    state.sessions.filter(s => s.status === 'complete').map(s => s.date)
+  )].sort().reverse();
+  let streak = 0;
+  const todayStr = new Date().toISOString().split('T')[0];
+  for (let i = 0; i < sortedDates.length; i++) {
+    const exp = new Date(todayStr);
+    exp.setDate(exp.getDate() - i);
+    if (sortedDates[i] === exp.toISOString().split('T')[0]) streak++;
+    else break;
+  }
+
+  const durations = mesoSessions
+    .filter(s => s.startTime && s.endTime)
+    .map(s => Math.round((new Date(s.endTime) - new Date(s.startTime)) / 60000));
+  const avgDur = durations.length
+    ? Math.round(durations.reduce((a,b)=>a+b,0) / durations.length)
+    : null;
+
+  const barsHtml = weekVolumes.map(wk => {
+    const pct = maxVol > 0 ? Math.max((wk.vol / maxVol) * 100, wk.vol > 0 ? 4 : 0) : 0;
+    const isCurrent = wk.w === week;
+    const barCls = wk.deload ? 'deload-bar' : isCurrent ? 'current' : '';
+    return '<div class="dash-volume-bar-wrap ' + (isCurrent ? 'current-wrap' : '') + '">' +
+      '<div class="dash-volume-bar ' + barCls + '" style="height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
+      '<div class="dash-volume-bar-label">' + (wk.deload ? 'DL' : 'W'+wk.w) + '</div>' +
+      '</div>';
+  }).join('');
+
+  const typeColors = { add_set:'var(--green)', increase_load:'var(--pull)', tempo:'var(--push-b)', equipment_ceiling:'var(--red)' };
+  const progHtml = pending.length > 0
+    ? '<div class="dash-section-label" style="margin-top:16px">Progression Pending</div>' +
+      pending.slice(0,5).map(p => {
+        const col = typeColors[p.type] || 'var(--text-dim)';
+        return '<div class="dash-prog-item">' +
+          '<div class="dash-prog-dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + '88"></div>' +
+          '<div class="dash-prog-name">' + p.exercise + '</div>' +
+          '<div class="dash-prog-type" style="color:' + col + '">' + p.type.replace(/_/g,' ') + '</div>' +
+          '</div>';
+      }).join('')
+    : '<div style="font-size:9px;color:var(--text-muted);margin-top:16px">No progressions pending</div>';
+
+  const bwNote = state.bodyweight ? 'BW ' + state.bodyweight + ' kg' : 'add bodyweight in settings';
+  const volChangeHtml = volChange !== null
+    ? '<span style="font-size:11px;color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs W' + (week-1) + '</span>'
+    : '<span style="font-size:9px;color:var(--text-muted)">week 1 baseline</span>';
+
+  return '<div class="dash-section volume-section dashboard-col-right" style="height:100%">' +
+    '<div class="dash-section-label">This Week</div>' +
+    '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">' +
+      '<div class="dash-volume-total">' + volFmt(thisWeekVol) + '</div>' + volChangeHtml +
+    '</div>' +
+    '<div class="dash-volume-sub">Volume &middot; ' + bwNote + '</div>' +
+    '<div class="dash-volume-bars">' + barsHtml + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:14px">' +
+      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
+        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + sessionCount + '</div>' +
+        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Sessions</div>' +
+      '</div>' +
+      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
+        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + streak + '</div>' +
+        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Day Streak</div>' +
+      '</div>' +
+      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
+        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + (avgDur ? avgDur + '<span style="font-size:13px">m</span>' : '—') + '</div>' +
+        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Avg Duration</div>' +
+      '</div>' +
+    '</div>' +
+    progHtml +
+    '</div>';
+}
+
 function renderDashboard() {
   const card = document.getElementById('dashboard-card');
   if (!card) return;
@@ -7505,35 +7684,7 @@ function renderDashboard() {
   if (state.profile === 'alex') {
     const volFmt = (v) => v >= 1000 ? `${(v/1000).toFixed(1)}t` : `${v}kg`;
     rightCol = `
-      <div class="dash-section volume-section dashboard-col-right" style="height:100%">
-        <div class="dash-section-label">Volume — Mesocycle ${state.mesoStartDate ? new Date(state.mesoStartDate).getFullYear() : ''}</div>
-        <div class="dash-volume-total">${volFmt(totalVol)}</div>
-        <div class="dash-volume-sub">Total · ${state.bodyweight ? `BW ${state.bodyweight}kg` : 'Set bodyweight in settings for full accuracy'}</div>
-        <div class="dash-volume-bars">
-          ${weekVolumes.map(wk => {
-            const pct = maxVol > 0 ? Math.max((wk.vol / maxVol) * 100, wk.vol > 0 ? 4 : 0) : 0;
-            const isCurrent = wk.w === week;
-            const barCls = wk.deload ? 'deload-bar' : isCurrent ? 'current' : '';
-            return `<div class="dash-volume-bar-wrap ${isCurrent ? 'current-wrap' : ''}">
-              <div class="dash-volume-bar ${barCls}" style="height:${pct}%"></div>
-              <div class="dash-volume-bar-label">${wk.deload ? 'DL' : 'W'+wk.w}</div>
-            </div>`;
-          }).join('')}
-        </div>
-
-        ${pending.length > 0 ? `
-          <div class="dash-section-label" style="margin-top:18px">Progression Pending</div>
-          ${pending.slice(0,5).map(p => {
-            const typeColors = { add_set:'var(--green)', increase_load:'var(--pull)', tempo:'var(--push-b)', equipment_ceiling:'var(--red)' };
-            const col = typeColors[p.type] || 'var(--text-dim)';
-            return `<div class="dash-prog-item">
-              <div class="dash-prog-dot" style="background:${col};box-shadow:0 0 6px ${col}88"></div>
-              <div class="dash-prog-name">${p.exercise}</div>
-              <div class="dash-prog-type" style="color:${col}">${p.type.replace(/_/g,' ')}</div>
-            </div>`;
-          }).join('')}
-        ` : `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:16px">No progressions pending</div>`}
-      </div>
+      buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending)
     `;
   } else {
     // Je — ladder progress
@@ -7584,8 +7735,18 @@ function renderDashboard() {
 ═══════════════════════════════════════════ */
 
 function toggleExerciseCard(cardId, event) {
-  // Don't collapse if clicking a button/input inside the card
-  if (event && event.target.closest('button, input, select')) return;
+  // Allow collapse button and header clicks through
+  // Block other interactive elements inside the body
+  if (event) {
+    const t = event.target;
+    // If click came from inside the body (not the head), block it
+    const head = t.closest('.tracker-ex-head');
+    if (!head) return; // clicked inside body — don't collapse
+    // Within the head, block sub-buttons except the collapse btn itself
+    const isCollapseBtn = t.closest('.tracker-ex-collapse-btn');
+    const isOtherBtn    = !isCollapseBtn && t.closest('button, input, select');
+    if (isOtherBtn) return;
+  }
   const card = document.getElementById(cardId);
   if (!card) return;
   card.classList.toggle('collapsed');
@@ -7635,32 +7796,30 @@ function checkSetCompletion(row) {
   const loadDisplay = load === 'BW' ? 'BW' : `${load}`;
   summary.textContent = `${loadDisplay} × ${reps}`;
 
-  if (!isLast) {
-    // Auto-collapse after a short delay
-    setTimeout(() => {
-      row.classList.add('set-collapsed');
-      // Focus next set's first rep pill
-      const nextRow = allRows[rowIndex + 1];
-      if (nextRow) {
-        const firstRepPill = nextRow.querySelector('.input-pill[data-reps]');
-        if (firstRepPill) firstRepPill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }, 320);
-  } else {
-    // Last set — show next exercise prompt
+  // Collapse this set regardless of position
+  setTimeout(() => {
+    row.classList.add('set-collapsed');
+  }, 320);
+
+  // Check if ALL sets in the card are now complete
+  const allComplete = allRows.every(r => {
+    const rEl = r.querySelector('.set-reps-val');
+    const lEl = r.querySelector('.set-load-val');
+    const reps = rEl ? rEl.value.trim() : '';
+    const load = lEl ? lEl.value.trim() : '';
+    // BW exercises only need reps
+    const isBWRow = load === 'BW';
+    return reps !== '' && (isBWRow || load !== '');
+  });
+
+  if (allComplete) {
     const card = row.closest('.tracker-ex-card');
     if (!card) return;
-    const cardId  = card.id; // tex-sessionId-idx
-    const parts   = cardId.split('-');
-    // cardId format: tex-{sessionId}-{idx}
-    // sessionId may contain hyphens, idx is last part
-    const exIdx   = parts[parts.length - 1];
+    const parts = card.id.split('-');
+    const exIdx = parts[parts.length - 1];
     const sessionId = parts.slice(1, -1).join('-');
-
     const prompt = document.getElementById(`next-prompt-${sessionId}-${exIdx}`);
-    if (prompt) {
-      setTimeout(() => prompt.classList.add('visible'), 300);
-    }
+    if (prompt) setTimeout(() => prompt.classList.add('visible'), 350);
   }
 }
 
