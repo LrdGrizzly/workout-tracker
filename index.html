@@ -4149,7 +4149,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.9.1';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -7683,9 +7683,7 @@ function renderDashboard() {
 
   if (state.profile === 'alex') {
     const volFmt = (v) => v >= 1000 ? `${(v/1000).toFixed(1)}t` : `${v}kg`;
-    rightCol = `
-      buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending)
-    `;
+    rightCol = buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending);
   } else {
     // Je — ladder progress
     const ladderExercises = state.programme.sessions.flatMap(s => s.exercises)
