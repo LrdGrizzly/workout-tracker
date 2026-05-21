@@ -3970,6 +3970,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
 <div class="warmup-overlay hidden" id="warmup-overlay">
   <div class="warmup-overlay-backdrop"></div>
   <div class="warmup-overlay-card">
+    <div id="warmup-session-title" style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--amber);margin-bottom:6px"></div>
     <span class="warmup-overlay-icon">🔥</span>
     <div class="warmup-overlay-title">Warm Up</div>
     <div class="warmup-overlay-started" id="warmup-started-label">Session timer running</div>
@@ -4149,7 +4150,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '2.9.1';
+const APP_VERSION = '3.0.0';
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -5788,69 +5789,153 @@ function startSession() {
   if (overlay) {
     label.textContent = `Session started at ${formatTime(state.startTime)} — timer running`;
     // Populate warmup cues based on session type
-    const cues = getWarmupCues(state.activeSessionId);
-    const list  = document.getElementById('warmup-list');
-    if (list) list.innerHTML = cues.map(c => `<li>${c}</li>`).join('');
+    const warmup = getWarmupCues(state.activeSessionId);
+    const list   = document.getElementById('warmup-list');
+    const titleEl = document.getElementById('warmup-session-title');
+    if (titleEl) titleEl.textContent = warmup.title || '';
+    if (list) list.innerHTML = warmup.cues.map(c => `<li>${c}</li>`).join('');
     overlay.classList.remove('hidden');
   }
 }
 
 function getWarmupCues(sessionId) {
   const cues = {
-    'push-a': [
-      'Shoulder circles — 10 each direction',
-      'Band pull-aparts × 15 (light)',
-      'Incline push-up × 10 bodyweight',
-      'Wrist rotations and extensions',
-    ],
-    'pull': [
-      'Shoulder circles — 10 each direction',
-      'Band pull-aparts × 15 (light)',
-      'Dead hang or doorframe stretch × 20s',
-      'Elbow circles and forearm stretch',
-    ],
-    'legs-a': [
-      'Hip circles — 10 each direction',
-      'Bodyweight squat × 15 (slow)',
-      'Leg swings — forward and lateral × 10',
-      'Ankle circles and calf stretch',
-    ],
-    'push-b': [
-      'Shoulder circles — 10 each direction',
-      'Band external rotation × 15 (light)',
-      'Arm circles — small to large',
-      'Overhead reach and lateral stretch',
-    ],
-    'legs-b': [
-      'Hip hinge × 15 bodyweight (slow)',
-      'Glute bridges × 15 bodyweight',
-      'Leg swings — forward and lateral × 10',
-      'Hip flexor stretch × 20s each side',
-    ],
-    'kb-flow': [
-      'Joint circles — wrists to shoulders',
-      'Hip hinge × 10 bodyweight',
-      'Bodyweight squat × 10',
-      'Light KB deadlift × 5 (half load)',
-    ],
-    'session-a': [
-      'Hip circles — 10 each direction',
-      'Bodyweight squat × 10 (supported)',
-      'Shoulder rolls and arm circles',
-      'Light band pull-apart × 10',
-    ],
-    'session-b': [
-      'Hip hinge × 10 bodyweight',
-      'Supported reverse lunge × 5 each side',
-      'Shoulder rolls and arm circles',
-      'Glute bridge × 10 bodyweight',
-    ],
+    // ── PUSH A — Chest & Triceps ─────────────────────────────────
+    'push-a': {
+      title: 'Upper Body — Chest & Triceps',
+      cues: [
+        'Thoracic rotation — 8 each side, open through the chest',
+        'Band pull-apart × 15 (light) — activate rear delt and retractors',
+        'Incline push-up × 10 slow — prime the pressing pattern before load',
+        'Wrist circles and extension stretch — prepare wrists for floor press',
+        'Shoulder CARs (Controlled Articular Rotations) × 5 each direction',
+      ]
+    },
+    // ── PULL — Back, Biceps & Rear Delt ─────────────────────────
+    'pull': {
+      title: 'Upper Body — Back & Biceps',
+      cues: [
+        'Doorframe or band-assisted lat stretch × 20s each side',
+        'Band pull-apart × 15 (light) — activate the rear delt and mid-trap',
+        'Scapular wall slides × 10 — engage serratus and lower traps',
+        'Dead hang × 20s — decompress the spine and open the shoulder joint',
+        'Forearm and wrist flex/extend — prepare biceps tendon for curling',
+        'Elbow circles × 10 each direction',
+      ]
+    },
+    // ── LEGS A — Quad Focus ───────────────────────────────────────
+    'legs-a': {
+      title: 'Lower Body — Quad Focus',
+      cues: [
+        'Hip circles × 10 each direction — lubricate the hip joint',
+        'Ankle circles and calf raise × 10 — prime ankle mobility for deep squat',
+        'Bodyweight squat × 10 slow (3s down) — feel the full range before load',
+        'ATG split squat × 5 each side bodyweight — open hip flexors and knees',
+        'Leg swings forward × 10 each leg — dynamic hamstring prep',
+        'Quad activation: straight-leg raise × 10 each side',
+      ]
+    },
+    // ── PUSH B — Shoulders & Triceps ────────────────────────────
+    'push-b': {
+      title: 'Upper Body — Shoulders & Triceps',
+      cues: [
+        'Shoulder CARs × 5 each direction — full range joint preparation',
+        'Band external rotation × 15 (light) — activate rotator cuff before pressing',
+        'Overhead arm reach with side bend × 8 each side — open the lats',
+        'Band face pull × 15 (light) — prime rear delt and upper back',
+        'Tricep wall stretch × 20s each arm — prepare the elbow for extension',
+        'Scapular wall slides × 10 — engage the stabilisers before overhead work',
+      ]
+    },
+    // ── LEGS B — Hip Hinge / Hamstrings / Glutes ────────────────
+    'legs-b': {
+      title: 'Lower Body — Glutes & Hamstrings',
+      cues: [
+        'Hip flexor stretch × 30s each side — release what you will load',
+        'Glute bridge × 15 bodyweight — activate glutes before heavy hip hinge',
+        'Hip hinge × 10 bodyweight (slow, deliberate) — groove the pattern',
+        'Leg swing forward and lateral × 10 each leg — dynamic posterior chain prep',
+        'Cossack squat × 5 each side — open adductors and hips',
+        'Single-leg glute bridge × 8 each side — isolate and wake up each glute',
+      ]
+    },
+    // ── KB FLOW — Full Body ───────────────────────────────────────
+    'kb-flow': {
+      title: 'Full Body — KB Flow',
+      cues: [
+        'Joint circles head to toe — wrists, elbows, shoulders, hips, knees, ankles',
+        'Hip hinge × 10 bodyweight — prep the posterior chain',
+        'Bodyweight squat × 10 — prime quads and glutes',
+        'Arm circles — small to large, forward and back',
+        'Light KB deadlift × 5 (50% working load) — feel the swing path',
+        'Turkish get-up × 1 each side (very light) — connect all movement planes',
+      ]
+    },
+    // ── SESSION A — Je Full Body ─────────────────────────────────
+    'session-a': {
+      title: 'Full Body Warm-Up — Session A',
+      cues: [
+        'Hip circles × 8 each direction',
+        'Supported bodyweight squat × 10 (slow) — same support as your working sets',
+        'Shoulder rolls forward and back × 10',
+        'Band pull-apart × 10 (light) — activate upper back for rows',
+        'Glute bridge × 10 bodyweight — wake up the posterior chain',
+      ]
+    },
+    // ── SESSION B — Je Full Body ─────────────────────────────────
+    'session-b': {
+      title: 'Full Body Warm-Up — Session B',
+      cues: [
+        'Hip flexor stretch × 20s each side — prep for reverse lunge',
+        'Supported reverse lunge × 5 each side (bodyweight only)',
+        'Hip hinge × 10 bodyweight — prepare for sumo deadlift',
+        'Shoulder rolls and arm circles × 10',
+        'Glute bridge × 10 bodyweight — activate before hip thrust',
+      ]
+    },
+    // ── TRANSITION SESSIONS ───────────────────────────────────────
+    'transition-1': {
+      title: 'Hip & Power — Mobility Prep',
+      cues: [
+        'Hip circles × 10 each direction — lubricate for hip flexion drills',
+        'Ankle circles and single-leg balance × 20s — prep for plyometric work',
+        'Cossack squat × 5 each side — open hips and adductors',
+        'Hip flexor stretch × 30s each side — critical before tuck jumps',
+        'Dead bug × 5 slow — activate deep core before power work',
+      ]
+    },
+    'transition-2': {
+      title: 'Stability & Control — Prep',
+      cues: [
+        'Scapular wall slides × 10 — activate serratus and lower traps',
+        'Single-leg balance × 20s each — prime proprioception',
+        'Hip circles × 8 each direction',
+        'Tibialis raise × 15 — prep anterior shin for ankle work',
+        'Thoracic rotation × 8 each side — open for windmill and get-up',
+      ]
+    },
+    'transition-3': {
+      title: 'Athletic Full Body — Prep',
+      cues: [
+        'Joint circles head to toe — 30 seconds',
+        'Hip flexor stretch × 20s each side — critical before jumps and bounds',
+        'Bodyweight squat × 10 slow',
+        'Lateral leg swing × 10 each leg',
+        'Ankle bounces × 20 — prime tendons for explosive work',
+      ]
+    },
   };
-  return cues[sessionId] || [
-    'Joint circles — wrists, elbows, shoulders',
-    'Bodyweight movement prep × 10 reps each',
-    'Light band activation',
-  ];
+
+  const result = cues[sessionId];
+  if (result) return result;
+  return {
+    title: 'General Warm-Up',
+    cues: [
+      'Joint circles — wrists, elbows, shoulders, hips',
+      'Bodyweight movement prep × 10 reps each',
+      'Light band activation',
+    ]
+  };
 }
 
 function dismissWarmupOverlay() {
@@ -6139,6 +6224,7 @@ function buildHistoryCard(s) {
       <div style="margin-bottom:10px">${exDetail || '<span style="color:var(--text-muted);font-size:11px">No exercise data logged.</span>'}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <button class="show-graph-btn" id="graph-btn-${s.id}" onclick="toggleGraph('${s.id}','${firstEx}','${color}')">📈 Show Graph</button>
+        <button class="history-delete-btn" onclick="editSession('${s.id}')" style="margin-right:6px">✏ Edit</button>
         <button class="history-delete-btn" onclick="deleteSession('${s.id}')">Delete Session</button>
       </div>
       <div class="session-chart-wrap hidden" id="chart-wrap-${s.id}">
@@ -6207,7 +6293,7 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   // Update pill active states
   const pillsContainer = document.getElementById(`chart-pills-${sessionId}`);
   if (pillsContainer) {
-    const accent = _chartState[sessionId]?.accentColor || 'var(--push-a)';
+    const accent = _chartState[sessionId]?.accentColor || 'rgba(0,212,160,0.9)';
     pillsContainer.querySelectorAll('.chart-ex-pill').forEach(p => {
       p.classList.remove('active');
       p.style.background = '';
@@ -6221,7 +6307,7 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   }
 
   if (_chartState[sessionId]) _chartState[sessionId].activeEx = exName;
-  const accent = _chartState[sessionId]?.accentColor || 'var(--push-a)';
+  const accent = _chartState[sessionId]?.accentColor || 'rgba(0,212,160,0.9)';
   renderExerciseChart(sessionId, exName, accent);
 }
 
@@ -6512,6 +6598,7 @@ let driveTokenClient  = null;
 let _driveRefreshTimer = null;   // setTimeout for silent token refresh
 let _driveSyncInterval = null;   // setInterval for periodic background sync
 let _driveAuthBannerShown = false; // prevent duplicate banners
+let _selectedMesoWeek = null;    // null = current week, number = selected week
 let driveFolderId     = { alex: null, je: null };
 
 // Load Google Identity Services script on demand
@@ -7414,19 +7501,28 @@ function setNextSessionOverride(sessionId) {
   renderDashboard();
 }
 
+function localDateStr(d) {
+  // Returns YYYY-MM-DD in local time (not UTC) to avoid timezone shift
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function getThisWeekSessions() {
   const today = new Date();
   const monday = new Date(today);
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-  monday.setHours(0,0,0,0);
+  monday.setHours(0, 0, 0, 0);
 
+  const todayStr = localDateStr(today);
   const days = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateStr(d);
     const logged = state.sessions.filter(s => s.date === dateStr && s.status !== 'partial');
-    days.push({ date: d, dateStr, logged, dayName: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i] });
+    days.push({ date: d, dateStr, logged, dayName: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i], isToday: dateStr === todayStr });
   }
   return days;
 }
@@ -7447,9 +7543,16 @@ function getPendingProgressions() {
   return suggestions;
 }
 
+function selectMesoWeek(w) {
+  _selectedMesoWeek = (_selectedMesoWeek === w) ? null : w; // toggle off if same
+  renderDashboard();
+}
+
 function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending) {
-  const thisWeekVol = calcWeekVolume(week);
-  const lastWeekVol = week > 1 ? calcWeekVolume(week - 1) : 0;
+  // Use selected week if user clicked a block, otherwise current week
+  const viewWeek    = _selectedMesoWeek || week;
+  const thisWeekVol = calcWeekVolume(viewWeek);
+  const lastWeekVol = viewWeek > 1 ? calcWeekVolume(viewWeek - 1) : 0;
   const volChange   = lastWeekVol > 0
     ? Math.round(((thisWeekVol - lastWeekVol) / lastWeekVol) * 100)
     : null;
@@ -7511,8 +7614,9 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     ? '<span style="font-size:11px;color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs W' + (week-1) + '</span>'
     : '<span style="font-size:9px;color:var(--text-muted)">week 1 baseline</span>';
 
+  const weekLabel = viewWeek === week ? 'This Week' : 'Week ' + viewWeek;
   return '<div class="dash-section volume-section dashboard-col-right" style="height:100%">' +
-    '<div class="dash-section-label">This Week</div>' +
+    '<div class="dash-section-label">' + weekLabel + '</div>' +
     '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">' +
       '<div class="dash-volume-total">' + volFmt(thisWeekVol) + '</div>' + volChangeHtml +
     '</div>' +
@@ -7544,7 +7648,7 @@ function renderDashboard() {
   const isDeload   = isDeloadWeek();
   const profile    = state.programme;
   const today      = new Date();
-  const dateStr    = today.toLocaleDateString('it-IT', { weekday:'short', day:'numeric', month:'short' });
+  const dateStr    = today.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
   const greeting   = getGreeting();
   const weekDays   = getThisWeekSessions();
   const doneDays   = weekDays.filter(d => d.logged.length > 0);
@@ -7584,14 +7688,20 @@ function renderDashboard() {
       <div class="dash-section-label">Mesocycle</div>
       <div class="dash-meso-blocks">
         ${MESO_WEEKS.map(wk => {
-          const cls = wk.w < week ? 'past' : wk.w === week ? 'current' : 'future';
+          const isSelected = (_selectedMesoWeek || week) === wk.w;
+          const cls = isSelected ? 'current' : wk.w < week ? 'past' : wk.w > week ? 'future' : '';
           const deloadCls = wk.deload ? ' deload' : '';
-          return `<div class="dash-meso-block ${cls}${deloadCls}">
+          return `<div class="dash-meso-block ${cls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
+            style="cursor:pointer" title="View week ${wk.w} data">
             <div class="dash-meso-block-week">W${wk.w}</div>
             <div class="dash-meso-block-sets">${wk.sets}</div>
             <div class="dash-meso-block-rir">${wk.rir}</div>
           </div>`;
         }).join('')}
+      </div>
+      <div style="font-size:8px;color:var(--text-muted);font-family:'DM Mono',monospace;
+        letter-spacing:0.05em;margin-top:4px;text-align:right">
+        ${_selectedMesoWeek && _selectedMesoWeek !== week ? `Viewing W${_selectedMesoWeek} · ` : ''}Tap a week to compare
       </div>
     </div>
 
@@ -7600,7 +7710,7 @@ function renderDashboard() {
       <div class="dash-section-label">This Week</div>
       <div class="dash-week-row">
         ${weekDays.map(d => {
-          const isToday = d.dateStr === today.toISOString().split('T')[0];
+          const isToday = d.isToday;
           const done = d.logged.length > 0;
           const isWeekend = d.date.getDay() === 0 || d.date.getDay() === 6;
           const dotCls = done ? 'done' : isWeekend ? 'rest' : '';
@@ -8262,6 +8372,146 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
+
+/* ═══════════════════════════════════════════
+   EDIT PAST SESSION
+═══════════════════════════════════════════ */
+function editSession(sessionId) {
+  const sess = state.sessions.find(s => s.id === sessionId);
+  if (!sess) return;
+
+  const progSess = state.programme.sessions.find(s => s.id === sess.sessionId);
+
+  let html = `<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
+    ${sess.sessionName} · ${formatDateIT(sess.date)}
+  </div>`;
+
+  sess.exercises.forEach((ex, exIdx) => {
+    html += `<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text)">${ex.name}</div>`;
+
+    ex.sets.forEach((set, setIdx) => {
+      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">
+        <span style="font-size:10px;color:var(--text-muted);min-width:14px">${setIdx+1}</span>
+        <input type="text" id="edit-load-${exIdx}-${setIdx}" value="${set.load || ''}"
+          placeholder="load" style="width:70px;background:var(--surface3);border:1px solid var(--border-h);
+          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+        <span style="color:var(--text-muted);font-size:10px">×</span>
+        <input type="number" id="edit-reps-${exIdx}-${setIdx}" value="${set.reps || ''}"
+          placeholder="reps" style="width:52px;background:var(--surface3);border:1px solid var(--border-h);
+          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+        <input type="text" id="edit-rir-${exIdx}-${setIdx}" value="${set.rir || ''}"
+          placeholder="RIR" style="width:42px;background:var(--surface3);border:1px solid var(--border-h);
+          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+        <button onclick="removeEditSet(${exIdx},${setIdx})" style="background:none;border:none;
+          color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+      </div>`;
+    });
+
+    html += `<button onclick="addEditSet(${exIdx})" style="font-family:'DM Mono',monospace;
+      font-size:9px;padding:3px 10px;border-radius:5px;border:1px solid var(--border-h);
+      background:none;color:var(--text-muted);cursor:pointer;margin-top:2px">+ set</button>
+    </div>`;
+  });
+
+  // Notes
+  html += `<div style="margin-top:10px">
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">Notes</div>
+    <textarea id="edit-session-notes" style="width:100%;background:var(--surface3);
+      border:1px solid var(--border-h);border-radius:6px;padding:7px 9px;
+      font-family:'DM Mono',monospace;font-size:10px;color:var(--text);
+      resize:vertical;min-height:52px;box-sizing:border-box">${sess.notes || ''}</textarea>
+  </div>`;
+
+  showModal(`Edit Session`, html, [
+    { label: 'Cancel', cls: 'cancel', action: closeModal },
+    { label: 'Save Changes', cls: 'save', action: () => saveEditedSession(sessionId) }
+  ]);
+
+  // Store working copy for add/remove set operations
+  window._editSessionId = sessionId;
+}
+
+function removeEditSet(exIdx, setIdx) {
+  // Remove the set input row from the modal DOM
+  const loadEl = document.getElementById(`edit-load-${exIdx}-${setIdx}`);
+  if (loadEl) {
+    const row = loadEl.closest('div[style*="display:flex"]');
+    if (row) row.remove();
+    // Re-index remaining inputs
+    reindexEditSets(exIdx);
+  }
+}
+
+function reindexEditSets(exIdx) {
+  // Not strictly needed since we read by querying all rows on save
+}
+
+function addEditSet(exIdx) {
+  const sess = state.sessions.find(s => s.id === window._editSessionId);
+  if (!sess) return;
+  const ex = sess.exercises[exIdx];
+  if (!ex) return;
+  // Count existing set rows for this exercise in the modal
+  const container = document.getElementById(`edit-load-${exIdx}-0`)
+    ?.closest('div[style*="margin-bottom:14px"]');
+  if (!container) return;
+  const rows = container.querySelectorAll('div[style*="display:flex"]');
+  const newIdx = rows.length;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:5px';
+  row.innerHTML = `
+    <span style="font-size:10px;color:var(--text-muted);min-width:14px">${newIdx+1}</span>
+    <input type="text" id="edit-load-${exIdx}-${newIdx}" placeholder="load"
+      style="width:70px;background:var(--surface3);border:1px solid var(--border-h);
+      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+    <span style="color:var(--text-muted);font-size:10px">×</span>
+    <input type="number" id="edit-reps-${exIdx}-${newIdx}" placeholder="reps"
+      style="width:52px;background:var(--surface3);border:1px solid var(--border-h);
+      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+    <input type="text" id="edit-rir-${exIdx}-${newIdx}" placeholder="RIR"
+      style="width:42px;background:var(--surface3);border:1px solid var(--border-h);
+      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
+    <button onclick="removeEditSet(${exIdx},${newIdx})" style="background:none;border:none;
+      color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>`;
+  rows[rows.length - 1].after(row);
+}
+
+function saveEditedSession(sessionId) {
+  const sess = state.sessions.find(s => s.id === sessionId);
+  if (!sess) return;
+
+  sess.exercises.forEach((ex, exIdx) => {
+    const newSets = [];
+    let setIdx = 0;
+    while (true) {
+      const loadEl = document.getElementById(`edit-load-${exIdx}-${setIdx}`);
+      const repsEl = document.getElementById(`edit-reps-${exIdx}-${setIdx}`);
+      const rirEl  = document.getElementById(`edit-rir-${exIdx}-${setIdx}`);
+      if (!loadEl && !repsEl) break;
+      // Skip fully empty rows
+      const load = loadEl?.value?.trim() || '';
+      const reps = repsEl?.value?.trim() || '';
+      if (load || reps) {
+        newSets.push({ load, reps, rir: rirEl?.value?.trim() || '' });
+      }
+      setIdx++;
+      if (setIdx > 20) break; // safety limit
+    }
+    ex.sets = newSets;
+  });
+
+  const notesEl = document.getElementById('edit-session-notes');
+  if (notesEl) sess.notes = notesEl.value.trim();
+
+  saveLocalState();
+  if (state.driveConnected) saveToDrive(sess).catch(() => {});
+  renderHistory();
+  renderDashboard();
+  closeModal();
+  toast('Session updated', 'success');
+}
 
 /* ═══════════════════════════════════════════
    LONG PRESS FOR REP PILLS (MOBILE)
