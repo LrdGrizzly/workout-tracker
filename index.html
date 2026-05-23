@@ -4150,7 +4150,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.6.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -4354,13 +4354,16 @@ const StorageManager = (() => {
 
     // Run schema migrations on each session
     const toWriteBack = [];
-    const sessions = raw.map(s => {
+    const migrated = raw.map(s => {
       const { session, upgraded } = _migrateSession(s);
       if (upgraded) toWriteBack.push(session);
       return session;
     });
 
-    // Write back any upgraded sessions in one transaction
+    // Run validation — discard corrupt records, repair minor issues
+    const sessions = Validator.sessions(migrated);
+
+    // Write back migration-upgraded sessions in one transaction
     if (toWriteBack.length > 0) {
       await _openDB().then(db => new Promise((resolve, reject) => {
         const tx    = db.transaction(STORE_SESSIONS, 'readwrite');
@@ -4442,10 +4445,9 @@ const StorageManager = (() => {
       const raw = localStorage.getItem(`wt_${profileId}`);
       if (!raw) return { _v: SETTINGS_VERSION };
       const data = JSON.parse(raw);
-      // Run schema migration and return migrated data.
-      // The migrated version is NOT written back here — it will be written
-      // on the next saveSettings() call, which happens at every settings change.
-      return _migrateSettings(data);
+      // Run schema migration then validation before returning
+      const migrated = _migrateSettings(data);
+      return Validator.settings(migrated);
     } catch(e) {
       console.warn('[StorageManager] getSettings error:', e);
       return { _v: SETTINGS_VERSION };
@@ -4456,8 +4458,229 @@ const StorageManager = (() => {
 })();
 
 /* ═══════════════════════════════════════════
-   PROGRAMME DATA
+   VALIDATOR
+   Runs after StorageManager loads data.
+   Invalid records are discarded with a console
+   warning rather than crashing the app.
+   Repairs minor type coercions silently.
+
+   Public API:
+     Validator.sessions(arr)   → cleaned array
+     Validator.settings(obj)   → cleaned object
 ═══════════════════════════════════════════ */
+const Validator = (() => {
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function isISODate(val) {
+    return typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val);
+  }
+
+  function coerceString(val) {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') return val;
+    return String(val);
+  }
+
+  function coerceNumber(val, min, max) {
+    const n = parseFloat(val);
+    if (isNaN(n)) return null;
+    if (min !== undefined && n < min) return null;
+    if (max !== undefined && n > max) return null;
+    return n;
+  }
+
+  // ── Set validation ────────────────────────────────────────────
+  function validateSet(set, exName, sessionId) {
+    if (!set || typeof set !== 'object') return null;
+
+    const clean = {};
+
+    // load: string or null
+    clean.load = coerceString(set.load);
+
+    // reps: string representation of a positive integer, or null
+    const repsNum = parseInt(set.reps);
+    if (set.reps !== null && set.reps !== undefined && set.reps !== '') {
+      if (isNaN(repsNum) || repsNum < 0 || repsNum > 200) {
+        console.warn(`[Validator] Invalid reps "${set.reps}" in exercise "${exName}" session ${sessionId} — cleared`);
+        clean.reps = null;
+      } else {
+        clean.reps = String(repsNum);
+      }
+    } else {
+      clean.reps = null;
+    }
+
+    // rir: string or null
+    clean.rir = coerceString(set.rir);
+
+    return clean;
+  }
+
+  // ── Exercise validation ───────────────────────────────────────
+  function validateExercise(ex, sessionId) {
+    if (!ex || typeof ex !== 'object') return null;
+    if (!ex.name || typeof ex.name !== 'string') {
+      console.warn(`[Validator] Exercise missing name in session ${sessionId} — skipped`);
+      return null;
+    }
+
+    const sets = Array.isArray(ex.sets)
+      ? ex.sets.map(s => validateSet(s, ex.name, sessionId)).filter(Boolean)
+      : [];
+
+    return {
+      name:           ex.name,
+      type:           typeof ex.type === 'string' ? ex.type : 'accessory',
+      repRange:       Array.isArray(ex.repRange) && ex.repRange.length === 2
+                        ? ex.repRange
+                        : [8, 12],
+      sets,
+      // Preserve optional fields if present
+      ...(ex.tempoApplied  ? { tempoApplied: true }               : {}),
+      ...(typeof ex.ladderRungIndex === 'number'
+                           ? { ladderRungIndex: ex.ladderRungIndex } : {}),
+    };
+  }
+
+  // ── Session validation ────────────────────────────────────────
+  function validateSession(session) {
+    if (!session || typeof session !== 'object') return null;
+
+    // Required fields
+    if (!session.id || typeof session.id !== 'string') {
+      console.warn('[Validator] Session missing id — discarded');
+      return null;
+    }
+    if (!isISODate(session.date)) {
+      console.warn(`[Validator] Session ${session.id} has invalid date "${session.date}" — discarded`);
+      return null;
+    }
+    if (!session.sessionId || typeof session.sessionId !== 'string') {
+      console.warn(`[Validator] Session ${session.id} missing sessionId — discarded`);
+      return null;
+    }
+
+    // Valid status values
+    const VALID_STATUSES = ['complete', 'partial', 'deload'];
+    const status = VALID_STATUSES.includes(session.status) ? session.status : 'partial';
+    if (status !== session.status) {
+      console.warn(`[Validator] Session ${session.id} has invalid status "${session.status}" — coerced to "partial"`);
+    }
+
+    // mesoWeek: integer 1–5 or null
+    const mesoWeek = session.mesoWeek
+      ? coerceNumber(session.mesoWeek, 1, 5)
+      : null;
+
+    // exercises: array, each validated
+    const exercises = Array.isArray(session.exercises)
+      ? session.exercises.map(ex => validateExercise(ex, session.id)).filter(Boolean)
+      : [];
+
+    return {
+      id:          session.id,
+      sessionId:   session.sessionId,
+      sessionName: coerceString(session.sessionName) || session.sessionId,
+      date:        session.date,
+      startTime:   session.startTime  || null,
+      endTime:     session.endTime    || null,
+      duration:    session.duration   || null,
+      notes:       coerceString(session.notes) || '',
+      status,
+      mesoWeek,
+      exercises,
+      _v:          session._v || 1,
+      profileId:   session.profileId || null,
+      // Preserve import/manual flags if present
+      ...(session._imported ? { _imported: true } : {}),
+      ...(session._manual   ? { _manual:   true } : {}),
+      ...(session._conflict ? { _conflict: true } : {}),
+    };
+  }
+
+  // ── Settings validation ───────────────────────────────────────
+  function validateSettings(data) {
+    if (!data || typeof data !== 'object') return {};
+
+    const clean = { _v: data._v || 1 };
+
+    // mesoStartDate: ISO date or null
+    clean.mesoStartDate = isISODate(data.mesoStartDate) ? data.mesoStartDate : null;
+    if (data.mesoStartDate && !clean.mesoStartDate) {
+      console.warn(`[Validator] Invalid mesoStartDate "${data.mesoStartDate}" — cleared`);
+    }
+
+    // mesoWeekOverride: integer 1–5 or null
+    clean.mesoWeekOverride = data.mesoWeekOverride
+      ? coerceNumber(data.mesoWeekOverride, 1, 5)
+      : null;
+    if (data.mesoWeekOverride && !clean.mesoWeekOverride) {
+      console.warn(`[Validator] Invalid mesoWeekOverride "${data.mesoWeekOverride}" — cleared`);
+    }
+
+    // restPeriods: object of sessionId → number
+    clean.restPeriods = {};
+    if (data.restPeriods && typeof data.restPeriods === 'object') {
+      Object.entries(data.restPeriods).forEach(([k, v]) => {
+        const n = coerceNumber(v, 10, 600);
+        if (n !== null) clean.restPeriods[k] = n;
+      });
+    }
+
+    // jeLadderKeyMap: object of string → string
+    clean.jeLadderKeyMap = {};
+    if (data.jeLadderKeyMap && typeof data.jeLadderKeyMap === 'object') {
+      Object.entries(data.jeLadderKeyMap).forEach(([k, v]) => {
+        if (typeof k === 'string' && typeof v === 'string') {
+          clean.jeLadderKeyMap[k] = v;
+        }
+      });
+    }
+
+    // weightLog: array of { date, kg }
+    clean.weightLog = [];
+    if (Array.isArray(data.weightLog)) {
+      data.weightLog.forEach(entry => {
+        if (!isISODate(entry?.date)) return;
+        const kg = coerceNumber(entry.kg, 20, 300);
+        if (kg === null) return;
+        clean.weightLog.push({ date: entry.date, kg });
+      });
+    }
+
+    // bodyweight: float 20–300 or null (derived from weightLog on load anyway)
+    clean.bodyweight = data.bodyweight
+      ? coerceNumber(data.bodyweight, 20, 300)
+      : null;
+
+    return clean;
+  }
+
+  // ═══════════════════════════════════════════
+  // PUBLIC API
+  // ═══════════════════════════════════════════
+
+  function sessions(arr) {
+    if (!Array.isArray(arr)) {
+      console.warn('[Validator] sessions() received non-array — returning []');
+      return [];
+    }
+    const before = arr.length;
+    const cleaned = arr.map(validateSession).filter(Boolean);
+    const discarded = before - cleaned.length;
+    if (discarded > 0) {
+      console.warn(`[Validator] Discarded ${discarded} invalid session(s)`);
+    }
+    return cleaned;
+  }
+
+  function settings(obj) {
+    return validateSettings(obj);
+  }
+
+  return { sessions, settings };
+})();
 
 const PROGRAMMES = {
   alex: {
