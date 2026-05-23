@@ -4150,7 +4150,310 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.5.0';
+
+/* ═══════════════════════════════════════════
+   STORAGE MANAGER
+   Two-tier storage:
+     localStorage  → settings (fast, sync)
+     IndexedDB     → session history (large, async)
+
+   Schema versions:
+     SETTINGS_VERSION — bumped when settings shape changes
+     SESSION_VERSION  — bumped when session object shape changes
+
+   Migration strategy:
+     Settings : migrated on getSettings() read, written back on next save
+     Sessions : migrated lazily on load, written back immediately if upgraded
+     localStorage→IDB : one-time silent migration on first load per profile
+
+   Public API:
+     StorageManager.init(profileId)       → Promise<session[]>
+     StorageManager.saveSession(session)  → Promise
+     StorageManager.deleteSession(id)     → Promise
+     StorageManager.saveSessions(arr)     → Promise  (bulk — Drive sync)
+     StorageManager.clearSessions()       → Promise  (delete all for profile)
+     StorageManager.saveSettings(obj)     → void
+     StorageManager.getSettings()         → object
+═══════════════════════════════════════════ */
+const StorageManager = (() => {
+  const DB_NAME    = 'WorkoutTrackerDB';
+  const DB_VERSION = 1;
+  const STORE_SESSIONS = 'sessions';
+  const STORE_META     = 'meta';
+
+  // ── Schema version constants ───────────────────────────────────
+  // Increment SETTINGS_VERSION when the settings object shape changes.
+  // Increment SESSION_VERSION when the session object shape changes.
+  // Add a corresponding case to _migrateSettings / _migrateSession.
+  const SETTINGS_VERSION = 1;
+  const SESSION_VERSION  = 1;
+
+  let _db = null;
+
+  // ── Open / create DB ──────────────────────────────────────────
+  function _openDB() {
+    return new Promise((resolve, reject) => {
+      if (_db) { resolve(_db); return; }
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        // sessions store: keyed by id, indexed by profileId + date
+        if (!db.objectStoreNames.contains(STORE_SESSIONS)) {
+          const store = db.createObjectStore(STORE_SESSIONS, { keyPath: 'id' });
+          store.createIndex('profileId', 'profileId', { unique: false });
+          store.createIndex('date',      'date',      { unique: false });
+        }
+        // meta store: keyed by arbitrary string key
+        if (!db.objectStoreNames.contains(STORE_META)) {
+          db.createObjectStore(STORE_META, { keyPath: 'key' });
+        }
+      };
+
+      req.onsuccess = (e) => { _db = e.target.result; resolve(_db); };
+      req.onerror   = (e) => reject(e.target.error);
+    });
+  }
+
+  // ── Generic IDB helpers ───────────────────────────────────────
+  function _tx(storeName, mode, fn) {
+    return _openDB().then(db => new Promise((resolve, reject) => {
+      const tx    = db.transaction(storeName, mode);
+      const store = tx.objectStore(storeName);
+      const req   = fn(store);
+      // fn may return a request or nothing (for put/delete chains)
+      if (req) {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror   = () => reject(req.error);
+      } else {
+        tx.oncomplete = () => resolve();
+        tx.onerror    = () => reject(tx.error);
+      }
+    }));
+  }
+
+  // ── Meta helpers ──────────────────────────────────────────────
+  function _getMeta(key) {
+    return _tx(STORE_META, 'readonly', s => s.get(key))
+      .then(r => r ? r.value : null);
+  }
+
+  function _setMeta(key, value) {
+    return _tx(STORE_META, 'readwrite', s => s.put({ key, value }));
+  }
+
+  // ── Settings schema migrations ────────────────────────────────
+  // Each case transforms data from that version to the next.
+  // Switch falls through intentionally — v0 data runs case 0 then 1 etc.
+  // To add a new migration:
+  //   1. Increment SETTINGS_VERSION above
+  //   2. Add case (SETTINGS_VERSION - 1): below
+  //   3. Apply transformation and set data._v = SETTINGS_VERSION
+  function _migrateSettings(data) {
+    const v = data._v || 0;
+    // eslint-disable-next-line default-case
+    switch (v) {
+      case 0:
+        // v0 → v1: first versioned snapshot — stamp only, no shape change.
+        // All existing fields are already correct.
+        data._v = 1;
+        // ▼ future migrations fall through from here:
+        // case 1:
+        //   data.newField = data.newField ?? defaultValue;
+        //   data._v = 2;
+    }
+    return data;
+  }
+
+  // ── Session schema migrations ─────────────────────────────────
+  // Returns { session, upgraded } where upgraded = true if a write-back
+  // to IndexedDB is needed.
+  // To add a new migration:
+  //   1. Increment SESSION_VERSION above
+  //   2. Add case (SESSION_VERSION - 1): below
+  //   3. Apply transformation and set session._v = SESSION_VERSION
+  function _migrateSession(session) {
+    const v = session._v || 0;
+    let upgraded = false;
+    // eslint-disable-next-line default-case
+    switch (v) {
+      case 0:
+        // v0 → v1: first versioned snapshot — stamp only, no shape change.
+        session._v = 1;
+        upgraded = true;
+        // ▼ future migrations fall through from here:
+        // case 1:
+        //   session.readiness = session.readiness ?? null;
+        //   session._v = 2;
+        //   upgraded = true;
+    }
+    return { session, upgraded };
+  }
+
+  // ── localStorage → IndexedDB one-time migration ───────────────
+  async function _migrateFromLocalStorage(profileId) {
+    const migKey = `migrated_v1_${profileId}`;
+    const done   = await _getMeta(migKey);
+    if (done) return;
+
+    console.log(`[StorageManager] Running localStorage→IDB migration for: ${profileId}`);
+
+    const lsKey  = `wt_${profileId}`;
+    let sessions = [];
+
+    try {
+      const raw = localStorage.getItem(lsKey);
+      if (raw) {
+        const data = JSON.parse(raw);
+        sessions = (data.sessions || []).filter(s => !s._dummy);
+
+        // Strip sessions from the localStorage blob — keep only settings
+        const slim = {
+          mesoStartDate:    data.mesoStartDate    || null,
+          mesoWeekOverride: data.mesoWeekOverride || null,
+          restPeriods:      data.restPeriods      || {},
+          jeLadderKeyMap:   data.jeLadderKeyMap   || {},
+          weightLog:        data.weightLog        || [],
+          bodyweight:       data.bodyweight       || null,
+        };
+        localStorage.setItem(lsKey, JSON.stringify(slim));
+      }
+    } catch(e) {
+      console.warn('[StorageManager] localStorage migration read error:', e);
+    }
+
+    // Write sessions to IndexedDB in a single transaction
+    if (sessions.length > 0) {
+      await _openDB().then(db => new Promise((resolve, reject) => {
+        const tx    = db.transaction(STORE_SESSIONS, 'readwrite');
+        const store = tx.objectStore(STORE_SESSIONS);
+        // Stamp version on migrated sessions
+        sessions.forEach(s => store.put({ ...s, profileId, _v: SESSION_VERSION }));
+        tx.oncomplete = resolve;
+        tx.onerror    = () => reject(tx.error);
+      }));
+      console.log(`[StorageManager] Migrated ${sessions.length} sessions to IndexedDB`);
+    }
+
+    await _setMeta(migKey, true);
+  }
+
+  // ── Load all sessions for a profile into memory ───────────────
+  // Runs schema migration on each session lazily.
+  // Sessions that needed upgrading are written back in one transaction.
+  async function _loadSessions(profileId) {
+    const raw = await _openDB().then(db => new Promise((resolve, reject) => {
+      const tx      = db.transaction(STORE_SESSIONS, 'readonly');
+      const store   = tx.objectStore(STORE_SESSIONS);
+      const index   = store.index('profileId');
+      const req     = index.getAll(profileId);
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror   = () => reject(req.error);
+    }));
+
+    // Run schema migrations on each session
+    const toWriteBack = [];
+    const sessions = raw.map(s => {
+      const { session, upgraded } = _migrateSession(s);
+      if (upgraded) toWriteBack.push(session);
+      return session;
+    });
+
+    // Write back any upgraded sessions in one transaction
+    if (toWriteBack.length > 0) {
+      await _openDB().then(db => new Promise((resolve, reject) => {
+        const tx    = db.transaction(STORE_SESSIONS, 'readwrite');
+        const store = tx.objectStore(STORE_SESSIONS);
+        toWriteBack.forEach(s => store.put(s));
+        tx.oncomplete = resolve;
+        tx.onerror    = () => reject(tx.error);
+      }));
+      console.log(`[StorageManager] Schema-migrated ${toWriteBack.length} sessions to v${SESSION_VERSION}`);
+    }
+
+    return sessions;
+  }
+
+  // ═══════════════════════════════════════════
+  // PUBLIC API
+  // ═══════════════════════════════════════════
+
+  async function init(profileId) {
+    await _openDB();
+    await _migrateFromLocalStorage(profileId);
+    const sessions = await _loadSessions(profileId);
+    // Sort chronologically — same order as the app expects
+    sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+    return sessions;
+  }
+
+  async function saveSession(session) {
+    // Stamp version and profileId on every session record
+    const record = { ...session, profileId: state.profile, _v: SESSION_VERSION };
+    return _tx(STORE_SESSIONS, 'readwrite', s => s.put(record));
+  }
+
+  async function deleteSession(id) {
+    return _tx(STORE_SESSIONS, 'readwrite', s => s.delete(id));
+  }
+
+  // Bulk-save an array of sessions (used after Drive sync merges)
+  async function saveSessions(sessions) {
+    await _openDB();
+    return new Promise((resolve, reject) => {
+      const tx    = _db.transaction(STORE_SESSIONS, 'readwrite');
+      const store = tx.objectStore(STORE_SESSIONS);
+      sessions.forEach(s => store.put({ ...s, profileId: state.profile, _v: SESSION_VERSION }));
+      tx.oncomplete = resolve;
+      tx.onerror    = () => reject(tx.error);
+    });
+  }
+
+  // Delete all sessions for the current profile (used by deleteAllData)
+  async function clearSessions(profileId) {
+    const sessions = await _loadSessions(profileId);
+    if (!sessions.length) return;
+    await _openDB();
+    return new Promise((resolve, reject) => {
+      const tx    = _db.transaction(STORE_SESSIONS, 'readwrite');
+      const store = tx.objectStore(STORE_SESSIONS);
+      sessions.forEach(s => store.delete(s.id));
+      tx.oncomplete = resolve;
+      tx.onerror    = () => reject(tx.error);
+    });
+  }
+
+  // ── Settings: synchronous localStorage operations ─────────────
+  function saveSettings(profileId, settings) {
+    try {
+      // Always stamp current settings version before writing
+      localStorage.setItem(`wt_${profileId}`, JSON.stringify({
+        ...settings,
+        _v: SETTINGS_VERSION
+      }));
+    } catch(e) {
+      console.warn('[StorageManager] saveSettings error:', e);
+    }
+  }
+
+  function getSettings(profileId) {
+    try {
+      const raw = localStorage.getItem(`wt_${profileId}`);
+      if (!raw) return { _v: SETTINGS_VERSION };
+      const data = JSON.parse(raw);
+      // Run schema migration and return migrated data.
+      // The migrated version is NOT written back here — it will be written
+      // on the next saveSettings() call, which happens at every settings change.
+      return _migrateSettings(data);
+    } catch(e) {
+      console.warn('[StorageManager] getSettings error:', e);
+      return { _v: SETTINGS_VERSION };
+    }
+  }
+
+  return { init, saveSession, deleteSession, saveSessions, clearSessions, saveSettings, getSettings };
+})();
 
 /* ═══════════════════════════════════════════
    PROGRAMME DATA
@@ -4697,24 +5000,80 @@ const GUIDE_SECTIONS = [
 /* ═══════════════════════════════════════════
    APP STATE
 ═══════════════════════════════════════════ */
-let state = {
-  profile: null,
-  programme: null,
-  mesoStartDate: null,
-  mesoWeekOverride: null,
-  driveConnected: false,
-  driveToken: null,
-  sessions: [],           // completed session history
-  activeSession: null,    // current live session data
-  activeSessionId: null,  // which session is being tracked
-  startTime: null,
-  endTime: null,
+
+// Canonical definition of every state field and its default value.
+// Add new fields here — never implicitly on state directly.
+const INITIAL_STATE = {
+  // Profile
+  profile:              null,   // 'alex' | 'je'
+  programme:            null,   // reference to PROGRAMMES[profile]
+
+  // Mesocycle
+  mesoStartDate:        null,   // ISO date string 'YYYY-MM-DD'
+  mesoWeekOverride:     null,   // integer 1–5, or null for auto
+
+  // Body
+  bodyweight:           null,   // kg (float), most recent entry
+  weightLog:            [],     // [{ date: 'YYYY-MM-DD', kg: float }]
+
+  // Sessions — in-memory cache backed by IndexedDB
+  sessions:             [],
+
+  // Active tracker session
+  activeSessionId:      null,
+  activeSession:        null,
+  startTime:            null,
+  endTime:              null,
+
+  // Drive
+  driveConnected:       false,
+  driveToken:           null,
+  driveTokenExpiry:     null,
+
+  // Programme customisation
+  jeLadderKeyMap:       {},
+
+  // Transient tracker flags (not persisted)
+  _useTemplate:         false,
+  _tempoFlags:          {},
+  _nextSessionOverride: null,
 };
+
+// Side-effect map: which state keys trigger which functions when changed via setState().
+// Functions are resolved by name at call time to avoid circular dependencies.
+const STATE_EFFECTS = {
+  mesoStartDate:    ['saveSettings', 'updateMesoDisplay'],
+  mesoWeekOverride: ['saveSettings', 'updateMesoDisplay'],
+  bodyweight:       ['saveSettings'],
+  weightLog:        ['saveSettings'],
+  jeLadderKeyMap:   ['saveSettings'],
+};
+
+// Controlled mutation path for settings-layer state.
+// Merges patch into state then fires any registered side effects.
+// Direct mutation of state still works for sessions and transient flags.
+function setState(patch) {
+  const changed = Object.keys(patch);
+  Object.assign(state, patch);
+  const fired = new Set();
+  changed.forEach(key => {
+    (STATE_EFFECTS[key] || []).forEach(fnName => {
+      if (!fired.has(fnName)) {
+        fired.add(fnName);
+        // Resolve function by name at call time
+        const fn = window[fnName];
+        if (typeof fn === 'function') fn();
+      }
+    });
+  });
+}
+
+const state = { ...INITIAL_STATE };
 
 /* ═══════════════════════════════════════════
    PROFILE & INIT
 ═══════════════════════════════════════════ */
-function selectProfile(profile) {
+async function selectProfile(profile) {
   state.profile = profile;
   state.programme = PROGRAMMES[profile];
 
@@ -4729,7 +5088,8 @@ function selectProfile(profile) {
   // Ensure tracker is fully reset for the new profile
   resetTrackerState();
 
-  loadLocalState();
+  // Load settings from localStorage (sync) then sessions from IndexedDB (async)
+  await loadLocalState();
   tryRestoreToken();
   // Render dashboard if already on dashboard tab
   if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
@@ -4813,61 +5173,78 @@ function resetTrackerState() {
 
 /* ═══════════════════════════════════════════
    LOCAL STATE PERSISTENCE
+   Settings → localStorage (sync)
+   Sessions → IndexedDB via StorageManager (async)
 ═══════════════════════════════════════════ */
-function loadLocalState() {
-  const key = `wt_${state.profile}`;
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      const data = JSON.parse(saved);
-      // Silently remove any dummy/demo data from previous test sessions
-      state.sessions = (data.sessions || []).filter(s => !s._dummy);
-      state.mesoStartDate = data.mesoStartDate || null;
-      state.mesoWeekOverride = data.mesoWeekOverride || null;
-      state.jeLadderKeyMap = data.jeLadderKeyMap || {};
-      state.weightLog = data.weightLog || [];
-      // Backwards compat: if old static bodyweight exists but no log, seed it
-      if (data.bodyweight && !state.weightLog.length) {
-        state.weightLog = [{ date: new Date().toISOString().split('T')[0], kg: data.bodyweight }];
-      }
-      state.bodyweight = state.weightLog.length ? state.weightLog[state.weightLog.length - 1].kg : null;
-      // Restore rest periods
-      if (data.restPeriods) {
-        state.programme.sessions.forEach(s => {
-          if (data.restPeriods[s.id]) s.rest = data.restPeriods[s.id];
-        });
-      }
-    }
-  } catch(e) { console.warn('Could not load local state', e); }
+async function loadLocalState() {
+  // ── 1. Settings from localStorage ──────────────────────────
+  const data = StorageManager.getSettings(state.profile);
 
-  // Set date input
+  // Use setState for settings fields so side effects fire correctly.
+  // Suppress effects during initial load by applying all at once.
+  const weightLog = data.weightLog || [];
+  // Backwards compat: seed weight log from old static bodyweight field
+  if (data.bodyweight && !weightLog.length) {
+    weightLog.push({ date: new Date().toISOString().split('T')[0], kg: data.bodyweight });
+  }
+  const bodyweight = weightLog.length ? weightLog[weightLog.length - 1].kg : null;
+
+  // Apply all settings fields directly (no side effects during init)
+  state.mesoStartDate    = data.mesoStartDate    || null;
+  state.mesoWeekOverride = data.mesoWeekOverride || null;
+  state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
+  state.weightLog        = weightLog;
+  state.bodyweight       = bodyweight;
+
+  // Restore rest periods into programme sessions
+  if (data.restPeriods) {
+    state.programme.sessions.forEach(s => {
+      if (data.restPeriods[s.id]) s.rest = data.restPeriods[s.id];
+    });
+  }
+
+  // Update date inputs
   if (state.mesoStartDate) {
     document.getElementById('meso-start-date').value = state.mesoStartDate;
   }
   if (state.mesoWeekOverride) {
     document.getElementById('meso-week-override').value = state.mesoWeekOverride;
   }
+
+  // ── 2. Sessions from IndexedDB (runs migration if needed) ───
+  try {
+    const sessions = await StorageManager.init(state.profile);
+    state.sessions = sessions.filter(s => !s._dummy);
+  } catch(e) {
+    console.warn('[loadLocalState] IndexedDB load failed, falling back to empty', e);
+    state.sessions = [];
+  }
 }
 
-function saveLocalState() {
-  const key = `wt_${state.profile}`;
+function saveSettings() {
+  // Saves only settings-layer data to localStorage — never sessions
   const restPeriods = {};
   state.programme.sessions.forEach(s => { restPeriods[s.id] = s.rest; });
-  try {
-    localStorage.setItem(key, JSON.stringify({
-      sessions: state.sessions,
-      mesoStartDate: state.mesoStartDate,
-      mesoWeekOverride: state.mesoWeekOverride,
-      restPeriods,
-      jeLadderKeyMap: state.jeLadderKeyMap || {},
-      weightLog: state.weightLog || [],
-      bodyweight: state.bodyweight || null
-    }));
-  } catch(e) { console.warn('Could not save local state', e); }
+  StorageManager.saveSettings(state.profile, {
+    mesoStartDate:    state.mesoStartDate,
+    mesoWeekOverride: state.mesoWeekOverride,
+    restPeriods,
+    jeLadderKeyMap:   state.jeLadderKeyMap   || {},
+    weightLog:        state.weightLog        || [],
+    bodyweight:       state.bodyweight       || null,
+  });
+}
+
+// Legacy alias — all non-session callers still work without changes.
+// Session-mutating callers have been updated to call StorageManager directly.
+function saveLocalState() {
+  saveSettings();
 }
 
 /* ═══════════════════════════════════════════
-   MESOCYCLE LOGIC
+   LOGIC — MESOCYCLE
+   Pure functions. No DOM access.
+   Future home: /js/logic/mesocycle.js
 ═══════════════════════════════════════════ */
 function getCurrentMesoWeek() {
   if (state.mesoWeekOverride) return parseInt(state.mesoWeekOverride);
@@ -4896,21 +5273,17 @@ function saveMesoSettings() {
     const today = new Date();
     today.setDate(today.getDate() - ((week - 1) * 7));
     const backCalc = today.toISOString().split('T')[0];
-    state.mesoStartDate    = backCalc;
-    state.mesoWeekOverride = week;
     document.getElementById('meso-start-date').value = backCalc;
     // Sync settings panel if open
     const sDate = document.getElementById('s-meso-date');
     const sWeek = document.getElementById('s-meso-week');
     if (sDate) sDate.value = backCalc;
     if (sWeek) sWeek.value = week;
+    setState({ mesoStartDate: backCalc, mesoWeekOverride: week });
   } else {
-    state.mesoStartDate    = dateVal || null;
-    state.mesoWeekOverride = week;
+    setState({ mesoStartDate: dateVal || null, mesoWeekOverride: week });
   }
 
-  saveLocalState();
-  updateMesoDisplay();
   renderProgramme();
   renderTracker();
   toast('Mesocycle settings saved', 'success');
@@ -4929,7 +5302,9 @@ function updateMesoDisplay() {
 }
 
 /* ═══════════════════════════════════════════
-   RENDER: PROGRAMME TAB
+   RENDER — PROGRAMME TAB
+   DOM-touching render functions.
+   Future home: /js/render/programme.js
 ═══════════════════════════════════════════ */
 function renderProgramme() {
   renderMesoStrip();
@@ -5109,7 +5484,9 @@ function editRest(e, sessionId) {
 }
 
 /* ═══════════════════════════════════════════
-   RENDER: TRACKER TAB
+   RENDER — TRACKER TAB
+   DOM-touching render functions.
+   Future home: /js/render/tracker.js
 ═══════════════════════════════════════════ */
 function renderTracker() {
   // Always ensure tracker is in session-select state when re-rendered
@@ -5408,7 +5785,9 @@ function selectBandPill(btn, band) {
 
 
 /* ═══════════════════════════════════════════
-   PILL INPUT BUILDERS
+   RENDER — PILL INPUT BUILDERS
+   DOM-touching input component builders.
+   Future home: /js/components/setRow.js
 ═══════════════════════════════════════════ */
 
 // Get recent distinct load values for an exercise (last 5 sessions)
@@ -5772,7 +6151,9 @@ function showSubstitution(exName) {
 }
 
 /* ═══════════════════════════════════════════
-   SESSION TIMING
+   UI — SESSION TIMING & LIFECYCLE
+   Session start/end/save/cancel handlers.
+   Future home: /js/render/tracker.js
 ═══════════════════════════════════════════ */
 function startSession() {
   // Record timestamp immediately — before overlay
@@ -6014,7 +6395,8 @@ function saveSession(exerciseData, status) {
   };
 
   state.sessions.push(session);
-  saveLocalState();
+  // Persist to IndexedDB (async — does not block UI)
+  StorageManager.saveSession(session).catch(e => console.warn('[saveSession] IndexedDB write failed:', e));
   renderHistory();
 
   // ── Post-save hooks ──────────────────────────
@@ -6053,7 +6435,9 @@ function cancelSession() {
 }
 
 /* ═══════════════════════════════════════════
-   RENDER: HISTORY TAB
+   RENDER — HISTORY TAB
+   DOM-touching render functions.
+   Future home: /js/render/history.js
 ═══════════════════════════════════════════ */
 function renderHistory() {
   const container = document.getElementById('history-list');
@@ -6078,7 +6462,11 @@ function renderHistory() {
   ).join('');
 }
 
-/* ── CHART HELPERS ────────────────────────── */
+/* ═══════════════════════════════════════════
+   LOGIC — CHARTS
+   Pure data-preparation functions. No DOM access.
+   Future home: /js/logic/charts.js
+═══════════════════════════════════════════ */
 
 function getExerciseMode(exName, sessions) {
   // Determine chart mode: 'kb', 'band', 'bw', 'bw+band'
@@ -6170,10 +6558,15 @@ function get2MesoCycleSessions(sessionId) {
     .sort((a,b) => new Date(a.date) - new Date(b.date));
 }
 
-/* ── CHART STATE ──────────────────────────── */
+/* ── Chart render state (module-level) ───────────────────────── */
 const _chartInstances = {};
 const _chartState     = {};  // sessionId → { activeEx, graphVisible }
 
+/* ═══════════════════════════════════════════
+   RENDER — HISTORY TAB & CHARTS
+   DOM-touching render functions.
+   Future home: /js/render/history.js, /js/render/charts.js
+═══════════════════════════════════════════ */
 function buildHistoryCard(s) {
   const statusCls   = `status-${s.status}`;
   const statusLabel = s.status.charAt(0).toUpperCase() + s.status.slice(1);
@@ -6525,7 +6918,7 @@ function deleteSession(id) {
       { label: 'Delete', cls: 'confirm', action: () => {
         const deleted = state.sessions.find(s => s.id === id);
         state.sessions = state.sessions.filter(s => s.id !== id);
-        saveLocalState();
+        StorageManager.deleteSession(id).catch(e => console.warn('[deleteSession] IndexedDB delete failed:', e));
         renderHistory();
         closeModal();
         toast('Session deleted', 'info');
@@ -6560,7 +6953,9 @@ function exportCSV() {
 }
 
 /* ═══════════════════════════════════════════
-   RENDER: GUIDE TAB
+   RENDER — GUIDE TAB
+   DOM-touching render functions.
+   Future home: /js/render/guide.js
 ═══════════════════════════════════════════ */
 function renderGuide() {
   const container = document.getElementById('guide-sections');
@@ -7194,7 +7589,8 @@ async function syncSessionsFromDrive(showToast) {
     // ── STEP 4: Sort, persist, render ────────────────────────────
     if (newCount > 0 || uploadCount > 0 || contentChecks.some(r => r.status === 'fulfilled')) {
       state.sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
-      saveLocalState();
+      // Persist all sessions to IndexedDB after sync merge
+      StorageManager.saveSessions(state.sessions).catch(e => console.warn('[sync] IndexedDB bulk save failed:', e));
       renderHistory();
     }
 
@@ -7314,7 +7710,7 @@ function resolveConflict(sessionId, action) {
 
   // Check if all conflicts in this group are resolved
   const remaining = state.sessions.filter(s => s._conflict);
-  saveLocalState();
+  StorageManager.saveSessions(state.sessions).catch(e => console.warn('[resolveConflict] IndexedDB save failed:', e));
   renderHistory();
 
   if (remaining.length === 0) {
@@ -7357,14 +7753,12 @@ function renderLastSynced(date) {
 function logBodyweight() {
   const val = parseFloat(document.getElementById('s-bw').value);
   if (!val || val < 20 || val > 300) { toast('Enter a valid weight (20–300 kg)', 'error'); return; }
-  if (!state.weightLog) state.weightLog = [];
+  const log = [...(state.weightLog || [])];
   const today = new Date().toISOString().split('T')[0];
-  // Replace today's entry if exists, otherwise append
-  const idx = state.weightLog.findIndex(e => e.date === today);
-  if (idx !== -1) state.weightLog[idx].kg = val;
-  else state.weightLog.push({ date: today, kg: val });
-  state.bodyweight = val;
-  saveLocalState();
+  const idx = log.findIndex(e => e.date === today);
+  if (idx !== -1) log[idx] = { date: today, kg: val };
+  else log.push({ date: today, kg: val });
+  setState({ weightLog: log, bodyweight: val });
   renderWeightLog();
   toast(`Weight logged: ${val} kg`, 'success');
 }
@@ -7386,7 +7780,9 @@ function renderWeightLog() {
 }
 
 /* ═══════════════════════════════════════════
-   VOLUME CALCULATION
+   LOGIC — VOLUME
+   Pure functions. No DOM access.
+   Future home: /js/logic/volume.js
 ═══════════════════════════════════════════ */
 function calcSessionVolume(session) {
   let total = 0;
@@ -7440,7 +7836,9 @@ function calcWeekVolume(weekNum) {
 }
 
 /* ═══════════════════════════════════════════
-   DASHBOARD RENDERER
+   LOGIC — DASHBOARD
+   Pure functions. No DOM access.
+   Future home: /js/logic/dashboard.js
 ═══════════════════════════════════════════ */
 function getGreeting() {
   const h = new Date().getHours();
@@ -7640,6 +8038,11 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     '</div>';
 }
 
+/* ═══════════════════════════════════════════
+   RENDER — DASHBOARD
+   DOM-touching render functions.
+   Future home: /js/render/dashboard.js
+═══════════════════════════════════════════ */
 function renderDashboard() {
   const card = document.getElementById('dashboard-card');
   if (!card) return;
@@ -8112,7 +8515,7 @@ function showDeloadReview() {
         const lastSess = state.sessions[state.sessions.length - 1];
         if (lastSess) {
           lastSess.notes = [lastSess.notes, `Block review: ${feel}`].filter(Boolean).join(' · ');
-          saveLocalState();
+          StorageManager.saveSession(lastSess).catch(e => console.warn('[deloadReview] IndexedDB save failed:', e));
           if (state.driveConnected) saveToDrive(lastSess);
         }
       }
@@ -8505,7 +8908,7 @@ function saveEditedSession(sessionId) {
   const notesEl = document.getElementById('edit-session-notes');
   if (notesEl) sess.notes = notesEl.value.trim();
 
-  saveLocalState();
+  StorageManager.saveSession(sess).catch(e => console.warn('[saveEditedSession] IndexedDB save failed:', e));
   if (state.driveConnected) saveToDrive(sess).catch(() => {});
   renderHistory();
   renderDashboard();
@@ -8614,14 +9017,21 @@ function showUpdateBanner(newVersion) {
 }
 
 async function applyAppUpdate() {
-  // Unregister SW so it doesn't serve stale cache, then reload
   try {
-    const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(regs.map(r => r.unregister()));
-    // Clear all caches
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => caches.delete(k)));
-  } catch(e) {}
+    // Tell any waiting SW to activate immediately
+    const reg = await navigator.serviceWorker.getRegistration('./');
+    if (reg?.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      // Give the SW a moment to activate before reloading
+      await new Promise(r => setTimeout(r, 300));
+    } else {
+      // No waiting SW — clear caches and hard reload
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(e) {
+    console.warn('[SW] applyAppUpdate error:', e);
+  }
   location.reload(true);
 }
 
@@ -8753,25 +9163,24 @@ function renderConsecutivePartialWarning(sessionId) {
 }
 
 /* ═══════════════════════════════════════════
-   PROGRESSION ALGORITHM (FULL)
-═══════════════════════════════════════════ */
+   LOGIC — PROGRESSION (ALEX)
+   Pure functions. No DOM access.
+   Future home: /js/logic/progression.js
 
-/**
- * Full progression check for a given exercise across sessions.
- * Returns a suggestion object or null.
- *
- * Logic:
- * 1. Suppress in week 1 and deload week
- * 2. Get last 2 COMPLETE sessions of the same type
- * 3. Check if rep ceiling was hit in ALL sets in BOTH sessions
- * 4. If yes → check set ceiling vs mesocycle target
- *    a. Below ceiling → suggest add set
- *    b. At ceiling → suggest load increase, note set reset
- * 5. If load cannot increase (bodyweight / equipment ceiling noted) → suggest tempo
- */
+   Algorithm summary:
+   1. Suppress in week 1 and deload
+   2. Check rep ceiling hit in last 2 complete sessions
+   3a. Below set ceiling → add set
+   3b. At set ceiling, load can increase → increase load (sets reset to 3)
+   3c. At set ceiling, no tempo yet → suggest tempo
+   3d. Tempo applied, ceiling still hit → equipment ceiling
+═══════════════════════════════════════════ */
 /* ═══════════════════════════════════════════
-   JE — VARIANT LADDERS
-   Each entry: { variant, type, cue }
+   LOGIC — PROGRESSION (JE) — VARIANT LADDERS
+   Pure functions + ladder data. No DOM access.
+   Future home: /js/logic/progressionJe.js
+
+   Each ladder entry: { variant, type, cue }
    type: 'bw' | 'load' | 'band' | 'support'
    support: true → triggers support-reduction logic (3 clean sessions)
 ═══════════════════════════════════════════ */
@@ -9132,8 +9541,10 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
 }
 
 /* ═══════════════════════════════════════════
-   UNIFIED renderProgressionSuggestions
+   RENDER — PROGRESSION SUGGESTIONS
    Routes to the correct algorithm per profile
+   and renders the result to the tracker DOM.
+   Future home: /js/render/tracker.js
 ═══════════════════════════════════════════ */
 function markTempoApplied(exerciseName) {
   // Find the active session's exercise and flag tempoApplied on it
@@ -9278,7 +9689,9 @@ function switchTab(tab) {
 }
 
 /* ═══════════════════════════════════════════
-   UTILITIES
+   LOGIC — UTILITIES
+   Pure helper functions. No DOM access.
+   Future home: /js/logic/utils.js
 ═══════════════════════════════════════════ */
 
 function formatDateIT(isoDate) {
@@ -9700,7 +10113,8 @@ function generateDummyData() {
   state.mesoStartDate = startDate.toISOString().split('T')[0];
   document.getElementById('meso-start-date').value = state.mesoStartDate;
 
-  saveLocalState();
+  saveSettings();
+  StorageManager.saveSessions(sessions).catch(e => console.warn('[dummyData] IndexedDB save failed:', e));
   renderProgramme();
   renderHistory();
   updateMesoDisplay();
@@ -9716,8 +10130,11 @@ function deleteDummyData() {
     [
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: `Delete ${count} sessions`, cls: 'confirm', action: () => {
+        const toDelete = state.sessions.filter(s => s._dummy);
         state.sessions = state.sessions.filter(s => !s._dummy);
-        saveLocalState();
+        // Remove each dummy session from IndexedDB
+        Promise.all(toDelete.map(s => StorageManager.deleteSession(s.id)))
+          .catch(e => console.warn('[deleteDummyData] IndexedDB delete failed:', e));
         renderHistory();
         closeModal();
         toast('Dummy data deleted', 'success');
@@ -9933,50 +10350,55 @@ function saveProfileSettings() {
   const week = parseInt(document.getElementById('s-meso-week').value) || null;
 
   if (name) state.programme.name = name;
+
+  // Build updated weight log
+  const patch = {};
   if (bw) {
-    if (!state.weightLog) state.weightLog = [];
+    const log = [...(state.weightLog || [])];
     const today = new Date().toISOString().split('T')[0];
-    const idx = state.weightLog.findIndex(e => e.date === today);
-    if (idx !== -1) state.weightLog[idx].kg = bw;
-    else state.weightLog.push({ date: today, kg: bw });
+    const idx = log.findIndex(e => e.date === today);
+    if (idx !== -1) log[idx] = { date: today, kg: bw };
+    else log.push({ date: today, kg: bw });
+    patch.weightLog = log;
+    patch.bodyweight = bw;
   }
-  state.bodyweight = bw;
 
   // If week override changed, back-calculate a consistent start date
   if (week && week !== state.mesoWeekOverride) {
-    // New start date = today minus (week-1) full weeks
     const today = new Date();
     today.setDate(today.getDate() - ((week - 1) * 7));
     const backCalcDate = today.toISOString().split('T')[0];
-    state.mesoStartDate    = backCalcDate;
-    state.mesoWeekOverride = week;
-    // Update both date inputs to stay in sync
-    const dateEl = document.getElementById('s-meso-date');
+    patch.mesoStartDate    = backCalcDate;
+    patch.mesoWeekOverride = week;
+    // Update all date inputs to stay in sync
+    const dateEl    = document.getElementById('s-meso-date');
     const mainDateEl = document.getElementById('meso-start-date');
-    if (dateEl)     dateEl.value = backCalcDate;
-    if (mainDateEl) mainDateEl.value = backCalcDate;
-    document.getElementById('s-meso-week').value = week;
-    document.getElementById('meso-week-override').value = week;
+    if (dateEl)      dateEl.value     = backCalcDate;
+    if (mainDateEl)  mainDateEl.value = backCalcDate;
+    document.getElementById('s-meso-week').value         = week;
+    document.getElementById('meso-week-override').value  = week;
   } else if (date) {
-    state.mesoStartDate    = date || null;
-    state.mesoWeekOverride = week || null;
+    patch.mesoStartDate    = date || null;
+    patch.mesoWeekOverride = week || null;
     document.getElementById('meso-start-date').value = date;
     if (week) document.getElementById('meso-week-override').value = week;
   } else {
-    state.mesoStartDate    = date || null;
-    state.mesoWeekOverride = week || null;
+    patch.mesoStartDate    = date || null;
+    patch.mesoWeekOverride = week || null;
   }
 
-  // Save band config
+  // Save band config (not in state — stored in BAND_KG constant)
   ['yellow','green','red','blue','black'].forEach(b => {
     const val = parseFloat(document.getElementById(`band-${b}`)?.value);
     if (!isNaN(val)) BAND_KG[b] = val;
   });
 
-  saveLocalState();
-  updateMesoDisplay();
+  // setState fires saveSettings + updateMesoDisplay automatically
+  if (Object.keys(patch).length) setState(patch);
+  else saveSettings(); // band config changed only — still need a save
+
   renderProgramme();
-  renderTracker(); // Refresh tracker so deload state reflects immediately
+  renderTracker();
   toast('Profile settings saved', 'success');
 }
 
@@ -10235,7 +10657,7 @@ function deleteAllData() {
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Delete Everything', cls: 'confirm', action: () => {
         state.sessions = [];
-        saveLocalState();
+        StorageManager.clearSessions(state.profile).catch(e => console.warn('[deleteAllData] IndexedDB clear failed:', e));
         renderHistory();
         closeModal();
         toast('All session data deleted', 'info');
@@ -10434,7 +10856,7 @@ function executeImport() {
   });
 
   state.sessions.push(...newSessions);
-  saveLocalState();
+  StorageManager.saveSessions(newSessions).catch(e => console.warn('[executeImport] IndexedDB save failed:', e));
   renderHistory();
   toast(`Imported ${newSessions.length} sessions (${_importData.rows.length} rows)`, 'success');
 
@@ -10600,7 +11022,7 @@ function saveManualSession() {
   };
 
   state.sessions.push(newSession);
-  saveLocalState();
+  StorageManager.saveSession(newSession).catch(e => console.warn('[saveManualSession] IndexedDB save failed:', e));
   renderHistory();
   document.getElementById('manual-entry-form').classList.add('hidden');
   toast(`Session added: ${session.name} on ${formatDateIT(date)}`, 'success');
@@ -10799,21 +11221,38 @@ showExerciseInfo = function(event, exName) {
 <script>
 /* ── SERVICE WORKER (PWA offline support) ── */
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  window.addEventListener('load', async () => {
     try {
-      const _cacheKey = 'workout-tracker-' + APP_VERSION;
-      const swCode = "\nconst CACHE = '" + _cacheKey + "';\nconst APP_URL = self.location.href.replace('/sw-blob', '') || './';\n\nself.addEventListener('install', e => {\n  e.waitUntil(\n    caches.open(CACHE).then(c => c.addAll([APP_URL])).catch(() => {})\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n    )\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', e => {\n  const url = e.request.url;\n  // Pass through Drive API and Google auth requests — never cache these\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') ||\n      url.includes('fonts.googleapis.com') || url.includes('cdn.jsdelivr.net')) {\n    return;\n  }\n  // Cache-first for the app itself, stale-while-revalidate\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      const network = fetch(e.request).then(res => {\n        if (res && res.status === 200 && e.request.method === 'GET') {\n          const clone = res.clone();\n          caches.open(CACHE).then(c => c.put(e.request, clone));\n        }\n        return res;\n      }).catch(() => null);\n      return cached || network;\n    })\n  );\n});\n";
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(reg => {
-          console.log('[SW] Registered, scope:', reg.scope);
-          // Revoke blob URL after a moment — SW stays registered
-          setTimeout(() => URL.revokeObjectURL(swUrl), 5000);
-        })
-        .catch(err => console.warn('[SW] Registration failed:', err));
+      // Unregister any legacy blob-URL service workers from previous versions.
+      // Blob SW registrations have a scope of the blob URL origin, which is
+      // distinct from the app origin — safe to unregister all and re-register.
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        if (reg.active?.scriptURL?.startsWith('blob:')) {
+          await reg.unregister();
+          console.log('[SW] Unregistered legacy blob SW');
+        }
+      }
+
+      // Register the real sw.js — version passed as query param so the SW
+      // can name its cache correctly without reading from the app's scope.
+      const swUrl = `./sw.js?v=${APP_VERSION}`;
+      const reg = await navigator.serviceWorker.register(swUrl, { scope: './' });
+      console.log('[SW] Registered:', reg.scope);
+
+      // When a new SW is waiting (user has old tab open), notify them.
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker?.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available — the app's update banner handles this via
+            // checkForAppUpdate(). No action needed here.
+            console.log('[SW] New version available');
+          }
+        });
+      });
     } catch(e) {
-      console.warn('[SW] Could not register service worker:', e);
+      console.warn('[SW] Registration failed:', e);
     }
   });
 }
