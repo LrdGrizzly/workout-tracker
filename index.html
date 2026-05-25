@@ -427,7 +427,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.0.1';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -4032,16 +4032,15 @@ async function loadProgrammeFromDrive() {
 
 // ── LIST ALL SESSION FILES ON DRIVE ────────
 async function listDriveSessionFiles() {
-  if (!DriveState.folderId[state.profile]) return [];
-  const folders = DriveState.folderId[state.profile];
+  // appDataFolder: query by space, not by parent folder ID
   let files = [];
   let pageToken = null;
   do {
-    const q = `'${folders.sessions}' in parents and trashed=false and name contains 'session_'`;
-    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)&pageSize=1000`;
-    if (pageToken) url += `&pageToken=${pageToken}`;
+    const q   = `name contains '_session_' and trashed=false`;
+    let url   = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id,name,modifiedTime)&pageSize=1000`;
+    if (pageToken) url += `&pageToken=${encodeURIComponent(pageToken)}`;
     const res = await driveRequest(url);
-    files = files.concat(res.files || []);
+    files     = files.concat(res.files || []);
     pageToken = res.nextPageToken || null;
   } while (pageToken);
   return files;
@@ -4060,13 +4059,14 @@ async function fetchDriveSessionFile(fileId) {
 
 // ── DELETE SESSION FILE FROM DRIVE ─────────
 async function deleteSessionFromDrive(session) {
-  if (!state.driveToken || !DriveState.folderId[state.profile]) return;
+  if (!state.driveToken) return;
   try {
-    const folders = DriveState.folderId[state.profile];
     // Find the file by session ID embedded in the filename
-    const q = `'${folders.sessions}' in parents and trashed=false and name contains '_${session.id}.json'`;
-    const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
-    if (!res.files.length) return;
+    const q   = `name contains '_${session.id}.json' and trashed=false`;
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id,name)`
+    );
+    if (!res.files || !res.files.length) return;
     await fetch(`https://www.googleapis.com/drive/v3/files/${res.files[0].id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${state.driveToken}` }
@@ -4198,8 +4198,8 @@ async function syncSessionsFromDrive(showToast) {
     }
 
   } catch(e) {
-    console.error('Sync failed:', e);
-    if (showToast) toast('Sync failed — check connection', 'error');
+    console.error('[Drive] Sync failed:', e?.message || e);
+    if (showToast) toast(`Sync failed — ${e?.message || 'check connection'}`, 'error');
   }
 }
 
