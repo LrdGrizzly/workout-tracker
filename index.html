@@ -341,8 +341,10 @@
               <button class="settings-btn primary" onclick="handleDriveConnect()" id="settings-drive-btn">Connect</button>
             </div>
             <div style="margin-top:8px" id="settings-sync-row">
-              <button class="settings-btn" style="width:100%" id="settings-sync-btn"
+              <button class="settings-btn" style="width:100%;margin-bottom:6px" id="settings-sync-btn"
                 onclick="syncSessionsFromDrive(true)" disabled>⟳ Sync Now</button>
+              <button class="settings-btn primary" style="width:100%;margin-bottom:6px" id="settings-push-all-btn"
+                onclick="pushAllSessionsToDrive()" disabled>↑ Push All Local Sessions to Drive</button>
               <div id="settings-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:6px;text-align:center"></div>
             </div>
             <div id="settings-client-id-row" style="margin-top:8px">
@@ -427,7 +429,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.0.1';
+const APP_VERSION = '4.0.2';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -3915,7 +3917,7 @@ async function ensureDriveFolder() {
 }
 
 // ── SAVE SESSION TO DRIVE (appDataFolder) ──
-async function saveToDrive(sessionData) {
+async function saveToDrive(sessionData, skipProgrammeSave) {
   try {
     if (!state.driveToken) return;
     // Filename namespaced by profile so Alex and Je don't collide
@@ -3929,14 +3931,12 @@ async function saveToDrive(sessionData) {
     );
 
     if (res.files?.length > 0) {
-      // Update existing file
       await fetch(`https://www.googleapis.com/upload/drive/v3/files/${res.files[0].id}?uploadType=media`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${state.driveToken}`, 'Content-Type': 'application/json' },
         body
       });
     } else {
-      // Create new file in appDataFolder
       const meta = JSON.stringify({ name: filename, parents: ['appDataFolder'] });
       const form = new FormData();
       form.append('metadata', new Blob([meta], { type: 'application/json' }));
@@ -3948,11 +3948,15 @@ async function saveToDrive(sessionData) {
       });
     }
 
-    await saveProgrammeToDrive();
-    toast('Saved to Google Drive ✓', 'success');
+    // Only save programme config when explicitly requested (not on every session upload)
+    if (!skipProgrammeSave) {
+      await saveProgrammeToDrive();
+      toast('Saved to Google Drive ✓', 'success');
+    }
   } catch(e) {
     console.error('Drive save failed:', e);
-    toast('Drive save failed — data kept locally.', 'error');
+    if (!skipProgrammeSave) toast('Drive save failed — data kept locally.', 'error');
+    throw e; // re-throw so batch upload can count failures
   }
 }
 
@@ -4165,12 +4169,25 @@ async function syncSessionsFromDrive(showToast) {
     });
 
     // ── STEP 3: Push local sessions not on Drive ──────────────────
+    // Upload in batches of 5 in parallel to avoid rate limits.
+    // Programme config saved once at the end — not per session.
     let uploadCount = 0;
-    for (const session of state.sessions) {
-      if (!driveIdMap.has(session.id)) {
-        await saveToDrive(session).catch(() => {});
-        uploadCount++;
-      }
+    const toUpload = state.sessions.filter(s => !driveIdMap.has(s.id));
+
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < toUpload.length; i += BATCH_SIZE) {
+      const batch = toUpload.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(session => saveToDrive(session, true)) // skipProgrammeSave = true
+      );
+      uploadCount += results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      if (failed > 0) console.warn(`[Drive] ${failed} session(s) failed to upload in this batch`);
+    }
+
+    // Save programme config once after all uploads
+    if (uploadCount > 0) {
+      await saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme save failed:', e));
     }
 
     // ── STEP 4: Sort, persist, render ────────────────────────────
@@ -4310,7 +4327,44 @@ function resolveConflict(sessionId, action) {
   }
 }
 
-// ── LAST SYNCED TIMESTAMP ───────────────────
+// ── FORCE PUSH ALL LOCAL SESSIONS TO DRIVE ─
+// Used when a new device needs the full history.
+// Uploads every local session regardless of
+// whether Drive already has it.
+async function pushAllSessionsToDrive() {
+  if (!state.driveToken) { toast('Connect Google Drive first', 'error'); return; }
+  if (!state.sessions.length) { toast('No sessions to push', 'info'); return; }
+
+  const btn = document.getElementById('settings-push-all-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '↑ Pushing…'; }
+
+  try {
+    toast(`Pushing ${state.sessions.length} sessions to Drive…`, 'info');
+    let success = 0;
+    let failed  = 0;
+    const BATCH = 5;
+
+    for (let i = 0; i < state.sessions.length; i += BATCH) {
+      const batch = state.sessions.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(s => saveToDrive(s, true))
+      );
+      success += results.filter(r => r.status === 'fulfilled').length;
+      failed  += results.filter(r => r.status === 'rejected').length;
+    }
+
+    // Save programme config once at the end
+    await saveProgrammeToDrive().catch(() => {});
+
+    updateLastSynced();
+    toast(`Pushed ${success} sessions to Drive${failed > 0 ? ` · ${failed} failed` : ''}`, 'success');
+  } catch(e) {
+    console.error('[Drive] Push all failed:', e);
+    toast(`Push failed — ${e?.message || 'check connection'}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↑ Push All Local Sessions to Drive'; }
+  }
+}
 function updateLastSynced() {
   const now = new Date();
   const key  = `wt_last_synced_${state.profile}`;
@@ -7006,9 +7060,11 @@ function openSettings() {
     btn.textContent  = state.driveConnected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
   }
   renderWeightLog();
-  // Enable/disable Sync Now button
+  // Enable/disable Sync Now and Push All buttons
   const settingsSyncBtn = document.getElementById('settings-sync-btn');
   if (settingsSyncBtn) settingsSyncBtn.disabled = !state.driveConnected;
+  const settingsPushAllBtn = document.getElementById('settings-push-all-btn');
+  if (settingsPushAllBtn) settingsPushAllBtn.disabled = !state.driveConnected;
   const settingsLastSynced = document.getElementById('settings-last-synced');
   if (settingsLastSynced) {
     const saved = localStorage.getItem(`wt_last_synced_${state.profile}`);
