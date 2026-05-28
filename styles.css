@@ -2963,7 +2963,9 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
-.drive-dot.error { background: var(--red); }
+.drive-dot.error   { background: var(--red); }
+.drive-dot.warning { background: var(--amber); }
+.drive-dot.syncing { background: var(--pull); }
 
 .drive-connect-btn {
   font-family: var(--font-mono);
