@@ -41,36 +41,39 @@
 :root,
 html[data-theme="light"] {
 
-  /* ── Backgrounds ── */
-  --bg:          var(--palette-cream);
-  --bg-surface:  var(--palette-sand);
-  --bg-surface2: var(--palette-sand-dark);
-  --bg-surface3: #B8A48A;
-  --bg-overlay:  rgba(255,248,236,0.85);
+  /* ── Backgrounds ──
+     Inverted relationship: cards are lighter than the page.
+     Page: warm mid-tone sand. Cards: bright cream. Inputs: sand.
+  ── */
+  --bg:          #EDE0C8;   /* warm sand — page background */
+  --bg-surface:  #FFF8EC;   /* cream — card surfaces (elevated above page) */
+  --bg-surface2: #F5EDD8;   /* light sand — set rows, inputs, secondary panels */
+  --bg-surface3: #E8D8B8;   /* mid sand — deepest surface, disabled states */
+  --bg-overlay:  rgba(237,224,200,0.90);
 
   /* ── Text ── */
-  --text:        var(--palette-ink);
-  --text-dim:    var(--palette-ink-mid);
-  --text-muted:  var(--palette-ink-soft);
+  --text:        #1E1E1E;   /* near-black — strong contrast on cream */
+  --text-dim:    #4A4540;   /* warm dark grey */
+  --text-muted:  #8A8070;   /* warm mid grey */
 
   /* ── Accent ── */
   --accent:      var(--palette-forest);
   --accent-soft: var(--palette-sage);
   --accent-glow: rgba(84,107,65,0.15);
 
-  /* ── Borders ── */
-  --border:      rgba(84,107,65,0.15);
-  --border-h:    rgba(84,107,65,0.28);
-  --border-g:    rgba(84,107,65,0.22);
+  /* ── Borders — subtle warm tones ── */
+  --border:      rgba(84,107,65,0.12);
+  --border-h:    rgba(84,107,65,0.25);
+  --border-g:    rgba(84,107,65,0.18);
 
   /* ── Glass / nav surfaces ── */
-  --glass-bg:    rgba(255,248,236,0.82);
-  --glass-blur:  blur(20px) saturate(1.4);
+  --glass-bg:    rgba(237,224,200,0.88);
+  --glass-blur:  blur(20px) saturate(1.3);
 
-  /* ── Shadows ── */
-  --shadow-sm:   0 2px 6px  rgba(84,107,65,0.08);
-  --shadow-md:   0 4px 12px rgba(84,107,65,0.10);
-  --shadow-lg:   0 8px 32px rgba(84,107,65,0.12);
+  /* ── Shadows — warm-tinted, soft ── */
+  --shadow-sm:   0 1px 4px  rgba(84,107,65,0.06), 0 2px 8px rgba(84,107,65,0.04);
+  --shadow-md:   0 2px 8px  rgba(84,107,65,0.08), 0 4px 16px rgba(84,107,65,0.05);
+  --shadow-lg:   0 4px 16px rgba(84,107,65,0.10), 0 8px 32px rgba(84,107,65,0.06);
 
   /* ── Status / semantic ── */
   --green:       var(--palette-forest);
@@ -96,7 +99,7 @@ html[data-theme="light"] {
   --glow-md:     0 0 14px;
   --glow-lg:     0 0 28px;
 
-  /* ── Band colours (unchanged — physical reference) ── */
+  /* ── Band colours (physical reference) ── */
   --band-yellow: #C8A800;
   --band-green:  #3A8A3E;
   --band-red:    #B83028;
@@ -195,21 +198,28 @@ html[data-theme="dark"] {
 }
 
 /* ─────────────────────────────────────────
-   LAYER 3 — TYPOGRAPHY TOKENS
+   LAYER 3 — TYPOGRAPHY & SPACING TOKENS
 ───────────────────────────────────────── */
 :root {
   --font-display: 'Barlow Condensed', sans-serif;
   --font-body:    'Barlow', sans-serif;
   --font-mono:    'DM Mono', monospace;
 
-  --text-xs:   10px;
-  --text-sm:   12px;
-  --text-base: 15px;
-  --text-md:   18px;
-  --text-lg:   22px;
-  --text-xl:   28px;
-  --text-2xl:  36px;
+  /* ── Type scale ── */
+  --text-xs:   10px;   /* metadata, status badges */
+  --text-sm:   12px;   /* secondary labels */
+  --text-base: 15px;   /* body default */
+  --text-md:   18px;   /* section titles */
+  --text-lg:   22px;   /* card headers */
+  --text-xl:   28px;   /* screen titles */
+  --text-2xl:  38px;   /* hero numbers (volume, stats) */
 
+  /* ── Line heights ── */
+  --leading-tight:  1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed:1.75;
+
+  /* ── Spacing scale (4px base unit) ── */
   --space-1:  4px;
   --space-2:  8px;
   --space-3:  12px;
@@ -218,6 +228,10 @@ html[data-theme="dark"] {
   --space-6:  24px;
   --space-8:  32px;
   --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Touch target minimum ── */
+  --tap-target: 44px;
 }
 
 /* ─────────────────────────────────────────
@@ -239,6 +253,7 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   font-size: var(--text-base);
+  line-height: var(--leading-normal);
   min-height: 100vh;
   overflow-x: hidden;
   transition: background 0.3s ease, color 0.3s ease;
@@ -405,9 +420,9 @@ html[data-theme="dark"] body::before { opacity: 0.55; }
 
 .topbar-brand {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-md);
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text);
   flex: 1;
@@ -482,20 +497,20 @@ html[data-theme="dark"] .topbar-meso.deload-active {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 58px;
+  height: 60px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--border-g);
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 -1px 0 var(--border), var(--shadow-sm);
   display: flex;
   align-items: stretch;
   z-index: 99;
 }
 
 html[data-theme="dark"] .tabnav {
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 -1px 0 var(--border), 0 -4px 20px rgba(0,0,0,0.20);
 }
 
 .tab-btn {
@@ -515,15 +530,15 @@ html[data-theme="dark"] .tabnav {
   border: none;
   background: none;
   border-top: 2px solid transparent;
-  transition: all var(--transition);
+  transition: color var(--transition), border-color var(--transition);
   position: relative;
   padding-bottom: 2px;
+  min-height: var(--tap-target);
 }
 
 .tab-btn:hover { color: var(--text-dim); }
 .tab-btn.active { color: var(--accent); }
 
-/* All active tabs use the primary accent colour */
 #tab-dashboard.active,
 #tab-programme.active,
 #tab-tracker.active,
@@ -541,7 +556,7 @@ html[data-theme="dark"] .tabnav {
 ═══════════════════════════════════════════ */
 .main {
   margin-top: 60px;
-  padding: 24px 20px 80px;
+  padding: var(--space-6) var(--space-5) 84px;
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
@@ -570,7 +585,7 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 28px 0 12px;
+  margin: var(--space-6) 0 var(--space-3);
 }
 
 .section-label::after {
@@ -598,8 +613,8 @@ body[data-tab="guide"]     { background-image: radial-gradient(ellipse at 30% 0%
 .session-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
   cursor: pointer;
   user-select: none;
   transition: background var(--transition);
@@ -617,7 +632,7 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .session-tag {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 500;
   padding: 3px 8px;
   border-radius: 20px;
@@ -629,16 +644,17 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .session-title {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: uppercase;
   flex: 1;
+  color: var(--text);
 }
 
 .session-meta {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -890,7 +906,7 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 .dashboard-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-g);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }
@@ -912,7 +928,7 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 }
 
 .dash-section {
-  padding: 18px 20px;
+  padding: var(--space-5) var(--space-5);
   border-bottom: 1px solid var(--border);
   position: relative;
 }
@@ -930,20 +946,21 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .dash-greeting {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: var(--text-lg);
   font-weight: 800;
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: var(--text);
-  line-height: 1.1;
+  line-height: var(--leading-tight);
 }
 
 .dash-greeting-sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   letter-spacing: 0.04em;
+  line-height: var(--leading-relaxed);
 }
 
 .dash-meso-blocks { display: flex; gap: 5px; margin-top: 2px; }
@@ -1057,11 +1074,11 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .dash-volume-total {
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: var(--text-2xl);
   font-weight: 900;
   letter-spacing: -0.02em;
   color: var(--accent);
-  line-height: 1;
+  line-height: var(--leading-tight);
   margin-bottom: 2px;
 }
 
@@ -1136,11 +1153,11 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .dash-next-session-name {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--text-lg);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .dash-next-session-meta {
@@ -1152,16 +1169,17 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .dash-start-btn {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 10px 20px;
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius);
   cursor: pointer;
   border: 1px solid;
   transition: all var(--transition);
-  min-height: 40px;
+  min-height: var(--tap-target);
+  width: 100%;
 }
 
 .dash-ladder-item {
@@ -1969,9 +1987,9 @@ html[data-theme="light"] .milestone-overlay {
 .session-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
   background: var(--bg-surface);
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -1981,16 +1999,18 @@ html[data-theme="light"] .milestone-overlay {
 
 .session-toolbar-name {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-md);
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
   flex: 1;
+  color: var(--text);
 }
 
 .time-btn {
   font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 6px 12px;
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-surface2);
@@ -1999,6 +2019,7 @@ html[data-theme="light"] .milestone-overlay {
   transition: all var(--transition);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  min-height: 36px;
 }
 
 .time-btn.start-btn {
@@ -2116,10 +2137,11 @@ html[data-theme="light"] .milestone-overlay {
 .tracker-ex-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  cursor: grab;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
   user-select: none;
+  min-height: var(--tap-target);
 }
 
 .tracker-ex-head:active { cursor: grabbing; }
@@ -2133,20 +2155,22 @@ html[data-theme="light"] .milestone-overlay {
 
 .tracker-ex-name {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+  color: var(--text);
 }
 
 .tracker-ex-target {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
   text-align: right;
-  line-height: 1.6;
+  line-height: var(--leading-normal);
 }
 
-.tracker-ex-target .range { font-size: 8px; opacity: 0.6; }
+.tracker-ex-target .range { font-size: 8px; opacity: 0.65; }
 
 .tracker-sub-btn {
   font-family: var(--font-mono);
@@ -2336,25 +2360,25 @@ html[data-theme="light"] .milestone-overlay {
 
 /* End session area */
 .end-session-wrap {
-  margin-top: 20px;
+  margin-top: var(--space-5);
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
   justify-content: flex-end;
   flex-wrap: wrap;
 }
 
 .end-btn {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--transition);
   border: 1px solid;
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 
 .end-btn.primary {
@@ -2470,9 +2494,10 @@ html[data-theme="light"] .milestone-overlay {
 .history-card-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
+  min-height: var(--tap-target);
 }
 
 .history-card-date {
@@ -2484,10 +2509,12 @@ html[data-theme="light"] .milestone-overlay {
 
 .history-card-name {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: var(--text-base);
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
   flex: 1;
+  color: var(--text);
 }
 
 .history-card-meta {
@@ -2807,7 +2834,7 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border: 1px solid;
-  min-height: 36px;
+  min-height: 40px;
 }
 
 .modal-btn.confirm {
@@ -3784,7 +3811,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
    RESPONSIVE
 ═══════════════════════════════════════════ */
 @media (max-width: 600px) {
-  .main { padding: 20px 14px 80px; }
+  .main { padding: var(--space-5) var(--space-3) 84px; }
   .ex-notes { display: none; }
   .topbar-meso { display: none; }
   .topbar-brand { font-size: 14px; }
