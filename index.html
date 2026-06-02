@@ -35,12 +35,12 @@
     <div class="logo">Who's training?</div>
   </div>
   <div class="profile-cards">
-    <div class="profile-card alex" onclick="selectProfile('alex')">
+    <div class="profile-card alex" onclick="selectProfile('alex')" role="button" tabindex="0" aria-label="Select Alex profile">
       <div class="profile-avatar">A</div>
       <div class="profile-name">Alex</div>
       <div class="profile-meta">PPL Split<br>5 days / week<br>Mass & Strength</div>
     </div>
-    <div class="profile-card je" onclick="selectProfile('je')">
+    <div class="profile-card je" onclick="selectProfile('je')" role="button" tabindex="0" aria-label="Select Je profile">
       <div class="profile-avatar">Je ❤️</div>
       <div class="profile-name">Je</div>
       <div class="profile-meta">Full Body<br>3 days / week<br>Fat Loss & Tone</div>
@@ -57,29 +57,29 @@
   <div class="topbar">
     <div class="topbar-brand">Workout</div>
     <div class="topbar-meso" id="topbar-meso">Week — / 5</div>
-    <div class="topbar-user" onclick="showProfileScreen()">
+    <div class="topbar-user" onclick="showProfileScreen()" role="button" tabindex="0" aria-label="Switch profile">
       <div class="topbar-user-dot" id="topbar-dot"></div>
       <span id="topbar-username">—</span>
       <span style="color:var(--text-muted)">↩</span>
     </div>
-    <button class="gear-btn" onclick="openSettings()" title="Settings">⚙</button>
+    <button class="gear-btn" onclick="openSettings()" title="Settings" aria-label="Open settings">⚙</button>
   </div>
 
   <!-- Bottom Nav -->
   <div class="tabnav">
-    <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard">
+    <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard" role="tab" aria-controls="panel-dashboard" aria-selected="true">
       <span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('programme')" id="tab-programme">
+    <button class="tab-btn" onclick="switchTab('programme')" id="tab-programme" role="tab" aria-controls="panel-programme" aria-selected="false">
       <span class="tab-icon">📋</span><span class="tab-label">Programme</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('tracker')" id="tab-tracker">
+    <button class="tab-btn" onclick="switchTab('tracker')" id="tab-tracker" role="tab" aria-controls="panel-tracker" aria-selected="false">
       <span class="tab-icon">⚡</span><span class="tab-label">Track</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('history')" id="tab-history">
+    <button class="tab-btn" onclick="switchTab('history')" id="tab-history" role="tab" aria-controls="panel-history" aria-selected="false">
       <span class="tab-icon">📈</span><span class="tab-label">History</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide">
+    <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide" role="tab" aria-controls="panel-guide" aria-selected="false">
       <span class="tab-icon">📖</span><span class="tab-label">Guide</span>
     </button>
   </div>
@@ -97,14 +97,14 @@
     </div>
 
     <!-- ══════════ TAB 0: DASHBOARD ══════════ -->
-    <div class="tab-panel active" id="panel-dashboard">
+    <div class="tab-panel active" id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
       <div class="dashboard-card" id="dashboard-card">
         <!-- Rendered by renderDashboard() -->
       </div>
     </div>
 
     <!-- ══════════ TAB 1: PROGRAMME ══════════ -->
-    <div class="tab-panel" id="panel-programme">
+    <div class="tab-panel" id="panel-programme" role="tabpanel" aria-labelledby="tab-programme">
 
       <!-- Drive status -->
       <div class="drive-status">
@@ -145,7 +145,7 @@
     </div>
 
     <!-- ══════════ TAB 2: TRACKER ══════════ -->
-    <div class="tab-panel" id="panel-tracker">
+    <div class="tab-panel" id="panel-tracker" role="tabpanel" aria-labelledby="tab-tracker">
       <div id="session-select-view">
         <div class="section-label">Select Session</div>
         <div class="tracker-select-grid" id="tracker-select-grid"></div>
@@ -166,17 +166,24 @@
 
         <!-- Session toolbar -->
         <div class="session-toolbar">
-          <div class="session-pip" id="active-session-pip" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>
-          <div class="session-toolbar-name" id="active-session-name">—</div>
-          <div class="time-display hidden" id="start-time-display">—</div>
-          <button class="time-btn start-btn" id="start-btn" onclick="startSession()">▶ Start</button>
-          <button class="time-btn end-btn hidden" id="end-btn" onclick="endSession()">■ End</button>
-          <button class="time-btn secondary" onclick="cancelSession()" style="font-size:9px;padding:4px 8px;">✕ Cancel</button>
+          <div class="session-toolbar-main">
+            <div class="session-pip active-session-pip" id="active-session-pip"></div>
+            <div>
+              <div class="session-toolbar-kicker">Active Workout</div>
+              <div class="session-toolbar-name" id="active-session-name">—</div>
+            </div>
+          </div>
+          <div class="session-toolbar-actions">
+            <div class="time-display hidden" id="start-time-display">—</div>
+            <button class="time-btn start-btn" id="start-btn" onclick="startSession()">▶ Start</button>
+            <button class="time-btn end-btn hidden" id="end-btn" onclick="endSession()">■ End</button>
+            <button class="time-btn secondary cancel-compact-btn" onclick="cancelSession()">✕ Cancel</button>
+          </div>
         </div>
 
         <!-- Template toggle — shown below toolbar when prev session exists -->
         <div class="session-template-row" id="template-toggle-row" onclick="toggleSessionTemplate()"
-          title="Pre-fill loads from your last session" style="display:none;margin:8px 0 4px">
+          title="Pre-fill loads from your last session" style="display:none">
           <div class="session-template-toggle"></div>
           <span class="session-template-text">Use last session's loads</span>
         </div>
@@ -223,7 +230,7 @@
     </div>
 
     <!-- ══════════ TAB 3: HISTORY ══════════ -->
-    <div class="tab-panel" id="panel-history">
+    <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
       <div class="history-toolbar">
         <button class="history-filter active" onclick="filterHistory('all', this)">All</button>
         <div id="history-session-filters"></div>
@@ -234,7 +241,7 @@
     </div>
 
     <!-- ══════════ TAB 4: GUIDE ══════════ -->
-    <div class="tab-panel" id="panel-guide">
+    <div class="tab-panel" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
       <div class="guide-sections" id="guide-sections"></div>
     </div>
 
@@ -305,6 +312,21 @@
           <div class="section-label" style="margin:16px 0 10px">Band Resistance Config</div>
           <div id="band-config-list"></div>
           <button class="settings-btn primary" style="margin-top:12px;width:100%" onclick="saveProfileSettings()">Save Profile Settings</button>
+        </div>
+      </div>
+
+      <!-- SECTION: DASHBOARD -->
+      <div class="settings-section" id="settings-dashboard">
+        <div class="settings-section-head" onclick="toggleSettingsSection('settings-dashboard')">
+          <span class="settings-section-icon">â–¦</span>
+          <span class="settings-section-title">Dashboard</span>
+          <span class="settings-section-chev">â€º</span>
+        </div>
+        <div class="settings-section-body">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);padding:10px 0 12px;line-height:1.7">
+            Choose which insight panels appear. Enabled panels stay collapsed until you open them on the dashboard.
+          </div>
+          <div id="dashboard-panel-settings"></div>
         </div>
       </div>
 
@@ -817,6 +839,8 @@ const Validator = (() => {
       sets,
       // Preserve optional fields if present
       ...(ex.tempoApplied  ? { tempoApplied: true }               : {}),
+      ...(isValidProgressionModel(ex.progressionModel)
+                           ? { progressionModel: ex.progressionModel } : {}),
       ...(typeof ex.ladderRungIndex === 'number'
                            ? { ladderRungIndex: ex.ladderRungIndex } : {}),
     };
@@ -1535,6 +1559,16 @@ const INITIAL_STATE = {
   // Programme customisation
   jeLadderKeyMap:       {},
 
+  // Dashboard insight panels
+  dashboardPanels: {
+    blockReview:        true,
+    fatigueWatch:       true,
+    movementTrends:     true,
+    rirReadiness:       true,
+    progressionPending: true,
+  },
+  dashboardPanelOpen: {},
+
   // Transient tracker flags (not persisted)
   _useTemplate:         false,
   _tempoFlags:          {},
@@ -1701,6 +1735,8 @@ async function loadLocalState() {
   state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
   state.weightLog        = weightLog;
   state.bodyweight       = bodyweight;
+  state.dashboardPanels   = { ...INITIAL_STATE.dashboardPanels, ...(data.dashboardPanels || {}) };
+  state.dashboardPanelOpen = data.dashboardPanelOpen || {};
 
   // Restore rest periods into programme sessions
   if (data.restPeriods) {
@@ -1738,6 +1774,8 @@ function saveSettings() {
     jeLadderKeyMap:   state.jeLadderKeyMap   || {},
     weightLog:        state.weightLog        || [],
     bodyweight:       state.bodyweight       || null,
+    dashboardPanels:  state.dashboardPanels  || INITIAL_STATE.dashboardPanels,
+    dashboardPanelOpen: state.dashboardPanelOpen || {},
   });
 }
 
@@ -2003,10 +2041,11 @@ function renderTracker() {
 
   const grid = document.getElementById('tracker-select-grid');
   grid.innerHTML = state.programme.sessions.map(session => `
-    <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" style="border-left: 3px solid ${session.color}">
-      <div class="tracker-session-name" style="color:${session.color}">${session.name}</div>
+    <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" role="button" tabindex="0" aria-label="Select ${session.name}"
+      style="--session-color:${session.color};--session-rgb:${session.colorRgb || '0,212,160'}">
+      <div class="tracker-session-name">${session.name}</div>
       <div class="tracker-session-detail">${session.subtitle}</div>
-      <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} exercises · ${session.rest}s rest</div>
+      <div class="tracker-session-stats"><span>${session.exercises.filter(e=>e.type!=='optional').length} exercises</span><span>${session.rest}s rest</span></div>
     </div>
   `).join('');
 }
@@ -2024,6 +2063,8 @@ function selectTrackerSession(sessionId) {
   document.getElementById('session-select-view').style.display = 'none';
   const activeView = document.getElementById('active-session-view');
   activeView.classList.add('visible');
+  activeView.style.setProperty('--session-color', session.color);
+  activeView.style.setProperty('--session-rgb', session.colorRgb || '0,212,160');
 
   // Session name + pip
   document.getElementById('active-session-name').textContent = `${session.name} — ${session.subtitle}`;
@@ -2069,7 +2110,7 @@ function buildTrackerExercises(session) {
 
   container.innerHTML = session.exercises.map((ex, idx) => {
     if (ex.type === 'optional') {
-      return `<div class="tracker-ex-card" style="border-style:dashed;opacity:0.5">
+      return `<div class="tracker-ex-card optional-ex-card">
         <div class="tracker-ex-head">
           <span class="drag-handle" style="cursor:default">⋮⋮</span>
           <div class="tracker-ex-name">${ex.name} <span style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace">· optional</span></div>
@@ -2082,6 +2123,7 @@ function buildTrackerExercises(session) {
     }
 
     const prev2 = getPrev2Sessions(session.id, ex.name);
+    const previousSetRefs = getPreviousSetRefs(session.id, ex.name);
     // Determine correct starting set count.
     // If the last suggestion for this exercise was increase_load, reset to 3 sets.
     // Otherwise carry forward the last session's set count (up to the weekly target).
@@ -2113,6 +2155,7 @@ function buildTrackerExercises(session) {
 
     const initialSets = Array.from({length: setCount}, (_, i) => {
       const _prevSet = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
+      const _previousRef = previousSetRefs[i] || null;
       // Template mode: pre-select load from last session
       // Normal mode: clean slate — show prev as ghost hint only, no pre-selection
       const _prevLoad = state._useTemplate ? (_prevSet?.load || '') : '';
@@ -2121,7 +2164,7 @@ function buildTrackerExercises(session) {
       // Ghost reference values for the hint line
       const _ghostLoad = _prevSet?.load || '';
       const _ghostReps = _prevSet?.reps || '';
-      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps);
+      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps, _previousRef);
     });
 
     const deloadNote = deload
@@ -2129,19 +2172,19 @@ function buildTrackerExercises(session) {
       : '';
 
     return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
-      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" style="cursor:pointer">
+      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" role="button" tabindex="0" aria-label="Toggle ${ex.name}">
         <span class="drag-handle" onclick="event.stopPropagation()">⋮⋮</span>
         <div style="flex:1">
           <div class="tracker-ex-name">
             ${ex.name}
-            ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
+            ${ex.desc ? `<sup class="exercise-info-dot" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">i</sup>` : ''}
           </div>
-          ${ex.tags.includes('unilateral') ? '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(61,171,255,0.5);margin-top:2px">🔄 Unilateral</div>' : ''}
+          ${ex.tags.includes('unilateral') ? '<div class="tracker-ex-badge">Unilateral</div>' : ''}
         </div>
         <div class="tracker-ex-target">
-          <div id="set-count-${session.id}-${idx}" style="font-family:\'DM Mono\',monospace;font-size:11px">${setCount} sets</div>
-          <div class="range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.85;font-weight:600">${ex.reps}</div>
-          <div class="range" style="color:var(--text-muted);font-size:8px">${ex.load}</div>
+          <div class="tracker-ex-setcount" id="set-count-${session.id}-${idx}">${setCount} sets</div>
+          <div class="range tracker-ex-reps" style="--exercise-color:${session.color}">${ex.reps}</div>
+          <div class="range tracker-ex-load">${ex.load}</div>
         </div>
         ${EXERCISE_SWAP_MAP[ex.name]
           ? `<button class="swap-btn" id="swap-btn-${idx}" onclick="toggleExerciseSwap('${ex.name}',this.closest('.tracker-ex-card'),this)">Alt ⇄</button>`
@@ -2169,10 +2212,94 @@ function buildTrackerExercises(session) {
 function isBWExercise(ex) {
   // Detect BW exercises by their load field containing 'BW' or being bodyweight-tagged
   const load = (ex.load || '').toString().toUpperCase();
-  return load.includes('BW') || ex.tags.includes('bw');
+  return load.includes('BW') || (ex.tags || []).includes('bw');
 }
 
 const BAND_KG = { yellow: 4.5, green: 9.1, red: 13.6, blue: 18.1, black: 22.7 };
+
+const PROGRESSION_MODELS = {
+  kb_load: {
+    label: 'KB load',
+    short: 'KB',
+    description: 'Add sets first, then increase kettlebell load.'
+  },
+  band_tension: {
+    label: 'Band tension',
+    short: 'Band',
+    description: 'Add sets first, then move up the band ladder.'
+  },
+  bodyweight_reps: {
+    label: 'Bodyweight reps',
+    short: 'BW reps',
+    description: 'Add sets first, then make the bodyweight version harder.'
+  },
+  bodyweight_variant: {
+    label: 'Bodyweight variant',
+    short: 'Variant',
+    description: 'Progress to a harder variant once the current rung is owned.'
+  },
+  explosive_quality: {
+    label: 'Explosive quality',
+    short: 'Power',
+    description: 'Do not auto-progress. Keep reps crisp and fast.'
+  },
+  prehab_quality: {
+    label: 'Prehab quality',
+    short: 'Prehab',
+    description: 'Do not auto-progress. Keep control and joint position clean.'
+  }
+};
+
+function isValidProgressionModel(model) {
+  return typeof model === 'string' && Object.prototype.hasOwnProperty.call(PROGRESSION_MODELS, model);
+}
+
+function getExerciseTextBlob(ex) {
+  return [
+    ex?.name,
+    ex?.type,
+    ex?.load,
+    ex?.prog,
+    ex?.notes,
+    ex?.desc,
+    ...(ex?.tags || [])
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function hasBandLoad(ex) {
+  const txt = getExerciseTextBlob(ex);
+  return /\b(yellow|green|red|blue|black)\b/.test(txt) || txt.includes('band');
+}
+
+function inferProgressionModel(ex) {
+  if (!ex || typeof ex !== 'object') return 'kb_load';
+  const tags = ex.tags || [];
+  const txt = getExerciseTextBlob(ex);
+
+  if (ex.type === 'prehab' || tags.includes('prehab') || txt.includes('prehab')) return 'prehab_quality';
+  const nameTxt = (ex.name || '').toLowerCase();
+  if (tags.includes('explosive') || /\b(jump|bound|pogo|sprint|swing|snatch|clean)\b/.test(nameTxt)) {
+    return 'explosive_quality';
+  }
+  if (getJeLadder(ex.name)) return 'bodyweight_variant';
+  if (isBWExercise(ex)) {
+    if (/\b(variant|ladder|progression|archer|pike|handstand|elevated|fingertip|freestanding|support)\b/.test(txt)) {
+      return 'bodyweight_variant';
+    }
+    if (hasBandLoad(ex)) return 'band_tension';
+    return 'bodyweight_reps';
+  }
+  if (hasBandLoad(ex)) return 'band_tension';
+  return 'kb_load';
+}
+
+function getExerciseProgressionModel(ex) {
+  return isValidProgressionModel(ex?.progressionModel) ? ex.progressionModel : inferProgressionModel(ex);
+}
+
+function getProgressionModelLabel(model) {
+  return PROGRESSION_MODELS[model]?.label || PROGRESSION_MODELS.kb_load.label;
+}
 
 function parseBandLoad(loadStr) {
   // Returns kg equivalent for band loads, 0 for BW, numeric for KB
@@ -2499,7 +2626,7 @@ function isBandExercise(ex) {
   return hasBand && !isBW;
 }
 
-function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR, ghostLoad, ghostReps) {
+function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR, ghostLoad, ghostReps, previousRef) {
   const isUnilateral = ex.tags.includes('unilateral');
   const isBW   = isBWExercise(ex);
   const isBand = isBandExercise(ex);
@@ -2507,6 +2634,20 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
   // Ghost hint — muted previous session reference shown above pills
   const ghostHint = (ghostLoad || ghostReps)
     ? `<div class="set-ghost-hint">Last: ${ghostLoad ? ghostLoad : '—'} × ${ghostReps ? ghostReps : '—'}</div>`
+    : '';
+
+  const previousBubble = previousRef
+    ? `<div class="set-prev-bubble ${previousRef.source === 'prev-meso' ? 'prev-meso' : 'last-session'}" title="${previousRef.title}">
+        <span class="set-prev-label">${previousRef.source === 'prev-meso' ? 'Prev block' : 'Last'}</span>
+        <span class="set-prev-value">${previousRef.text}</span>
+      </div>`
+    : '';
+  const setSuggestion = getSetAutoregSuggestion(sessionId, ex, previousRef);
+  const suggestionBubble = setSuggestion
+    ? `<div class="set-action-bubble ${setSuggestion.direction}" title="${setSuggestion.title}">
+        <span class="set-action-label">${setSuggestion.label}</span>
+        <span class="set-action-value">${setSuggestion.action}</span>
+      </div>`
     : '';
 
   // Load section
@@ -2535,7 +2676,7 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
       ${ghostHint}
-      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" style="margin-left:auto">✕</button>
+      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" aria-label="Remove set">✕</button>
     </div>
     <div class="set-row-pills">
       <div class="pill-labeled-group">
@@ -2550,6 +2691,8 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
         <span class="pill-section-label">RIR</span>
         ${rirSection}
       </div>
+      ${suggestionBubble}
+      ${previousBubble}
     </div>
   </div>`;
 }
@@ -2608,10 +2751,12 @@ function addSet(sessionId, exIdx, exName) {
   const lastLoadEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-load-val') : null;
   const lastRepsEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-reps-val') : null;
   const lastRIREl  = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-rir') : null;
+  const previousRef = getPreviousSetRefs(sessionId, exName)[currentSets] || null;
   const newRow = document.createElement('div');
   newRow.innerHTML = buildSetRow(
     currentSets, ex, isDeloadWeek(), sessionId, exIdx,
-    lastLoadEl?.value || '', lastRepsEl?.value || '', lastRIREl?.value || ''
+    lastLoadEl?.value || '', lastRepsEl?.value || '', lastRIREl?.value || '',
+    '', '', previousRef
   );
   container.appendChild(newRow.firstElementChild);
   const countEl = document.getElementById(`set-count-${sessionId}-${exIdx}`);
@@ -2635,6 +2780,45 @@ function getPrev2Sessions(sessionId, exName) {
     if (!ex || !ex.sets.length) return '—';
     const lastSet = ex.sets[ex.sets.length - 1];
     return `${lastSet.load || '—'} × ${lastSet.reps || '—'}`;
+  });
+}
+
+function formatPreviousSetRef(set) {
+  if (!set) return null;
+  const load = set.load || 'BW';
+  const reps = set.reps || '-';
+  const rir = set.rir ? ` (${set.rir})` : '';
+  return `${load} x ${reps}${rir}`;
+}
+
+function getPreviousSetRefs(sessionId, exName) {
+  const currentWeek = getCurrentMesoWeek();
+  const mesoStart = state.mesoStartDate ? new Date(state.mesoStartDate) : null;
+  const completed = state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .filter(s => s.exercises?.some(e => e.name === exName && e.sets?.length))
+    .sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+  const lastSession = completed[completed.length - 1] || null;
+  const prevMesoSameWeek = completed
+    .filter(s => s.mesoWeek === currentWeek)
+    .filter(s => !mesoStart || new Date(s.date || 0) < mesoStart)
+    .slice(-1)[0] || null;
+
+  const lastEx = lastSession?.exercises?.find(e => e.name === exName) || null;
+  const prevMesoEx = prevMesoSameWeek?.exercises?.find(e => e.name === exName) || null;
+  const maxSets = Math.max(lastEx?.sets?.length || 0, prevMesoEx?.sets?.length || 0);
+
+  return Array.from({ length: maxSets }, (_, idx) => {
+    const prevMesoSet = prevMesoEx?.sets?.[idx] || null;
+    const lastSet = lastEx?.sets?.[idx] || null;
+    const sourceSet = prevMesoSet || lastSet;
+    const text = formatPreviousSetRef(sourceSet);
+    if (!text) return null;
+    const source = prevMesoSet ? 'prev-meso' : 'last-session';
+    const sourceDate = prevMesoSet ? prevMesoSameWeek?.date : lastSession?.date;
+    const title = `${source === 'prev-meso' ? 'Same week in previous mesocycle' : 'Last completed session'} · ${sourceDate ? formatDateIT(sourceDate) : ''}`;
+    return { text, source, title, set: sourceSet };
   });
 }
 
@@ -3098,6 +3282,49 @@ function getSessionAccentColor(sessionId) {
   return sess?.color || 'var(--push-a)';
 }
 
+function resolveCssColor(color, fallback = '#00D4A0') {
+  if (!color) return fallback;
+  const trimmed = color.toString().trim();
+  if (!trimmed.startsWith('var(')) return trimmed;
+  const varName = trimmed.match(/var\((--[^,\)]+)/)?.[1];
+  if (!varName) return fallback;
+  const resolved = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return resolved || fallback;
+}
+
+function colorWithAlpha(color, alpha) {
+  const resolved = resolveCssColor(color);
+  const hex = resolved.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    let value = hex[1];
+    if (value.length === 3) value = value.split('').map(ch => ch + ch).join('');
+    const n = parseInt(value, 16);
+    const r = (n >> 16) & 255;
+    const g = (n >> 8) & 255;
+    const b = n & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  const rgb = resolved.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgb) {
+    const [r, g, b] = rgb[1].split(',').map(part => parseFloat(part.trim()));
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  return resolved;
+}
+
+function getChartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    gridColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(84,107,65,0.10)',
+    tickColor: styles.getPropertyValue('--text-dim').trim() || (isDark ? '#E8E9EA' : '#4A4540'),
+    mutedColor: styles.getPropertyValue('--text-muted').trim() || (isDark ? '#A0A895' : '#8A8070'),
+    textColor: styles.getPropertyValue('--text').trim() || (isDark ? '#FFF8EC' : '#1E1E1E'),
+    tooltipBg: styles.getPropertyValue('--bg-surface').trim() || (isDark ? '#22291E' : '#FFF8EC'),
+    tooltipBorder: styles.getPropertyValue('--border-h').trim() || 'rgba(84,107,65,0.20)',
+  };
+}
+
 function get2MesoCycleSessions(sessionId) {
   // For transition sessions: use all history (session-number based)
   // For standard sessions: last ~70 days (2 mesocycles)
@@ -3118,6 +3345,69 @@ function get2MesoCycleSessions(sessionId) {
 }
 
 /* ── Chart render state (module-level) ───────────────────────── */
+function getExerciseTrendData(limit = 5) {
+  const names = new Set();
+  state.programme.sessions.forEach(sess => {
+    sess.exercises.forEach(ex => {
+      if (ex.type !== 'optional' && ex.type !== 'prehab') names.add(ex.name);
+    });
+  });
+
+  const trends = [];
+  names.forEach(name => {
+    const exerciseSessions = state.sessions
+      .filter(s => s.status === 'complete' && s.exercises?.some(ex => ex.name === name && ex.sets?.length))
+      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+    if (exerciseSessions.length < 4) return;
+
+    const mode = getExerciseMode(name, exerciseSessions);
+    const points = exerciseSessions.map(sess => {
+      const ex = sess.exercises.find(e => e.name === name);
+      const vol = calcVolume(ex, mode);
+      const rirValues = (ex?.sets || []).map(set => parseRIRValue(set.rir)).filter(rir => rir !== null);
+      const avgRIR = rirValues.length ? rirValues.reduce((sum, rir) => sum + rir, 0) / rirValues.length : null;
+      return {
+        date: sess.date,
+        score: vol?.volume || 0,
+        unit: vol?.unit || '',
+        avgRIR
+      };
+    }).filter(p => p.score > 0);
+
+    if (points.length < 4) return;
+    const recent = points.slice(-6);
+    const split = Math.max(2, Math.floor(recent.length / 2));
+    const early = recent.slice(0, split);
+    const late = recent.slice(split);
+    const avg = arr => arr.reduce((sum, p) => sum + p.score, 0) / arr.length;
+    const earlyAvg = avg(early);
+    const lateAvg = avg(late);
+    if (!earlyAvg || !lateAvg) return;
+
+    const pct = Math.round(((lateAvg - earlyAvg) / earlyAvg) * 100);
+    const last = recent[recent.length - 1];
+    const lastRIR = last.avgRIR === null ? null : Math.round(last.avgRIR * 10) / 10;
+    let status = 'steady';
+    if (pct >= 8) status = 'up';
+    else if (pct <= -8) status = 'down';
+
+    trends.push({
+      name,
+      status,
+      pct,
+      score: Math.round(last.score),
+      unit: last.unit,
+      lastRIR,
+      sessions: points.length
+    });
+  });
+
+  return trends
+    .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
+    .slice(0, limit);
+}
+
 const _chartInstances = {};
 const _chartState     = {};  // sessionId → { activeEx, graphVisible }
 
@@ -3330,12 +3620,9 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   // Destroy existing chart
   if (Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
 
-  const isDark    = document.documentElement.getAttribute('data-theme') === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(84,107,65,0.08)';
-  const tickColor = isDark ? '#3a4533' : '#8A8070';
-  const tooltipBg = isDark ? 'rgba(26,31,22,0.96)' : 'rgba(255,248,236,0.96)';
-  const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(84,107,65,0.15)';
-  const monoFont  = { family: 'DM Mono', size: 9 };
+  const chartTheme = getChartTheme();
+  const accent = resolveCssColor(accentColor);
+  const monoFont = { family: 'DM Mono', size: 9 };
 
   const datasets = [];
 
@@ -3343,11 +3630,11 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   datasets.push({
     label: mode === 'bw' ? 'Total Reps' : 'Volume',
     data: volData,
-    borderColor: accentColor,
-    backgroundColor: accentColor + '18',
+    borderColor: accent,
+    backgroundColor: colorWithAlpha(accent, 0.12),
     tension: 0.35,
     pointRadius: 3,
-    pointBackgroundColor: accentColor,
+    pointBackgroundColor: accent,
     borderWidth: 2,
     yAxisID: 'yVol',
     fill: true,
@@ -3392,7 +3679,7 @@ function renderExerciseChart(sessionId, exName, accentColor) {
       plugins: {
         legend: {
           labels: {
-            color: tickColor,
+            color: chartTheme.tickColor,
             font: monoFont,
             boxWidth: 8,
             padding: 8,
@@ -3402,35 +3689,35 @@ function renderExerciseChart(sessionId, exName, accentColor) {
           }
         },
         tooltip: {
-          backgroundColor: tooltipBg,
-          borderColor: tooltipBorder,
+          backgroundColor: colorWithAlpha(chartTheme.tooltipBg, 0.96),
+          borderColor: chartTheme.tooltipBorder,
           borderWidth: 1,
           titleFont: monoFont,
           bodyFont: monoFont,
-          titleColor: isDark ? '#e8e9ea' : '#2C2C2C',
-          bodyColor: isDark ? '#6b6d72' : '#5A5A5A',
+          titleColor: chartTheme.textColor,
+          bodyColor: chartTheme.tickColor,
           padding: 10,
         }
       },
       scales: {
         x: {
-          ticks: { color: tickColor, font: monoFont, maxRotation: 45 },
-          grid:  { color: gridColor }
+          ticks: { color: chartTheme.tickColor, font: monoFont, maxRotation: 45 },
+          grid:  { color: chartTheme.gridColor }
         },
         yVol: {
           type: 'linear',
           position: 'left',
-          ticks: { color: tickColor, font: monoFont },
-          grid:  { color: gridColor },
-          title: { display: true, text: axisLabel, color: tickColor, font: { size: 8 } }
+          ticks: { color: chartTheme.tickColor, font: monoFont },
+          grid:  { color: chartTheme.gridColor },
+          title: { display: true, text: axisLabel, color: chartTheme.tickColor, font: { size: 8 } }
         },
         yCeil: {
           type: 'linear',
           position: 'right',
           min: 0, max: 100,
-          ticks: { color: 'rgba(180,180,180,0.35)', font: monoFont, callback: v => v + '%' },
+          ticks: { color: colorWithAlpha(chartTheme.mutedColor, 0.75), font: monoFont, callback: v => v + '%' },
           grid:  { drawOnChartArea: false },
-          title: { display: true, text: '% ceiling', color: 'rgba(180,180,180,0.35)', font: { size: 8 } }
+          title: { display: true, text: '% ceiling', color: colorWithAlpha(chartTheme.mutedColor, 0.75), font: { size: 8 } }
         }
       }
     }
@@ -3452,6 +3739,15 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   } else if (noteEl) {
     noteEl.classList.add('hidden');
   }
+}
+
+function refreshVisibleCharts() {
+  Object.entries(_chartState).forEach(([sessionId, cfg]) => {
+    const wrap = document.getElementById(`chart-wrap-${sessionId}`);
+    if (!wrap || wrap.classList.contains('hidden')) return;
+    if (!cfg?.activeEx) return;
+    renderExerciseChart(sessionId, cfg.activeEx, cfg.accentColor || getSessionAccentColor(sessionId));
+  });
 }
 
 function filterHistory(filter, btn) {
@@ -4746,6 +5042,29 @@ function setNextSessionOverride(sessionId) {
   renderDashboard();
 }
 
+function toggleDashboardPanel(panelId) {
+  state.dashboardPanelOpen = {
+    ...(state.dashboardPanelOpen || {}),
+    [panelId]: !state.dashboardPanelOpen?.[panelId]
+  };
+  saveSettings();
+  _renderDashboardRightCol();
+}
+
+function toggleDashboardPanelVisibility(panelId) {
+  state.dashboardPanels = {
+    ...INITIAL_STATE.dashboardPanels,
+    ...(state.dashboardPanels || {}),
+    [panelId]: !((state.dashboardPanels || INITIAL_STATE.dashboardPanels)[panelId] !== false)
+  };
+  if (state.dashboardPanels[panelId]) {
+    state.dashboardPanelOpen = { ...(state.dashboardPanelOpen || {}), [panelId]: false };
+  }
+  saveSettings();
+  renderDashboard();
+  renderDashboardPanelSettings();
+}
+
 function localDateStr(d) {
   // Returns YYYY-MM-DD in local time (not UTC) to avoid timezone shift
   const y = d.getFullYear();
@@ -4855,7 +5174,7 @@ function _renderDashboardNextSession() {
   const makeChip = s => {
     const isSelected = s.id === nextSess.session.id;
     const rgb = s.colorRgb || '0,212,160';
-    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
+    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-label="Choose ${s.name}"
       style="--picker-rgb:${rgb}"
       onclick="setNextSessionOverride('${s.id}')"
       data-session-id="${s.id}">
@@ -4939,15 +5258,38 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     const isCurrent = wk.w === week;
     const barCls = wk.deload ? 'deload-bar' : isCurrent ? 'current' : '';
     return '<div class="dash-volume-bar-wrap ' + (isCurrent ? 'current-wrap' : '') + '">' +
-      '<div class="dash-volume-bar ' + barCls + '" style="height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
+      '<div class="dash-volume-bar-track">' +
+        '<div class="dash-volume-bar ' + barCls + '" style="height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
+      '</div>' +
       '<div class="dash-volume-bar-label">' + (wk.deload ? 'DL' : 'W'+wk.w) + '</div>' +
       '</div>';
   }).join('');
 
-  const typeColors = { add_set:'var(--green)', increase_load:'var(--pull)', tempo:'var(--push-b)', equipment_ceiling:'var(--red)' };
-  const progHtml = pending.length > 0
-    ? '<div class="dash-section-label" style="margin-top:16px">Progression Pending</div>' +
-      pending.slice(0,5).map(p => {
+  const panelEnabled = id => (state.dashboardPanels || INITIAL_STATE.dashboardPanels)[id] !== false;
+  const collapsiblePanel = (id, title, body, summary = '') => {
+    if (!panelEnabled(id) || !body) return '';
+    const isOpen = !!state.dashboardPanelOpen?.[id];
+    return '<div class="dash-insight-panel ' + (isOpen ? 'open' : 'collapsed') + '" data-panel-id="' + id + '">' +
+      '<div class="dash-insight-head" role="button" tabindex="0" onclick="toggleDashboardPanel(&quot;' + id + '&quot;)" aria-label="Toggle ' + title + '">' +
+        '<span class="dash-insight-title">' + title + '</span>' +
+        '<span class="dash-insight-summary">' + summary + '</span>' +
+        '<span class="dash-insight-chev">›</span>' +
+      '</div>' +
+      '<div class="dash-insight-body">' + body + '</div>' +
+    '</div>';
+  };
+
+  const typeColors = {
+    add_set:'var(--green)',
+    increase_load:'var(--pull)',
+    hold_effort:'var(--amber)',
+    band_tension:'var(--legs-a)',
+    variant_advancement:'var(--push-b)',
+    tempo:'var(--push-b)',
+    equipment_ceiling:'var(--red)'
+  };
+  const progBody = pending.length > 0
+    ? pending.slice(0,5).map(p => {
         const col = typeColors[p.type] || 'var(--text-dim)';
         return '<div class="dash-prog-item">' +
           '<div class="dash-prog-dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + '88"></div>' +
@@ -4956,34 +5298,45 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
           '</div>';
       }).join('')
     : '<div style="font-size:9px;color:var(--text-muted);margin-top:16px">No progressions pending</div>';
+  const progHtml = collapsiblePanel('progressionPending', 'Progression Pending', progBody, pending.length ? pending.length + ' pending' : 'none');
+  const fatigueWatchHtml = collapsiblePanel('fatigueWatch', 'Fatigue Watch', buildFatigueWatchPanel(week), analyseFatigueWatch(week).label);
+  const blockReview = analyseCurrentBlock(week);
+  const blockReviewHtml = collapsiblePanel('blockReview', 'Block Review', buildBlockReviewPanel(week, blockReview), blockReview.label);
+  const trends = getExerciseTrendData(5);
+  const movementTrendsHtml = collapsiblePanel('movementTrends', 'Movement Trends', buildMovementTrendsPanel(trends), trends.length ? trends.length + ' movements' : 'no data');
+  const rirReadinessHtml = collapsiblePanel('rirReadiness', 'RIR Readiness', buildDashboardAutoregulationPanel(week), 'next session');
 
   const bwNote = state.bodyweight ? 'BW ' + state.bodyweight + ' kg' : 'add bodyweight in settings';
   const volChangeHtml = volChange !== null
-    ? '<span style="font-size:11px;color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs W' + (week-1) + '</span>'
-    : '<span style="font-size:9px;color:var(--text-muted)">week 1 baseline</span>';
+    ? '<span class="dash-volume-change" style="--change-color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs W' + (week-1) + '</span>'
+    : '<span class="dash-volume-change muted">week 1 baseline</span>';
 
   const weekLabel = viewWeek === week ? 'This Week' : 'Week ' + viewWeek;
-  return '<div class="dash-section volume-section dashboard-col-right" style="height:100%">' +
+  return '<div class="dash-section volume-section dashboard-col-right">' +
     '<div class="dash-section-label">' + weekLabel + '</div>' +
-    '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">' +
+    '<div class="dash-volume-head">' +
       '<div class="dash-volume-total">' + volFmt(thisWeekVol) + '</div>' + volChangeHtml +
     '</div>' +
     '<div class="dash-volume-sub">Volume &middot; ' + bwNote + '</div>' +
     '<div class="dash-volume-bars">' + barsHtml + '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:14px">' +
-      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
-        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + sessionCount + '</div>' +
-        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Sessions</div>' +
+    '<div class="dash-stat-grid">' +
+      '<div class="dash-stat-tile">' +
+        '<div class="dash-stat-value">' + sessionCount + '</div>' +
+        '<div class="dash-stat-label">Sessions</div>' +
       '</div>' +
-      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
-        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + streak + '</div>' +
-        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Day Streak</div>' +
+      '<div class="dash-stat-tile">' +
+        '<div class="dash-stat-value">' + streak + '</div>' +
+        '<div class="dash-stat-label">Day Streak</div>' +
       '</div>' +
-      '<div style="background:var(--surface3);border-radius:7px;padding:8px;text-align:center">' +
-        '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">' + (avgDur ? avgDur + '<span style="font-size:13px">m</span>' : '—') + '</div>' +
-        '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em">Avg Duration</div>' +
+      '<div class="dash-stat-tile">' +
+        '<div class="dash-stat-value">' + (avgDur ? avgDur + '<span class="dash-stat-unit">m</span>' : '-') + '</div>' +
+        '<div class="dash-stat-label">Avg Duration</div>' +
       '</div>' +
     '</div>' +
+    blockReviewHtml +
+    fatigueWatchHtml +
+    movementTrendsHtml +
+    rirReadinessHtml +
     progHtml +
     '</div>';
 }
@@ -5045,7 +5398,7 @@ function renderDashboard() {
           const cls = isSelected ? 'current' : wk.w < week ? 'past' : wk.w > week ? 'future' : '';
           const deloadCls = wk.deload ? ' deload' : '';
           return `<div class="dash-meso-block ${cls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
-            style="cursor:pointer" title="View week ${wk.w} data">
+            role="button" tabindex="0" aria-label="View week ${wk.w} data" title="View week ${wk.w} data">
             <div class="dash-meso-block-week">W${wk.w}</div>
             <div class="dash-meso-block-sets">${wk.sets}</div>
             <div class="dash-meso-block-rir">${wk.rir}</div>
@@ -5095,7 +5448,7 @@ function renderDashboard() {
         function makeChip(s) {
           const isSelected = s.id === nextSess.session.id;
           const rgb = s.colorRgb || '0,212,160';
-          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
+          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-label="Choose ${s.name}"
             style="--picker-rgb:${rgb}"
             onclick="setNextSessionOverride('${s.id}')"
             data-session-id="${s.id}">
@@ -5153,7 +5506,7 @@ function renderDashboard() {
       .filter(ex => getJeLadder(ex.name));
 
     rightCol = `
-      <div class="dash-section dashboard-col-right" style="height:100%">
+      <div class="dash-section dashboard-col-right">
         <div class="dash-section-label">Ladder Progress</div>
         ${ladderExercises.length === 0
           ? '<div class="dash-empty">Log sessions to track progress</div>'
@@ -5186,7 +5539,7 @@ function renderDashboard() {
     `;
   }
 
-  card.innerHTML = `<div class="dashboard-grid">${leftCol}${rightCol}</div>`;
+  card.innerHTML = `<div class="dashboard-grid"><div class="dashboard-left-stack">${leftCol}</div>${rightCol}</div>`;
 }
 
 
@@ -5291,6 +5644,15 @@ document.addEventListener('click', function(e) {
   // Don't re-expand if clicking the summary itself (that's just reading)
   row.classList.remove('set-collapsed');
   hideNextPromptForCard(row);
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const target = e.target.closest('[role="button"]');
+  if (!target) return;
+  if (target.matches('button, input, textarea, select')) return;
+  e.preventDefault();
+  target.click();
 });
 
 function hideNextPromptForCard(row) {
@@ -6357,9 +6719,535 @@ function hasTempoApplied(sessionId, exerciseName) {
     });
 }
 
+function parseRIRValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const str = value.toString().trim().toLowerCase();
+  if (!str) return null;
+  if (str.includes('+')) {
+    const n = parseFloat(str.replace('+', ''));
+    return isNaN(n) ? null : n;
+  }
+  const n = parseFloat(str);
+  return isNaN(n) ? null : n;
+}
+
+function getTargetRIRRange(week) {
+  const ranges = {
+    1: [3, 4],
+    2: [2, 3],
+    3: [2, 2],
+    4: [1, 2],
+    5: [5, 6],
+  };
+  return ranges[week] || [2, 3];
+}
+
+function assessProgressionReadiness(completeSessions, exerciseName, week) {
+  const rirValues = [];
+  completeSessions.forEach(sess => {
+    const ex = sess.exercises.find(e => e.name === exerciseName);
+    (ex?.sets || []).forEach(set => {
+      const rir = parseRIRValue(set.rir);
+      if (rir !== null) rirValues.push(rir);
+    });
+  });
+
+  if (rirValues.length < 2) return { status: 'unknown' };
+
+  const avg = rirValues.reduce((sum, rir) => sum + rir, 0) / rirValues.length;
+  const [targetLow, targetHigh] = getTargetRIRRange(week);
+  const roundedAvg = Math.round(avg * 10) / 10;
+
+  if (avg < targetLow - 0.5) {
+    return {
+      status: 'hold',
+      avgRIR: roundedAvg,
+      targetLow,
+      targetHigh,
+      message: `Rep ceiling was hit, but average RIR was ${roundedAvg}. Week ${week} target is ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Hold the current load or variant until it is cleaner.`
+    };
+  }
+
+  if (avg > targetHigh + 1.5) {
+    return {
+      status: 'easy',
+      avgRIR: roundedAvg,
+      targetLow,
+      targetHigh,
+      message: `Average RIR was ${roundedAvg}, above the Week ${week} target of ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Progression is strongly justified.`
+    };
+  }
+
+  return { status: 'ready', avgRIR: roundedAvg, targetLow, targetHigh };
+}
+
+function withEffortContext(suggestion, readiness) {
+  if (!suggestion || readiness.status !== 'easy') return suggestion;
+  return {
+    ...suggestion,
+    message: `${suggestion.message} ${readiness.message}`
+  };
+}
+
+function getAutoregulationHint(sessionId, exerciseName, week) {
+  const lastSession = state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .slice(-1)[0];
+  const lastEx = lastSession?.exercises?.find(e => e.name === exerciseName);
+  if (!lastEx || !lastEx.sets?.length) return null;
+
+  const rirValues = lastEx.sets
+    .map(set => parseRIRValue(set.rir))
+    .filter(rir => rir !== null);
+  if (rirValues.length === 0) return null;
+
+  const avg = rirValues.reduce((sum, rir) => sum + rir, 0) / rirValues.length;
+  const roundedAvg = Math.round(avg * 10) / 10;
+  const [targetLow, targetHigh] = getTargetRIRRange(week);
+  const targetText = targetLow === targetHigh ? String(targetLow) : `${targetLow}-${targetHigh}`;
+  const model = getExerciseProgressionModel(findExerciseConfig(sessionId, exerciseName));
+
+  if (avg < targetLow - 0.5) {
+    return {
+      status: 'reduce',
+      label: 'Ease off',
+      message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. Keep the movement cleaner: reduce load, band tension, variant difficulty, or reps.`
+    };
+  }
+
+  if (avg > targetHigh + 1.5) {
+    const action = model === 'band_tension'
+      ? 'band tension'
+      : model === 'bodyweight_variant'
+        ? 'variant difficulty'
+        : model === 'bodyweight_reps'
+          ? 'rep quality or tempo'
+          : 'load';
+    return {
+      status: 'push',
+      label: 'Room to push',
+      message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. You likely have room to increase ${action} if form stays sharp.`
+    };
+  }
+
+  return {
+    status: 'hold',
+    label: 'On target',
+    message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. Keep the current setup and execute cleanly.`
+  };
+}
+
+function buildAutoregulationHint(sessionId, exerciseName, week) {
+  const hint = getAutoregulationHint(sessionId, exerciseName, week);
+  if (!hint) return '';
+  return `<div class="autoreg-hint ${hint.status}">
+    <span class="autoreg-label">${hint.label}</span>
+    <span class="autoreg-message">${hint.message}</span>
+  </div>`;
+}
+
+function buildDashboardAutoregulationPanel(week) {
+  if (state.profile !== 'alex' || isDeloadWeek()) return '';
+  const next = getNextSession()?.session;
+  if (!next?.exercises?.length) return '';
+
+  const hints = next.exercises
+    .filter(ex => ex.type !== 'optional' && ex.type !== 'prehab')
+    .map(ex => ({ ex, hint: getAutoregulationHint(next.id, ex.name, week) }))
+    .filter(item => item.hint)
+    .slice(0, 5);
+
+  if (!hints.length) return '';
+
+  const rows = hints.map(({ ex, hint }) =>
+    '<div class="dash-rir-item ' + hint.status + '">' +
+      '<div class="dash-rir-head">' +
+        '<span class="dash-rir-name">' + ex.name + '</span>' +
+        '<span class="dash-rir-label">' + hint.label + '</span>' +
+      '</div>' +
+      '<div class="dash-rir-message">' + hint.message + '</div>' +
+    '</div>'
+  ).join('');
+
+  return rows;
+}
+
+function getSessionRIRValues(session) {
+  return (session.exercises || [])
+    .flatMap(ex => (ex.sets || []).map(set => parseRIRValue(set.rir)))
+    .filter(rir => rir !== null);
+}
+
+function getRecentCompleteSessions(days = 10) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  return state.sessions
+    .filter(s => s.status === 'complete' && s.date && new Date(s.date) >= cutoff)
+    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+}
+
+function analyseFatigueWatch(week) {
+  const recent = getRecentCompleteSessions(10);
+  if (recent.length < 2) {
+    return {
+      status: 'neutral',
+      label: 'Need data',
+      title: 'Not enough recent sessions',
+      message: 'Complete at least 2 sessions in the last 10 days for a fatigue signal.',
+      metrics: []
+    };
+  }
+
+  const rirValues = recent.flatMap(getSessionRIRValues);
+  const avgRIR = rirValues.length
+    ? rirValues.reduce((sum, rir) => sum + rir, 0) / rirValues.length
+    : null;
+  const lowRIRRate = rirValues.length
+    ? rirValues.filter(rir => rir <= 1).length / rirValues.length
+    : 0;
+  const highRIRRate = rirValues.length
+    ? rirValues.filter(rir => rir >= 4).length / rirValues.length
+    : 0;
+
+  let totalSets = 0;
+  let missedSets = 0;
+  recent.forEach(sess => {
+    (sess.exercises || []).forEach(ex => {
+      (ex.sets || []).forEach(set => {
+        const reps = parseInt(set.reps);
+        if (isNaN(reps)) return;
+        totalSets++;
+        if (Array.isArray(ex.repRange) && reps < ex.repRange[0]) missedSets++;
+      });
+    });
+  });
+  const missedRate = totalSets ? missedSets / totalSets : 0;
+
+  const noteText = recent.map(s => s.notes || '').join(' ').toLowerCase();
+  const noteFlags = [
+    /felt fatigued/.test(noteText),
+    /felt wrecked/.test(noteText),
+    /low motivation/.test(noteText),
+    /\b5h sleep\b/.test(noteText),
+  ].filter(Boolean).length;
+
+  const weekSessions = getThisWeekSessions().reduce((count, day) => count + day.logged.length, 0);
+  const [targetLow, targetHigh] = getTargetRIRRange(week);
+
+  let score = 0;
+  if (avgRIR !== null && avgRIR < targetLow - 0.5) score += 1;
+  if (lowRIRRate >= 0.35) score += 2;
+  else if (lowRIRRate >= 0.2) score += 1;
+  if (missedRate >= 0.12) score += 2;
+  else if (missedRate >= 0.06) score += 1;
+  if (noteFlags >= 2) score += 2;
+  else if (noteFlags >= 1) score += 1;
+  if (weekSessions >= 5) score += 1;
+
+  const avgText = avgRIR === null ? '-' : (Math.round(avgRIR * 10) / 10).toString();
+  const metrics = [
+    `${recent.length} sessions / 10d`,
+    `avg RIR ${avgText}`,
+    `${Math.round(lowRIRRate * 100)}% low-RIR sets`,
+    `${Math.round(missedRate * 100)}% misses`
+  ];
+
+  if (score >= 4) {
+    return {
+      status: 'high',
+      label: 'Back off',
+      title: 'Fatigue is running hot',
+      message: 'Recent effort and misses suggest the next session should stay cleaner: reduce load, trim optional work, or cap sets.',
+      metrics
+    };
+  }
+
+  if (score >= 2) {
+    return {
+      status: 'caution',
+      label: 'Watch',
+      title: 'Fatigue is elevated',
+      message: 'Keep the next session honest. Progress only where the set-level bubbles say push.',
+      metrics
+    };
+  }
+
+  if (avgRIR !== null && highRIRRate >= 0.35 && missedRate < 0.04 && weekSessions <= 4) {
+    return {
+      status: 'low',
+      label: 'Room',
+      title: 'Fatigue looks low',
+      message: 'Recent sessions were not close to the target effort. You can push selected movements if form is clean.',
+      metrics
+    };
+  }
+
+  return {
+    status: 'normal',
+    label: 'Stable',
+    title: 'Fatigue is controlled',
+    message: 'Recent workload and effort look compatible with the current mesocycle week.',
+    metrics
+  };
+}
+
+function buildFatigueWatchPanel(week) {
+  if (state.profile !== 'alex') return '';
+  const watch = analyseFatigueWatch(week);
+  return '<div class="dash-fatigue-card ' + watch.status + '">' +
+      '<div class="dash-fatigue-head">' +
+        '<div class="dash-fatigue-title">' + watch.title + '</div>' +
+        '<div class="dash-fatigue-label">' + watch.label + '</div>' +
+      '</div>' +
+      '<div class="dash-fatigue-message">' + watch.message + '</div>' +
+      '<div class="dash-fatigue-metrics">' + watch.metrics.map(m => '<span>' + m + '</span>').join('') + '</div>' +
+    '</div>';
+}
+
+function buildMovementTrendsPanel(trends = getExerciseTrendData(5)) {
+  if (!trends.length) return '';
+
+  const rows = trends.map(t => {
+    const sign = t.pct > 0 ? '+' : '';
+    const rir = t.lastRIR === null ? '' : ' · RIR ' + t.lastRIR;
+    const label = t.status === 'up' ? 'Up' : t.status === 'down' ? 'Down' : 'Flat';
+    return '<div class="dash-trend-item ' + t.status + '">' +
+      '<div class="dash-trend-main">' +
+        '<span class="dash-trend-name">' + t.name + '</span>' +
+        '<span class="dash-trend-label">' + label + '</span>' +
+      '</div>' +
+      '<div class="dash-trend-meta">' +
+        '<span>' + sign + t.pct + '% recent trend</span>' +
+        '<span>' + t.score + ' ' + t.unit + rir + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  return rows;
+}
+
+function analyseCurrentBlock(week) {
+  if (!state.mesoStartDate) {
+    return {
+      status: 'neutral',
+      label: 'Unset',
+      title: 'No block start date',
+      message: 'Set a mesocycle start date to review block quality.',
+      metrics: []
+    };
+  }
+
+  const start = new Date(state.mesoStartDate);
+  const now = new Date();
+  const mesoSessions = state.sessions.filter(s => {
+    if (!s.date || s.status !== 'complete') return false;
+    const d = new Date(s.date);
+    return d >= start && d <= now;
+  });
+
+  const completedTypes = new Set(mesoSessions.map(s => s.sessionId)).size;
+  const totalVolume = mesoSessions.reduce((sum, s) => sum + calcSessionVolume(s), 0);
+  const peakVol = calcWeekVolume(4);
+  const currentVol = calcWeekVolume(week);
+  const elapsedDays = Math.max(1, Math.floor((now - start) / 86400000) + 1);
+  const expectedSessions = state.profile === 'alex'
+    ? Math.min(20, Math.ceil((elapsedDays / 7) * 5))
+    : Math.min(12, Math.ceil((elapsedDays / 7) * 3));
+  const completion = expectedSessions ? Math.min(100, Math.round((mesoSessions.length / expectedSessions) * 100)) : 0;
+  const missedPartial = state.sessions.filter(s => {
+    if (!s.date || s.status !== 'partial') return false;
+    const d = new Date(s.date);
+    return d >= start && d <= now;
+  }).length;
+  const avgRIRVals = mesoSessions.flatMap(getSessionRIRValues);
+  const avgRIR = avgRIRVals.length
+    ? avgRIRVals.reduce((sum, rir) => sum + rir, 0) / avgRIRVals.length
+    : null;
+
+  let status = 'building';
+  let label = 'Building';
+  let title = 'Block is building';
+  let message = 'Volume and completion are accumulating. Keep following the week targets.';
+
+  if (week >= 5) {
+    status = 'deload';
+    label = 'Review';
+    title = 'Deload review due';
+    message = 'Use this week to recover and review what should carry into the next block.';
+  } else if (completion < 55 || missedPartial >= 2) {
+    status = 'patchy';
+    label = 'Patchy';
+    title = 'Block consistency is weak';
+    message = 'The block has gaps or partial sessions. Prioritise completing core sessions before adding complexity.';
+  } else if (week >= 4 && avgRIR !== null && avgRIR > 3) {
+    status = 'under';
+    label = 'Under';
+    title = 'Block may be under-dosed';
+    message = 'Peak-week effort is still too easy. Push selected movements where set bubbles allow it.';
+  } else if (week >= 4 && avgRIR !== null && avgRIR < 1) {
+    status = 'hot';
+    label = 'Hot';
+    title = 'Block pressure is high';
+    message = 'Peak-week effort is very close to failure. Finish cleanly and protect the deload.';
+  } else if (completion >= 75 && week >= 3) {
+    status = 'solid';
+    label = 'Solid';
+    title = 'Block is on track';
+    message = 'Completion and effort are aligned well enough to trust the current progression model.';
+  }
+
+  const fmt = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${Math.round(v)}kg`;
+  const metrics = [
+    `${completion}% complete`,
+    `${mesoSessions.length}/${expectedSessions} sessions`,
+    `${completedTypes} session types`,
+    `${fmt(totalVolume)} total`,
+    `W${week} ${fmt(currentVol)}`,
+  ];
+  if (peakVol) metrics.push(`W4 ${fmt(peakVol)}`);
+  if (avgRIR !== null) metrics.push(`avg RIR ${Math.round(avgRIR * 10) / 10}`);
+
+  return { status, label, title, message, metrics };
+}
+
+function buildBlockReviewPanel(week, block = analyseCurrentBlock(week)) {
+  return '<div class="dash-block-card ' + block.status + '">' +
+      '<div class="dash-block-head">' +
+        '<div class="dash-block-title">' + block.title + '</div>' +
+        '<div class="dash-block-label">' + block.label + '</div>' +
+      '</div>' +
+      '<div class="dash-block-message">' + block.message + '</div>' +
+      '<div class="dash-block-metrics">' + block.metrics.map(m => '<span>' + m + '</span>').join('') + '</div>' +
+    '</div>';
+}
+
+function getAutoregulationAction(model, direction) {
+  const actions = {
+    kb_load: {
+      reduce: 'Reduce load',
+      push: 'Increase load',
+      hold: 'Hold load'
+    },
+    band_tension: {
+      reduce: 'Lighter band',
+      push: 'Heavier band',
+      hold: 'Same band'
+    },
+    bodyweight_variant: {
+      reduce: 'Easier variant',
+      push: 'Harder variant',
+      hold: 'Same variant'
+    },
+    bodyweight_reps: {
+      reduce: 'Reduce reps',
+      push: 'Add reps',
+      hold: 'Hold reps'
+    },
+    explosive_quality: {
+      reduce: 'Reduce speed/load',
+      push: 'Sharper reps',
+      hold: 'Same setup'
+    },
+    prehab_quality: {
+      reduce: 'Reduce tension',
+      push: 'Cleaner control',
+      hold: 'Same setup'
+    }
+  };
+  return actions[model]?.[direction] || actions.kb_load[direction];
+}
+
+function getSetAutoregSuggestion(sessionId, ex, previousRef) {
+  if (isDeloadWeek() || !previousRef?.set) return null;
+  const rir = parseRIRValue(previousRef.set.rir);
+  if (rir === null) return null;
+
+  const week = getCurrentMesoWeek();
+  const [targetLow, targetHigh] = getTargetRIRRange(week);
+  const model = getExerciseProgressionModel(ex);
+  let direction = 'hold';
+
+  if (rir < targetLow - 0.5) direction = 'reduce';
+  else if (rir > targetHigh + 1.5) direction = 'push';
+
+  return {
+    direction,
+    label: direction === 'push' ? 'Push' : direction === 'reduce' ? 'Reduce' : 'Hold',
+    action: getAutoregulationAction(model, direction),
+    title: `Previous RIR ${previousRef.set.rir}. Week ${week} target: ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}.`
+  };
+}
+
+function findExerciseConfig(sessionId, exerciseName) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  return session?.exercises.find(e => e.name === exerciseName)
+      || state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName)
+      || null;
+}
+
+function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, currentSets) {
+  if (model === 'band_tension') {
+    return {
+      exercise: exerciseName,
+      type: 'band_tension',
+      message: `Set ceiling reached (${currentSets} sets). Increase band tension, then reset to 3 sets.`
+    };
+  }
+
+  if (model === 'bodyweight_variant') {
+    return {
+      exercise: exerciseName,
+      type: 'variant_advancement',
+      message: `Set ceiling reached (${currentSets} sets). Progress to the next harder bodyweight variant or reduce assistance, then reset to 3 sets.`
+    };
+  }
+
+  if (model === 'bodyweight_reps') {
+    if (hasTempoApplied(sessionId, exerciseName)) {
+      return {
+        exercise: exerciseName,
+        type: 'variant_advancement',
+        message: `Tempo already applied and the rep ceiling is still easy. Move to a harder bodyweight setup, then reset to 3 sets.`
+      };
+    }
+    return {
+      exercise: exerciseName,
+      type: 'tempo',
+      message: `Bodyweight rep ceiling reached. Apply a stricter tempo or pause, then keep the same set target.`
+    };
+  }
+
+  if (canIncreaseLoad(exerciseName)) {
+    return {
+      exercise: exerciseName,
+      type: 'increase_load',
+      message: `Set ceiling reached (${currentSets} sets). Increase load - sets reset to 3.`
+    };
+  }
+
+  if (hasTempoApplied(sessionId, exerciseName)) {
+    return {
+      exercise: exerciseName,
+      type: 'equipment_ceiling',
+      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached - new kit needed to progress further.`
+    };
+  }
+
+  return {
+    exercise: exerciseName,
+    type: 'tempo',
+    message: `Equipment ceiling reached. Apply 3s eccentric tempo - same load, significantly harder. Flag session with tempo once applied.`
+  };
+}
+
 function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const week = getCurrentMesoWeek();
   if (week === 1 || isDeloadWeek()) return null;
+
+  const exConfig = findExerciseConfig(sessionId, exerciseName);
+  const model = getExerciseProgressionModel(exConfig);
+  if (model === 'prehab_quality' || model === 'explosive_quality') return null;
 
   const completeSessions = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
@@ -6378,6 +7266,15 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
 
   if (!bothHitCeiling) return null;
 
+  const readiness = assessProgressionReadiness(completeSessions, exerciseName, week);
+  if (readiness.status === 'hold') {
+    return {
+      exercise: exerciseName,
+      type: 'hold_effort',
+      message: readiness.message
+    };
+  }
+
   const lastSess    = completeSessions[completeSessions.length - 1];
   const lastEx      = lastSess.exercises.find(e => e.name === exerciseName);
   const currentSets = lastEx ? lastEx.sets.length : 0;
@@ -6385,37 +7282,16 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
 
   // Step 3a — below set ceiling
   if (currentSets < targetSets) {
-    return {
+    return withEffortContext({
       exercise: exerciseName,
       type: 'add_set',
       message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.`
-    };
+    }, readiness);
   }
 
   // At set ceiling — check if load can go up
-  if (canIncreaseLoad(exerciseName)) {
-    return {
-      exercise: exerciseName,
-      type: 'increase_load',
-      message: `Set ceiling reached (${currentSets} sets). Increase load — sets reset to 3.`
-    };
-  }
+  return withEffortContext(buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, currentSets), readiness);
 
-  // Step 3c — equipment ceiling, check if tempo already applied
-  if (hasTempoApplied(sessionId, exerciseName)) {
-    return {
-      exercise: exerciseName,
-      type: 'equipment_ceiling',
-      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached — new kit needed to progress further.`
-    };
-  }
-
-  // Step 3c — suggest tempo manipulation
-  return {
-    exercise: exerciseName,
-    type: 'tempo',
-    message: `Equipment ceiling reached. Apply 3s eccentric tempo — same load, significantly harder. Flag session with tempo once applied.`
-  };
 }
 
 /* ═══════════════════════════════════════════
@@ -6440,6 +7316,7 @@ function markTempoApplied(exerciseName) {
 function renderProgressionSuggestions(session) {
   const card   = document.getElementById('prog-suggestion');
   const textEl = document.getElementById('prog-suggestion-text');
+  const titleEl = card?.querySelector('.prog-suggestion-title');
 
   if (isDeloadWeek()) { card.classList.add('hidden'); return; }
 
@@ -6472,11 +7349,18 @@ function renderProgressionSuggestions(session) {
   }
 
   if (suggestions.length > 0) {
+    if (titleEl) {
+      const hasHold = suggestions.some(s => s.type === 'hold_effort');
+      titleEl.textContent = hasHold ? 'Progression Review' : '↑ Progression Available';
+    }
     textEl.innerHTML = suggestions.map(s => {
       const typeColors = {
         'add_set':             'var(--green)',
         'increase_load':       'var(--pull)',
+        'hold_effort':         'var(--amber)',
         'support_reduce':      'var(--amber)',
+        'band_tension':        'var(--legs-a)',
+        'variant_advancement': 'var(--push-b)',
         'variant advancement': 'var(--push-b)',
         'band progression':    'var(--legs-a)',
         'tempo':               'var(--push-b)',
@@ -6581,10 +7465,8 @@ function applyTheme(theme) {
   const btn = document.getElementById('theme-toggle-btn');
   if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
 
-  // Redraw any visible charts so they pick up the new token colours
-  Object.values(_chartInstances).forEach(chart => {
-    if (chart && typeof chart.update === 'function') chart.update();
-  });
+  // Redraw any visible charts so canvas colours pick up the new theme tokens.
+  refreshVisibleCharts();
 }
 
 function initTheme() {
@@ -6596,9 +7478,14 @@ function initTheme() {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   document.getElementById(`panel-${tab}`)?.classList.add('active');
-  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  const tabBtn = document.getElementById(`tab-${tab}`);
+  tabBtn?.classList.add('active');
+  tabBtn?.setAttribute('aria-selected', 'true');
   document.body.dataset.tab = tab;
   if (tab === 'dashboard') renderDashboard();
 }
@@ -7063,6 +7950,12 @@ function deleteDummyData() {
    COMPUTE NEXT PROGRESSION (dynamic)
 ═══════════════════════════════════════════ */
 function computeNextProgression(ex) {
+  const model = getExerciseProgressionModel(ex);
+  if (model === 'prehab_quality') return 'Quality only';
+  if (model === 'explosive_quality') return 'Keep reps fast and crisp';
+  if (model === 'bodyweight_variant' && state.profile !== 'je') return 'Next harder variant';
+  if (model === 'bodyweight_reps') return 'More reps, then harder setup';
+
   const load = (ex.load || '').toString().toLowerCase();
   const BAND_ORDER = ['yellow','green','red','blue','black'];
   const KB_SIZES   = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
@@ -7244,6 +8137,7 @@ function openSettings() {
 
   // Band config
   renderBandConfig();
+  renderDashboardPanelSettings();
 
   // Programme editor
   renderSettingsProgramme();
@@ -7255,6 +8149,26 @@ function closeSettings() {
 
 function toggleSettingsSection(id) {
   document.getElementById(id)?.classList.toggle('open');
+}
+
+function renderDashboardPanelSettings() {
+  const wrap = document.getElementById('dashboard-panel-settings');
+  if (!wrap) return;
+  const panels = {
+    blockReview: 'Block Review',
+    fatigueWatch: 'Fatigue Watch',
+    movementTrends: 'Movement Trends',
+    rirReadiness: 'RIR Readiness',
+    progressionPending: 'Progression Pending',
+  };
+  const current = { ...INITIAL_STATE.dashboardPanels, ...(state.dashboardPanels || {}) };
+  wrap.innerHTML = Object.entries(panels).map(([id, label]) => {
+    const on = current[id] !== false;
+    return `<button class="settings-toggle-row ${on ? 'active' : ''}" onclick="toggleDashboardPanelVisibility('${id}')">
+      <span>${label}</span>
+      <span class="settings-toggle-pill">${on ? 'On' : 'Off'}</span>
+    </button>`;
+  }).join('');
 }
 
 /* ── PROFILE SETTINGS ──────────────────────────────────────────── */
@@ -7362,11 +8276,14 @@ function renderSettingsProgramme() {
 
 function buildProgExRow(session, ex, idx) {
   const dotStyle = ex.type === 'optional' ? 'background:var(--text-muted)' : `background:${session.color}`;
+  const model = getExerciseProgressionModel(ex);
+  const modelLabel = PROGRESSION_MODELS[model]?.short || getProgressionModelLabel(model);
   return `<div class="prog-ex-row" id="prog-row-${session.id}-${idx}">
     <span class="prog-ex-drag">⋮⋮</span>
     <div class="prog-ex-dot" style="${dotStyle}"></div>
     <span class="prog-ex-name">${ex.name}</span>
     <span class="prog-ex-type">${ex.type}</span>
+    <span class="prog-ex-type" title="${getProgressionModelLabel(model)}">${modelLabel}</span>
     <div class="prog-ex-actions">
       <button class="prog-ex-btn edit-btn" onclick="showEditExerciseForm('${session.id}',${idx})">Edit</button>
       <button class="prog-ex-btn del-btn" onclick="confirmRemoveExercise('${session.id}',${idx})">✕</button>
@@ -7396,6 +8313,9 @@ function showEditExerciseForm(sessionId, idx) {
 function buildExerciseEditForm(ex, sessionId, idx) {
   const typeOpts = ['compound','accessory','prehab','optional'].map(t =>
     `<option value="${t}"${ex.type===t?' selected':''}>${t}</option>`).join('');
+  const currentModel = getExerciseProgressionModel(ex);
+  const modelOpts = Object.entries(PROGRESSION_MODELS).map(([key, cfg]) =>
+    `<option value="${key}"${currentModel===key?' selected':''}>${cfg.label}</option>`).join('');
 
   const tagsList = (ex.tags || []).filter(t => !['compound','accessory','prehab','optional'].includes(t));
 
@@ -7409,6 +8329,10 @@ function buildExerciseEditForm(ex, sessionId, idx) {
       <div class="form-field">
         <label>Type</label>
         <select id="ef-type-${sessionId}-${idx}">${typeOpts}</select>
+      </div>
+      <div class="form-field">
+        <label>Progression Model</label>
+        <select id="ef-prog-model-${sessionId}-${idx}">${modelOpts}</select>
       </div>
     </div>
     <div class="form-row">
@@ -7483,6 +8407,7 @@ function saveExerciseEdit(sessionId, idx) {
   const newDesc  = document.getElementById(`ef-desc-${sessionId}-${idx}`)?.value?.trim();
   const newNotes = document.getElementById(`ef-notes-${sessionId}-${idx}`)?.value?.trim();
   const newSubs  = document.getElementById(`ef-subs-${sessionId}-${idx}`)?.value?.split(',').map(t=>t.trim()).filter(Boolean);
+  const newModel = document.getElementById(`ef-prog-model-${sessionId}-${idx}`)?.value;
 
   // Parse rep range
   const repMatch = (newReps || '').match(/(\d+)[–\-–](\d+)/);
@@ -7497,7 +8422,7 @@ function saveExerciseEdit(sessionId, idx) {
     session.exercises.push({
       num: nextNum, name: newName, type: newType, tags: baseTags,
       sets: newSets, reps: newReps, repRange, load: newLoad,
-      notes: newNotes, desc: newDesc, prog: '', substitutions: newSubs
+      notes: newNotes, desc: newDesc, prog: '', progressionModel: newModel, substitutions: newSubs
     });
     toast(`Exercise "${newName}" added`, 'success');
   } else {
@@ -7540,7 +8465,7 @@ function saveExerciseEdit(sessionId, idx) {
 
       toast(`Renamed "${oldName}" → "${newName}" across ${affected.length} sessions`, 'success');
     }
-    Object.assign(ex, { name: newName, type: newType, tags: baseTags, sets: newSets, reps: newReps, repRange, load: newLoad, notes: newNotes, desc: newDesc, substitutions: newSubs });
+    Object.assign(ex, { name: newName, type: newType, tags: baseTags, sets: newSets, reps: newReps, repRange, load: newLoad, notes: newNotes, desc: newDesc, progressionModel: newModel, substitutions: newSubs });
   }
 
   saveLocalState();
