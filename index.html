@@ -451,7 +451,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.1.6';
+const APP_VERSION = '4.1.7';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1675,6 +1675,7 @@ function resetTrackerState() {
 
   if (activeView) {
     activeView.classList.remove('visible');
+    activeView.classList.remove('timer-running');
   }
   if (selectView) {
     selectView.classList.remove('hidden');
@@ -2063,6 +2064,7 @@ function selectTrackerSession(sessionId) {
   document.getElementById('session-select-view').classList.add('hidden');
   const activeView = document.getElementById('active-session-view');
   activeView.classList.add('visible');
+  activeView.classList.remove('timer-running');
   activeView.style.setProperty('--session-color', session.color);
   activeView.style.setProperty('--session-rgb', session.colorRgb || '0,212,160');
 
@@ -2660,24 +2662,27 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
   const repSection = buildRepPills(setIdx, exIdx, ex.repRange, prevReps || '');
   const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR || '');
 
+  const bubbleCluster = (suggestionBubble || previousBubble)
+    ? `<div class="set-bubble-cluster">${suggestionBubble}${previousBubble}</div>`
+    : '<div class="set-bubble-cluster empty"></div>';
+
   return `<div class="set-row">
     <div class="set-row-main">
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
-      ${suggestionBubble}
-      ${previousBubble}
+      ${bubbleCluster}
       <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" aria-label="Remove set">✕</button>
     </div>
     <div class="set-row-pills">
-      <div class="pill-labeled-group">
+      <div class="pill-labeled-group load-group">
         <span class="pill-section-label">Load</span>
         ${loadSection}
       </div>
-      <div class="pill-labeled-group">
+      <div class="pill-labeled-group reps-group">
         <span class="pill-section-label">Reps</span>
         ${repSection}
       </div>
-      <div class="pill-labeled-group">
+      <div class="pill-labeled-group rir-group">
         <span class="pill-section-label">RIR</span>
         ${rirSection}
       </div>
@@ -2797,7 +2802,8 @@ function formatPreviousSetRef(set) {
   if (!set) return null;
   const load = set.load || 'BW';
   const reps = set.reps || '-';
-  const rir = set.rir ? ` (${set.rir})` : '';
+  const hasRIR = set.rir !== undefined && set.rir !== null && set.rir !== '';
+  const rir = hasRIR ? ` (${set.rir})` : '';
   return `${load} x ${reps}${rir}`;
 }
 
@@ -2858,6 +2864,7 @@ function showSubstitution(exName) {
 function startSession() {
   // Record timestamp immediately — before overlay
   state.startTime = new Date();
+  document.getElementById('active-session-view')?.classList.add('timer-running');
   document.getElementById('start-btn').classList.add('hidden');
   document.getElementById('end-btn').classList.remove('hidden');
   const display = document.getElementById('start-time-display');
@@ -3031,6 +3038,7 @@ function dismissWarmupOverlay() {
 
 function endSession() {
   state.endTime = new Date();
+  document.getElementById('active-session-view')?.classList.remove('timer-running');
 
   // Collect set data
   const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
@@ -3135,6 +3143,7 @@ function cancelSession() {
   state.startTime = null;
   state.endTime = null;
   document.getElementById('active-session-view').classList.remove('visible');
+  document.getElementById('active-session-view').classList.remove('timer-running');
   document.getElementById('session-select-view').classList.remove('hidden');
 }
 
