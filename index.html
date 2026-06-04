@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Workout Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23546B41'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='38' font-family='Arial,sans-serif' fill='%23FFF8EC'%3EW%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIldvcmtvdXQgVHJhY2tlciIsCiAgInNob3J0X25hbWUiOiAiV29ya291dCIsCiAgImRlc2NyaXB0aW9uIjogIlBlcnNvbmFsIHdvcmtvdXQgdHJhY2tlciBhbmQgcHJvZ3JhbW1lIHJlZmVyZW5jZSIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0ZGRjhFQyIsCiAgInRoZW1lX2NvbG9yIjogIiNGRkY4RUMiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdC1wcmltYXJ5IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIgMTkyJyUzRSUzQ3JlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIHJ4PScyNCcgZmlsbD0nJTIzNTQ2QjQxJy8lM0UlM0N0ZXh0IHg9Jzk2JyB5PScxMzAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nMTEwJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZiclM0XimqElM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFza2FibGUiCiAgICB9LAogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNjQnIGZpbGw9JyUyMzU0NkI0MScvJTNFJTNDdGV4dCB4PScyNTYnIHk9JzM0MCcgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1zaXplPSczMDAnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyUzReKaoSUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,9 +20,6 @@
   if (metaTheme) metaTheme.content = saved === 'dark' ? '#1A1F16' : '#FFF8EC';
 })();
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -60,7 +58,7 @@
     <div class="topbar-user" onclick="showProfileScreen()" role="button" tabindex="0" aria-label="Switch profile">
       <div class="topbar-user-dot" id="topbar-dot"></div>
       <span id="topbar-username">—</span>
-      <span style="color:var(--text-muted)">↩</span>
+      <span class="topbar-switch-icon" aria-hidden="true">↩</span>
     </div>
     <button class="gear-btn" onclick="openSettings()" title="Settings" aria-label="Open settings">⚙</button>
   </div>
@@ -68,19 +66,19 @@
   <!-- Bottom Nav -->
   <div class="tabnav">
     <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard" role="tab" aria-controls="panel-dashboard" aria-selected="true">
-      <span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span>
+      <span class="tab-icon" aria-hidden="true">🏠</span><span class="tab-label">Dashboard</span>
     </button>
     <button class="tab-btn" onclick="switchTab('programme')" id="tab-programme" role="tab" aria-controls="panel-programme" aria-selected="false">
-      <span class="tab-icon">📋</span><span class="tab-label">Programme</span>
+      <span class="tab-icon" aria-hidden="true">📋</span><span class="tab-label">Programme</span>
     </button>
     <button class="tab-btn" onclick="switchTab('tracker')" id="tab-tracker" role="tab" aria-controls="panel-tracker" aria-selected="false">
-      <span class="tab-icon">⚡</span><span class="tab-label">Track</span>
+      <span class="tab-icon" aria-hidden="true">⚡</span><span class="tab-label">Track</span>
     </button>
     <button class="tab-btn" onclick="switchTab('history')" id="tab-history" role="tab" aria-controls="panel-history" aria-selected="false">
-      <span class="tab-icon">📈</span><span class="tab-label">History</span>
+      <span class="tab-icon" aria-hidden="true">📈</span><span class="tab-label">History</span>
     </button>
     <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide" role="tab" aria-controls="panel-guide" aria-selected="false">
-      <span class="tab-icon">📖</span><span class="tab-label">Guide</span>
+      <span class="tab-icon" aria-hidden="true">📖</span><span class="tab-label">Guide</span>
     </button>
   </div>
 
@@ -88,7 +86,7 @@
   <div class="main">
 
     <!-- ══════════ MILESTONE OVERLAY ══════════ -->
-    <div class="milestone-overlay" id="milestone-overlay" onclick="dismissMilestone()">
+    <div class="milestone-overlay" id="milestone-overlay" onclick="dismissMilestone()" role="dialog" aria-modal="true" aria-labelledby="milestone-title">
       <div class="milestone-emoji" id="milestone-emoji">🏆</div>
       <div class="milestone-title" id="milestone-title">New Level!</div>
       <div class="milestone-sub" id="milestone-sub"></div>
@@ -97,31 +95,31 @@
     </div>
 
     <!-- ══════════ TAB 0: DASHBOARD ══════════ -->
-    <div class="tab-panel active" id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
+    <div class="tab-panel active" id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" aria-hidden="false">
       <div class="dashboard-card" id="dashboard-card">
         <!-- Rendered by renderDashboard() -->
       </div>
     </div>
 
     <!-- ══════════ TAB 1: PROGRAMME ══════════ -->
-    <div class="tab-panel" id="panel-programme" role="tabpanel" aria-labelledby="tab-programme">
+    <div class="tab-panel" id="panel-programme" role="tabpanel" aria-labelledby="tab-programme" aria-hidden="true">
 
       <!-- Drive status -->
       <div class="drive-status">
         <div class="drive-dot" id="drive-dot"></div>
         <span id="drive-status-text">Google Drive — not connected</span>
         <button class="drive-connect-btn" id="drive-connect-btn" onclick="handleDriveConnect()">Connect</button>
-        <button class="drive-connect-btn" id="drive-sync-btn" onclick="syncSessionsFromDrive(true)" style="display:none;margin-left:4px">⟳ Sync</button>
+        <button class="drive-connect-btn drive-sync-action hidden" id="drive-sync-btn" onclick="syncSessionsFromDrive(true)">⟳ Sync</button>
       </div>
-      <div id="drive-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);padding:0 16px 4px;text-align:right"></div>
+      <div id="drive-last-synced" class="drive-last-synced"></div>
 
       <!-- Mesocycle settings -->
       <div class="section-label">Mesocycle</div>
       <div class="meso-settings">
-        <label>Start Date</label>
+        <label for="meso-start-date">Start Date</label>
         <input type="date" id="meso-start-date" onchange="saveMesoSettings()">
-        <label>Current Week</label>
-        <input type="number" id="meso-week-override" min="1" max="5" style="width:60px" placeholder="Auto">
+        <label for="meso-week-override">Current Week</label>
+        <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" placeholder="Auto">
         <button class="meso-save-btn" onclick="saveMesoSettings()">Save</button>
       </div>
 
@@ -131,11 +129,11 @@
       <!-- Band reference -->
       <div class="section-label">Band Resistance</div>
       <div class="band-ref">
-        <div class="band-chip"><div class="band-swatch" style="background:var(--band-yellow)"></div>Yellow — 4.5 kg</div>
-        <div class="band-chip"><div class="band-swatch" style="background:var(--band-green)"></div>Green — 9.1 kg</div>
-        <div class="band-chip"><div class="band-swatch" style="background:var(--band-red)"></div>Red — 13.6 kg</div>
-        <div class="band-chip"><div class="band-swatch" style="background:var(--band-blue)"></div>Blue — 18.1 kg</div>
-        <div class="band-chip"><div class="band-swatch" style="background:var(--band-black); border:1px solid rgba(255,255,255,0.15)"></div>Black — 22.7 kg</div>
+        <div class="band-chip"><div class="band-swatch band-yellow"></div>Yellow — 4.5 kg</div>
+        <div class="band-chip"><div class="band-swatch band-green"></div>Green — 9.1 kg</div>
+        <div class="band-chip"><div class="band-swatch band-red"></div>Red — 13.6 kg</div>
+        <div class="band-chip"><div class="band-swatch band-blue"></div>Blue — 18.1 kg</div>
+        <div class="band-chip"><div class="band-swatch band-black"></div>Black — 22.7 kg</div>
       </div>
 
       <!-- Sessions -->
@@ -145,7 +143,7 @@
     </div>
 
     <!-- ══════════ TAB 2: TRACKER ══════════ -->
-    <div class="tab-panel" id="panel-tracker" role="tabpanel" aria-labelledby="tab-tracker">
+    <div class="tab-panel" id="panel-tracker" role="tabpanel" aria-labelledby="tab-tracker" aria-hidden="true">
       <div id="session-select-view">
         <div class="section-label">Select Session</div>
         <div class="tracker-select-grid" id="tracker-select-grid"></div>
@@ -160,7 +158,7 @@
 
         <!-- Progression suggestion -->
         <div class="prog-suggestion hidden" id="prog-suggestion">
-          <div class="prog-suggestion-title">↑ Progression Available</div>
+          <div class="prog-suggestion-title">Progression Available</div>
           <div id="prog-suggestion-text"></div>
         </div>
 
@@ -182,8 +180,9 @@
         </div>
 
         <!-- Template toggle — shown below toolbar when prev session exists -->
-        <div class="session-template-row" id="template-toggle-row" onclick="toggleSessionTemplate()"
-          title="Pre-fill loads from your last session" style="display:none">
+        <div class="session-template-row hidden" id="template-toggle-row" onclick="toggleSessionTemplate()"
+          role="button" tabindex="0" aria-pressed="false"
+          title="Pre-fill loads from your last session">
           <div class="session-template-toggle"></div>
           <span class="session-template-text">Use last session's loads</span>
         </div>
@@ -193,31 +192,31 @@
 
         <!-- Session notes -->
         <div class="session-notes-wrap mt-16">
-          <div class="session-notes-label">Session Notes <span style="color:var(--text-muted)">(optional)</span></div>
+          <div class="session-notes-label">Session Notes <span class="text-muted">(optional)</span></div>
 
           <!-- Quick-select pills -->
           <div class="notes-quick-row">
             <span class="notes-quick-label">Feel</span>
-            <div class="notes-pill" data-group="fatigue" data-value="Felt fresh" onclick="toggleNotesPill(this)">Fresh</div>
-            <div class="notes-pill" data-group="fatigue" data-value="Felt good" onclick="toggleNotesPill(this)">Good</div>
-            <div class="notes-pill" data-group="fatigue" data-value="Felt fatigued" onclick="toggleNotesPill(this)">Fatigued</div>
-            <div class="notes-pill" data-group="fatigue" data-value="Felt wrecked" onclick="toggleNotesPill(this)">Wrecked</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt fresh" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Fresh</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt good" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Good</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt fatigued" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Fatigued</div>
+            <div class="notes-pill" data-group="fatigue" data-value="Felt wrecked" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Wrecked</div>
           </div>
           <div class="notes-quick-row">
             <span class="notes-quick-label">Sleep</span>
-            <div class="notes-pill" data-group="sleep" data-value="5h sleep" onclick="toggleNotesPill(this)">5h</div>
-            <div class="notes-pill" data-group="sleep" data-value="6h sleep" onclick="toggleNotesPill(this)">6h</div>
-            <div class="notes-pill" data-group="sleep" data-value="7h sleep" onclick="toggleNotesPill(this)">7h</div>
-            <div class="notes-pill" data-group="sleep" data-value="8h+ sleep" onclick="toggleNotesPill(this)">8h+</div>
+            <div class="notes-pill" data-group="sleep" data-value="5h sleep" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">5h</div>
+            <div class="notes-pill" data-group="sleep" data-value="6h sleep" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">6h</div>
+            <div class="notes-pill" data-group="sleep" data-value="7h sleep" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">7h</div>
+            <div class="notes-pill" data-group="sleep" data-value="8h+ sleep" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">8h+</div>
           </div>
           <div class="notes-quick-row">
             <span class="notes-quick-label">Mood</span>
-            <div class="notes-pill" data-group="mood" data-value="Confident" onclick="toggleNotesPill(this)">Confident</div>
-            <div class="notes-pill" data-group="mood" data-value="Neutral" onclick="toggleNotesPill(this)">Neutral</div>
-            <div class="notes-pill" data-group="mood" data-value="Low motivation" onclick="toggleNotesPill(this)">Low</div>
+            <div class="notes-pill" data-group="mood" data-value="Confident" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Confident</div>
+            <div class="notes-pill" data-group="mood" data-value="Neutral" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Neutral</div>
+            <div class="notes-pill" data-group="mood" data-value="Low motivation" onclick="toggleNotesPill(this)" role="button" tabindex="0" aria-pressed="false">Low</div>
           </div>
 
-          <textarea class="session-notes-input" id="session-notes-input"
+          <textarea class="session-notes-input" id="session-notes-input" aria-label="Session notes"
             placeholder="Add any extra notes..."></textarea>
         </div>
 
@@ -230,30 +229,31 @@
     </div>
 
     <!-- ══════════ TAB 3: HISTORY ══════════ -->
-    <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+    <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history" aria-hidden="true">
       <div class="history-toolbar">
         <button class="history-filter active" onclick="filterHistory('all', this)">All</button>
         <div id="history-session-filters"></div>
         <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
 
       </div>
+      <div class="history-analytics" id="history-analytics"></div>
       <div class="history-list" id="history-list"></div>
     </div>
 
     <!-- ══════════ TAB 4: GUIDE ══════════ -->
-    <div class="tab-panel" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
+    <div class="tab-panel" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide" aria-hidden="true">
       <div class="guide-sections" id="guide-sections"></div>
     </div>
 
   </div><!-- /main -->
 
 <!-- Warmup Overlay -->
-<div class="warmup-overlay hidden" id="warmup-overlay">
+<div class="warmup-overlay hidden" id="warmup-overlay" role="dialog" aria-modal="true" aria-labelledby="warmup-title" aria-hidden="true">
   <div class="warmup-overlay-backdrop"></div>
   <div class="warmup-overlay-card">
-    <div id="warmup-session-title" style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--amber);margin-bottom:6px"></div>
+    <div id="warmup-session-title" class="warmup-session-title"></div>
     <span class="warmup-overlay-icon">🔥</span>
-    <div class="warmup-overlay-title">Warm Up</div>
+    <div class="warmup-overlay-title" id="warmup-title">Warm Up</div>
     <div class="warmup-overlay-started" id="warmup-started-label">Session timer running</div>
     <div class="warmup-overlay-body">
       5 minutes before you load the bar. Target the joints and movement patterns for today's session.
@@ -269,61 +269,61 @@
 
 
 <!-- Settings Panel -->
-<div class="settings-overlay hidden" id="settings-overlay">
+<div class="settings-overlay hidden" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
   <div class="settings-backdrop" onclick="closeSettings()"></div>
   <div class="settings-panel">
     <div class="settings-header">
-      <span style="font-size:18px">⚙</span>
-      <div class="settings-title">Settings</div>
-      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)" id="settings-profile-label">—</div>
-      <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle light/dark mode">☀️</button>
-      <button class="settings-close" onclick="closeSettings()">✕</button>
+      <span class="settings-header-icon">⚙</span>
+      <div class="settings-title" id="settings-title">Settings</div>
+      <div class="settings-profile-label" id="settings-profile-label">—</div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle light/dark mode" aria-label="Toggle light or dark mode">☀️</button>
+      <button class="settings-close" onclick="closeSettings()" aria-label="Close settings">✕</button>
     </div>
     <div class="settings-body">
 
       <!-- SECTION: PROFILE -->
       <div class="settings-section" id="settings-profile">
-        <div class="settings-section-head" onclick="toggleSettingsSection('settings-profile')">
+        <div class="settings-section-head" onclick="toggleSettingsSection('settings-profile')" role="button" tabindex="0" aria-expanded="false" aria-controls="settings-profile-body">
           <span class="settings-section-icon">👤</span>
           <span class="settings-section-title">Profile</span>
           <span class="settings-section-chev">›</span>
         </div>
-        <div class="settings-section-body">
-          <div class="settings-field" style="margin-top:12px">
-            <label>Display Name</label>
+        <div class="settings-section-body" id="settings-profile-body">
+          <div class="settings-field mt-12">
+            <label for="s-name">Display Name</label>
             <input class="settings-input" id="s-name" type="text" placeholder="Your name">
           </div>
           <div class="settings-field">
-            <label>Bodyweight (kg)</label>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input class="settings-input" id="s-bw" type="number" step="0.1" placeholder="e.g. 80" style="flex:1">
-              <button class="settings-btn primary" onclick="logBodyweight()" style="white-space:nowrap">Log</button>
+            <label for="s-bw">Bodyweight (kg)</label>
+            <div class="settings-inline-row">
+              <input class="settings-input flex-1" id="s-bw" type="number" step="0.1" placeholder="e.g. 80">
+              <button class="settings-btn primary nowrap" onclick="logBodyweight()">Log</button>
             </div>
-            <div id="weight-log-list" style="margin-top:8px"></div>
+            <div id="weight-log-list" class="mt-8"></div>
           </div>
           <div class="settings-field">
-            <label>Mesocycle Start Date</label>
+            <label for="s-meso-date">Mesocycle Start Date</label>
             <input class="settings-input" id="s-meso-date" type="date">
           </div>
           <div class="settings-field">
-            <label>Current Week Override (leave blank for auto)</label>
+            <label for="s-meso-week">Current Week Override (leave blank for auto)</label>
             <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto">
           </div>
-          <div class="section-label" style="margin:16px 0 10px">Band Resistance Config</div>
+          <div class="section-label section-label-spaced">Band Resistance Config</div>
           <div id="band-config-list"></div>
-          <button class="settings-btn primary" style="margin-top:12px;width:100%" onclick="saveProfileSettings()">Save Profile Settings</button>
+          <button class="settings-btn primary full-width mt-12" onclick="saveProfileSettings()">Save Profile Settings</button>
         </div>
       </div>
 
       <!-- SECTION: DASHBOARD -->
       <div class="settings-section" id="settings-dashboard">
-        <div class="settings-section-head" onclick="toggleSettingsSection('settings-dashboard')">
-          <span class="settings-section-icon">â–¦</span>
+        <div class="settings-section-head" onclick="toggleSettingsSection('settings-dashboard')" role="button" tabindex="0" aria-expanded="false" aria-controls="settings-dashboard-body">
+          <span class="settings-section-icon">📊</span>
           <span class="settings-section-title">Dashboard</span>
-          <span class="settings-section-chev">â€º</span>
+          <span class="settings-section-chev">›</span>
         </div>
-        <div class="settings-section-body">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);padding:10px 0 12px;line-height:1.7">
+        <div class="settings-section-body" id="settings-dashboard-body">
+          <div class="settings-help-text">
             Choose which insight panels appear. Enabled panels stay collapsed until you open them on the dashboard.
           </div>
           <div id="dashboard-panel-settings"></div>
@@ -332,13 +332,13 @@
 
       <!-- SECTION: PROGRAMME EDITOR -->
       <div class="settings-section" id="settings-programme">
-        <div class="settings-section-head" onclick="toggleSettingsSection('settings-programme')">
+        <div class="settings-section-head" onclick="toggleSettingsSection('settings-programme')" role="button" tabindex="0" aria-expanded="false" aria-controls="settings-programme-body">
           <span class="settings-section-icon">📋</span>
           <span class="settings-section-title">Programme Editor</span>
           <span class="settings-section-chev">›</span>
         </div>
-        <div class="settings-section-body">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);padding:10px 0 12px;line-height:1.7">
+        <div class="settings-section-body" id="settings-programme-body">
+          <div class="settings-help-text">
             Edit exercises, rename movements, adjust loads and rep ranges. Exercise renames propagate to all history data automatically.
           </div>
           <div id="settings-sessions-list"></div>
@@ -347,72 +347,72 @@
 
       <!-- SECTION: DATA -->
       <div class="settings-section" id="settings-data">
-        <div class="settings-section-head" onclick="toggleSettingsSection('settings-data')">
+        <div class="settings-section-head" onclick="toggleSettingsSection('settings-data')" role="button" tabindex="0" aria-expanded="false" aria-controls="settings-data-body">
           <span class="settings-section-icon">💾</span>
           <span class="settings-section-title">Data</span>
           <span class="settings-section-chev">›</span>
         </div>
-        <div class="settings-section-body" style="padding-top:12px">
+        <div class="settings-section-body settings-section-body-padded" id="settings-data-body">
 
           <!-- Drive -->
-          <div style="margin-bottom:14px;padding:10px 12px;background:var(--surface3);border-radius:6px;border:1px solid var(--border)">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-dim);margin-bottom:8px">Google Drive</div>
+          <div class="settings-card-block">
+            <div class="settings-card-title">Google Drive</div>
             <div class="settings-input-row">
               <div class="drive-dot" id="settings-drive-dot"></div>
-              <span style="font-family:'DM Mono',monospace;font-size:10px;flex:1" id="settings-drive-text">Not connected</span>
+              <span class="settings-drive-text" id="settings-drive-text">Not connected</span>
               <button class="settings-btn primary" onclick="handleDriveConnect()" id="settings-drive-btn">Connect</button>
             </div>
-            <div style="margin-top:8px" id="settings-sync-row">
-              <button class="settings-btn" style="width:100%;margin-bottom:6px" id="settings-sync-btn"
+            <div class="settings-sync-row" id="settings-sync-row">
+              <button class="settings-btn full-width mb-6" id="settings-sync-btn"
                 onclick="syncSessionsFromDrive(true)" disabled>⟳ Sync Now</button>
-              <button class="settings-btn primary" style="width:100%;margin-bottom:6px" id="settings-push-all-btn"
+              <button class="settings-btn primary full-width mb-6" id="settings-push-all-btn"
                 onclick="pushAllSessionsToDrive()" disabled>↑ Push All Local Sessions to Drive</button>
-              <div id="settings-last-synced" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:6px;text-align:center"></div>
+              <div id="settings-last-synced" class="settings-last-synced"></div>
             </div>
-            <div id="settings-client-id-row" style="margin-top:8px">
-              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-bottom:4px">OAuth Client ID</div>
-              <div style="display:flex;gap:6px;align-items:center">
-                <span id="settings-client-id-display" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Not set</span>
-                <button class="settings-btn" style="font-size:10px;padding:3px 8px" onclick="promptDriveClientId()">Edit</button>
-                <button class="settings-btn" style="font-size:10px;padding:3px 8px" onclick="clearDriveClientId()">Clear</button>
+            <div id="settings-client-id-row" class="settings-client-id-row">
+              <div class="settings-muted-label">OAuth Client ID</div>
+              <div class="settings-compact-row">
+                <span id="settings-client-id-display" class="settings-client-id-display">Not set</span>
+                <button class="settings-btn settings-btn-compact" onclick="promptDriveClientId()">Edit</button>
+                <button class="settings-btn settings-btn-compact" onclick="clearDriveClientId()">Clear</button>
               </div>
             </div>
           </div>
 
           <!-- Export -->
-          <div style="margin-bottom:14px">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-dim);margin-bottom:8px">Export</div>
-            <button class="settings-btn" style="width:100%;margin-bottom:6px" onclick="exportCSV()">⬇ Export Session History as CSV</button>
-            <button class="settings-btn primary" style="width:100%" onclick="exportJSON()">⬇ Export Full Backup as JSON</button>
-            <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:5px">JSON backup includes all data and can be fully restored. CSV is for spreadsheet use only.</div>
+          <div class="settings-block">
+            <div class="settings-card-title">Export</div>
+            <button class="settings-btn full-width mb-6" onclick="exportCSV()">⬇ Export Session History as CSV</button>
+            <button class="settings-btn primary full-width" onclick="exportJSON()">⬇ Export Full Backup as JSON</button>
+            <div class="settings-fine-print">JSON backup includes all data and can be fully restored. CSV is for spreadsheet use only.</div>
           </div>
 
           <!-- Import -->
-          <div style="margin-bottom:14px">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-dim);margin-bottom:8px">Import from CSV / Excel / JSON</div>
+          <div class="settings-block">
+            <div class="settings-card-title">Import from CSV / Excel / JSON</div>
             <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()"
               ondragover="event.preventDefault();this.classList.add('drag-over')"
               ondragleave="this.classList.remove('drag-over')"
               ondrop="handleImportDrop(event)">
-              <div style="font-size:24px">📂</div>
+              <div class="import-drop-icon">📂</div>
               <p>Click to select or drag a file here</p>
-              <p style="opacity:0.5;margin-top:4px">Supports CSV (Excel) or JSON backup</p>
+              <p class="import-drop-help">Supports CSV (Excel) or JSON backup</p>
             </div>
-            <input type="file" id="import-file-input" accept=".csv,.xlsx,.json" style="display:none" onchange="handleImportFile(event)">
+            <input type="file" id="import-file-input" accept=".csv,.xlsx,.json" class="hidden" onchange="handleImportFile(event)">
             <div id="import-preview-wrap" class="hidden"></div>
           </div>
 
           <!-- Manual Session Entry -->
-          <div style="margin-bottom:14px">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-dim);margin-bottom:8px">Manual Session Entry</div>
-            <button class="settings-btn" style="width:100%" onclick="showManualEntryForm()">+ Add Historical Session</button>
-            <div id="manual-entry-form" class="hidden" style="margin-top:10px"></div>
+          <div class="settings-block">
+            <div class="settings-card-title">Manual Session Entry</div>
+            <button class="settings-btn full-width" onclick="showManualEntryForm()">+ Add Historical Session</button>
+            <div id="manual-entry-form" class="hidden mt-10"></div>
           </div>
 
           <!-- Danger zone -->
-          <div style="padding:10px 12px;background:rgba(255,77,109,0.04);border-radius:6px;border:1px solid rgba(255,77,109,0.15)">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:rgba(255,77,109,0.5);margin-bottom:8px">Danger Zone</div>
-            <button class="settings-btn danger" style="width:100%" onclick="deleteAllData()">Delete All Session Data</button>
+          <div class="settings-danger-block">
+            <div class="settings-danger-title">Danger Zone</div>
+            <button class="settings-btn danger full-width" onclick="deleteAllData()">Delete All Session Data</button>
           </div>
 
         </div>
@@ -423,8 +423,8 @@
 </div>
 
 <!-- Exercise Info Tooltip -->
-<div class="info-tooltip hidden" id="info-tooltip">
-  <button class="info-tooltip-close" onclick="closeInfoTooltip()">✕</button>
+<div class="info-tooltip hidden" id="info-tooltip" role="tooltip" aria-hidden="true">
+  <button class="info-tooltip-close" onclick="closeInfoTooltip()" aria-label="Close exercise information">✕</button>
   <div class="info-tooltip-name" id="info-tooltip-name"></div>
   <div class="info-tooltip-desc" id="info-tooltip-desc"></div>
 </div>
@@ -432,7 +432,7 @@
 </div><!-- /app -->
 
 <!-- Modal -->
-<div class="modal-overlay" id="modal-overlay">
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
   <div class="modal">
     <div class="modal-title" id="modal-title"></div>
     <div class="modal-body" id="modal-body"></div>
@@ -441,7 +441,7 @@
 </div>
 
 <!-- Toast container -->
-<div class="toast-container" id="toast-container"></div>
+<div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 /* ═══════════════════════════════════════════
@@ -451,7 +451,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.1.0';
+const APP_VERSION = '4.1.6';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1003,8 +1003,8 @@ const PROGRAMMES = {
     mesoWeeks: [
       { label: 'Week 1', sets: '3', desc: '3–4 RIR · Base volume', rir: '3–4' },
       { label: 'Week 2', sets: '4', desc: '2–3 RIR · Build', rir: '2–3' },
-      { label: 'Week 3', sets: '4–5', desc: '2 RIR · Accumulate', rir: '2' },
-      { label: 'Week 4', sets: '5', desc: '1–2 RIR · Peak', rir: '1–2' },
+      { label: 'Week 3', sets: '4', desc: '2 RIR · Accumulate', rir: '2' },
+      { label: 'Week 4', sets: '4', desc: '1–2 RIR · Peak', rir: '1–2' },
       { label: 'Week 5', sets: '2', desc: 'Deload · 5+ RIR', rir: '5+', deload: true },
     ],
     sessions: [
@@ -1339,8 +1339,8 @@ const GUIDE_SECTIONS = [
         <tbody>
           <tr><td>Week 1</td><td>3</td><td>3–4</td><td>Conservative start. Learn the loads.</td></tr>
           <tr><td>Week 2</td><td>4</td><td>2–3</td><td>Add a set. Same load unless progressed.</td></tr>
-          <tr><td>Week 3</td><td>4–5</td><td>2</td><td>Volume accumulates. Stimulus is building.</td></tr>
-          <tr><td>Week 4</td><td>5</td><td>1–2</td><td>Peak volume. This week is meant to be hard.</td></tr>
+          <tr><td>Week 3</td><td>4</td><td>2</td><td>Volume accumulates. Stimulus is building.</td></tr>
+          <tr><td>Week 4</td><td>4</td><td>1–2</td><td>Peak effort. This week is meant to be hard without adding another set.</td></tr>
           <tr><td>Week 5</td><td>2</td><td>5+</td><td>Deload. Recovery is non-negotiable.</td></tr>
         </tbody>
       </table>
@@ -1361,7 +1361,7 @@ const GUIDE_SECTIONS = [
         <div class="rir-state too-heavy"><span class="rir-icon">✕</span><div><strong>Too Heavy — 1 RIR or less</strong><br>Form is breaking down or you're at the edge of failure. Reduce weight next session.</div></div>
       </div>
 
-      <p>Week 1 should feel almost conservative. That's intentional. The fatigue accumulates across weeks 2–4, and what felt easy in week 1 will feel genuinely hard by week 4 at 5 sets.</p>
+      <p>Week 1 should feel almost conservative. That's intentional. Fatigue accumulates across weeks 2–4, and what felt easy in week 1 will feel genuinely hard by week 4 at the same 4-set structure.</p>
     `
   },
   {
@@ -1378,18 +1378,18 @@ const GUIDE_SECTIONS = [
       <p>When you consistently hit the top of the rep range across all sets at 3+ RIR, and your weekly set ceiling hasn’t been reached — add one set next session.</p>
       <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 3 sets, all sets at 3 RIR. Week 2 ceiling is 4 sets. Next session: 16 kg × 6–8 reps × 4 sets. Reps may drop back to 6 — that’s normal.</div>
 
-      <h4>Step 3 — Increase Load</h4>
-      <p>When the set ceiling for the current week is reached and you’re hitting the top of the rep range across all sets — increase load and reset sets to 3. The tracker pre-opens the next session with 3 sets and a blue note reminding you to increase the load before you start.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 5 sets, all at 3+ RIR. Set ceiling reached. Next session opens with 3 sets. Increase load to 20 kg before logging. Reps may drop back to 6 — that’s normal.</div>
+      <h4>Step 3 - Increase Load</h4>
+      <p>When the set target for the current week is reached and you are hitting the top of the rep range across all sets, increase load and keep the current week set target. The next session opens with that week's planned set count.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg x 8 reps x 4 sets, all at 3+ RIR. Week target reached. Keep 4 sets and increase load to 20 kg before logging. Reps may drop back to 6; that is normal.</div>
 
       <h4>Step 4 — Tempo Manipulation</h4>
       <p>When the heaviest available KB is reached and the set ceiling is maxed, the app will suggest <strong>tempo manipulation</strong> instead of a load increase. Apply a 3-second eccentric (controlled lowering phase). The same weight becomes significantly harder.</p>
       <p>After applying tempo in a session, tap <strong>“✓ Mark tempo applied this session”</strong> on the suggestion card. This is saved with the session so the app knows to escalate next time.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press at 28 kg × 8 reps × 5 sets — heaviest KB available. Suggestion card shows <em>tempo</em> in purple. Next session: 28 kg with 3s lowering phase. Mark tempo applied. If ceiling is still hit after 2 sessions, suggestion escalates to <em>equipment ceiling</em>.</div>
+      <div class="guide-example"><strong>Example</strong>Floor Press at 28 kg x 8 reps x 4 sets — heaviest KB available. Suggestion card shows <em>tempo</em> in purple. Next session: 28 kg with 3s lowering phase. Mark tempo applied. If ceiling is still hit after 2 sessions, suggestion escalates to <em>equipment ceiling</em>.</div>
 
       <h4>Step 5 — Equipment Ceiling</h4>
       <p>Once tempo has been applied and you continue hitting the rep ceiling across 2 sessions, the app flags an <strong>equipment ceiling</strong> in red. This means you have genuinely outgrown the current kit for this exercise. No further automatic progression is possible.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 28 kg × 3s eccentric × 8 reps × 5 sets, still comfortable. Suggestion card shows <em>equipment ceiling</em> in red. Time to add a 32 kg KB, or find a heavier variation.</div>
+      <div class="guide-example"><strong>Example</strong>Floor Press: 28 kg x 3s eccentric x 8 reps x 4 sets, still comfortable. Suggestion card shows <em>equipment ceiling</em> in red. Time to add a 32 kg KB, or find a heavier variation.</div>
 
       <h4>Banded Exercises — Full Progression Ladder</h4>
       <p>Progress by moving to the next band colour. Once you reach Black, combine it with a lighter band. Log combinations using the multi-select band pills in the tracker — tap two colours to log both simultaneously.</p>
@@ -1408,39 +1408,39 @@ const GUIDE_SECTIONS = [
           <tr><td>10</td><td>Black + Black</td></tr>
         </tbody>
       </table>
-      <div class="guide-example"><strong>Example</strong>Chest Fly at Black band × 15 reps × 5 sets, 3+ RIR. Sets reset to 3. Next: tap Black + Yellow in the band pills. When that’s maxed: Black + Green. Sets reset on each load jump.</div>
+      <div class="guide-example"><strong>Example</strong>Chest Fly at Black band x 15 reps x 4 sets, 3+ RIR. Next: tap Black + Yellow in the band pills. When that is maxed: Black + Green. Keep the current week set target on each band jump.</div>
 
       <h4>Bodyweight Exercises</h4>
       <p>Progress by reducing support, increasing ROM, or adding load — not by adding reps indefinitely.</p>
-      <div class="guide-example"><strong>Example</strong>Archer Push-up at BW × 10 × 5 sets comfortably. Next: feet elevated. Once mastered: band across back for resistance.</div>
+      <div class="guide-example"><strong>Example</strong>Archer Push-up at BW x 10 x 4 sets comfortably. Next: feet elevated. Once mastered: band across back for resistance.</div>
 
       <h4>How the Suggestion Card Works</h4>
       <p>Before each session starts, a coloured card appears showing any progression actions due. It only fires when conditions are genuinely met across the last 2 complete sessions of that type.</p>
       <table class="guide-table">
         <thead><tr><th>Colour</th><th>Meaning</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td style="color:var(--green)">Green</td><td>Add a set</td><td>Start with one more set than last time</td></tr>
-          <tr><td style="color:var(--pull)">Blue</td><td>Increase load</td><td>Session opens with 3 sets — increase load before starting</td></tr>
-          <tr><td style="color:var(--push-b)">Purple</td><td>Tempo</td><td>Apply 3s eccentric. Tap “Mark tempo applied” on the card</td></tr>
-          <tr><td style="color:var(--red)">Red</td><td>Equipment ceiling</td><td>No automatic progression — new kit needed</td></tr>
-          <tr><td style="color:var(--amber)">Amber</td><td>Support reduction</td><td>Reduce support grip (Je’s programme only — see section below)</td></tr>
+          <tr><td class="guide-token-green">Green</td><td>Add a set</td><td>Start with one more set than last time</td></tr>
+          <tr><td class="guide-token-pull">Blue</td><td>Increase load</td><td>Keep the current week set target and increase load before starting</td></tr>
+          <tr><td class="guide-token-push">Purple</td><td>Tempo</td><td>Apply 3s eccentric. Tap “Mark tempo applied” on the card</td></tr>
+          <tr><td class="guide-token-red">Red</td><td>Equipment ceiling</td><td>No automatic progression — new kit needed</td></tr>
+          <tr><td class="guide-token-amber">Amber</td><td>Support reduction</td><td>Reduce support grip (Je’s programme only — see section below)</td></tr>
         </tbody>
       </table>
       <p>No card appears in week 1 or during deload. Those weeks are intentionally suppressed.</p>
 
       <h4>Deload Week — Week 5</h4>
       <p>No progression during deload. 2 sets, ~50% load, 5+ RIR. Treat every rep as a technique session. When week 1 of the new mesocycle begins, return to working weights and restart the set climb from 3.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press working weight: 20 kg × 6–8 reps × 5 sets by end of week 4. Deload: 10 kg × 6–8 reps × 2 sets. New mesocycle week 1: 20 kg × 6 reps × 3 sets.</div>
+      <div class="guide-example"><strong>Example</strong>Floor Press working weight: 20 kg x 6-8 reps x 4 sets by end of week 4. Deload: 10 kg x 6-8 reps x 2 sets. New mesocycle week 1: 20 kg x 6 reps x 3 sets.</div>
 
       <h4>RIR Across the Mesocycle</h4>
-      <p>Your RIR will naturally decrease as weeks progress even at the same load, because volume is increasing. A weight at 3 RIR in week 1 (3 sets) may feel like 1–2 RIR in week 4 (5 sets). This is correct and expected. Do not reduce load to chase a higher RIR.</p>
+      <p>Your RIR will naturally decrease as weeks progress even at the same load, because fatigue is accumulating. A weight at 3 RIR in week 1 may feel like 1–2 RIR in week 4. This is correct and expected. Do not reduce load to chase a higher RIR.</p>
 
       <h4>Summary</h4>
       <table class="guide-table">
         <thead><tr><th>Situation</th><th>Action</th></tr></thead>
         <tbody>
           <tr><td>Top of rep range, sets below ceiling</td><td>Add a set</td></tr>
-          <tr><td>Top of rep range, set ceiling reached</td><td>Increase load, reset to 3 sets</td></tr>
+          <tr><td>Top of rep range, week set target reached</td><td>Increase load, keep weekly set target</td></tr>
           <tr><td>At equipment ceiling, no tempo yet</td><td>Apply 3s eccentric tempo, mark it on the card</td></tr>
           <tr><td>Tempo applied, ceiling still hit after 2 sessions</td><td>Equipment ceiling — new kit needed</td></tr>
           <tr><td>Week 5</td><td>Deload — no progression</td></tr>
@@ -1460,7 +1460,7 @@ const GUIDE_SECTIONS = [
         <strong>What to do</strong>
         Complete the session with however many clean sets you can manage. Do not add the next planned set the following week. Hold the current set count and load for one more session. If performance recovers — proceed as normal. If you fail again at the same count — reduce by one set and hold until all sets are completed cleanly.
       </div>
-      <div class="guide-example"><strong>Example</strong>Week 3 — Floor Press 16 kg × 4 sets planned. You complete 3 sets cleanly but fail to hit 6 reps on set 4. Hold at 4 sets next session. Do not move to 5 sets in week 4 until all 4 sets are completed cleanly.</div>
+      <div class="guide-example"><strong>Example</strong>Week 3 — Floor Press 16 kg × 4 sets planned. You complete 3 sets cleanly but fail to hit 6 reps on set 4. Hold the same load and keep the 4-set structure until all 4 sets are completed cleanly.</div>
 
       <h4>Scenario B — Failing immediately after a load increase</h4>
       <p>The load jump was too large. KB size increments are significant jumps — this is common.</p>
@@ -1483,8 +1483,8 @@ const GUIDE_SECTIONS = [
       <table class="guide-table">
         <thead><tr><th>Trigger</th><th>Condition</th><th>Card colour</th></tr></thead>
         <tbody>
-          <tr><td>Support reduction</td><td>3 clean sessions at the current supported variant</td><td style="color:var(--amber)">Amber</td></tr>
-          <tr><td>Variant advancement</td><td>Rep ceiling hit in last 2 complete sessions at the same rung</td><td style="color:var(--push-b)">Purple</td></tr>
+          <tr><td>Support reduction</td><td>3 clean sessions at the current supported variant</td><td class="guide-token-amber">Amber</td></tr>
+          <tr><td>Variant advancement</td><td>Rep ceiling hit in last 2 complete sessions at the same rung</td><td class="guide-token-push">Purple</td></tr>
         </tbody>
       </table>
 
@@ -1614,13 +1614,11 @@ async function selectProfile(profile) {
   state.profile = profile;
   state.programme = PROGRAMMES[profile];
 
-  document.getElementById('profile-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('app').style.flexDirection = 'column';
+  document.body.classList.add('profile-selected');
   switchTab('dashboard');
 
   document.getElementById('topbar-username').textContent = state.programme.name;
-  document.getElementById('topbar-dot').style.background = state.programme.color;
+  document.getElementById('topbar-dot').style.setProperty('--profile-color', state.programme.color);
 
   // Ensure tracker is fully reset for the new profile
   resetTrackerState();
@@ -1657,8 +1655,7 @@ function showProfileScreen() {
         closeModal();
         // Always reset tracker state fully before switching
         resetTrackerState();
-        document.getElementById('profile-screen').style.display = 'flex';
-        document.getElementById('app').style.display = 'none';
+        document.body.classList.remove('profile-selected');
       }}
     ]
   );
@@ -1678,10 +1675,9 @@ function resetTrackerState() {
 
   if (activeView) {
     activeView.classList.remove('visible');
-    activeView.style.display = '';  // clear any inline style, let CSS take over
   }
   if (selectView) {
-    selectView.style.display = 'block';  // force visible
+    selectView.classList.remove('hidden');
   }
 
   // Hide overlays and banners
@@ -1690,7 +1686,10 @@ function resetTrackerState() {
   const progCard      = document.getElementById('prog-suggestion');
   const partialWarn   = document.getElementById('partial-warning');
 
-  if (warmupOverlay) warmupOverlay.classList.add('hidden');
+  if (warmupOverlay) {
+    warmupOverlay.classList.add('hidden');
+    warmupOverlay.setAttribute('aria-hidden', 'true');
+  }
   if (deloadBanner)  deloadBanner.classList.add('hidden');
   if (progCard)      progCard.classList.add('hidden');
   if (partialWarn)   partialWarn.remove();
@@ -1785,6 +1784,11 @@ function saveLocalState() {
   saveSettings();
 }
 
+function saveSettingsToDrive() {
+  if (!state.driveToken) return;
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Settings sync save failed:', e));
+}
+
 /* ═══════════════════════════════════════════
    LOGIC — MESOCYCLE
    Pure functions. No DOM access.
@@ -1803,7 +1807,7 @@ function getCurrentMesoWeek() {
 function isDeloadWeek() { return getCurrentMesoWeek() === 5; }
 
 function getMesoSetTarget(week) {
-  const targets = { 1: 3, 2: 4, 3: 5, 4: 5, 5: 2 };
+  const targets = { 1: 3, 2: 4, 3: 4, 4: 4, 5: 2 };
   return targets[week] || 3;
 }
 
@@ -1830,6 +1834,7 @@ function saveMesoSettings() {
 
   renderProgramme();
   renderTracker();
+  saveSettingsToDrive();
   toast('Mesocycle settings saved', 'success');
 }
 
@@ -1881,10 +1886,7 @@ function buildSessionCard(session) {
 
   const exRows = session.exercises.map(ex => {
     // Dot colour = session accent colour, grey for optional only
-    const sessionDotStyle = ex.type === 'optional' 
-      ? 'background:var(--text-muted)' 
-      : `background:${session.color}`;
-    const dotClass = ''; // replaced by inline style
+    const dotColor = ex.type === 'optional' ? 'var(--text-muted)' : session.color;
     const tags = ex.tags.filter(t => t !== 'compound' && t !== 'accessory' && t !== 'prehab' && t !== 'optional').map(t => {
       if (t === 'unilateral') return `<span class="ex-tag uni">🔄 Unilateral</span>`;
       if (t === 'bw') return `<span class="ex-tag">BW</span>`;
@@ -1899,23 +1901,23 @@ function buildSessionCard(session) {
       <td class="ex-num">${ex.num}</td>
       <td>
         <div class="ex-name-wrap">
-          <div class="ex-type-dot" style="${sessionDotStyle}"></div>
+          <div class="ex-type-dot" style="--ex-dot-color:${dotColor}"></div>
           <div>
             <div class="ex-name">
               ${ex.name}
-              ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
+              ${ex.desc ? `<sup class="exercise-info-dot" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">i</sup>` : ''}
             </div>
             <div class="ex-tags">${tags}${optTag}${preTag}</div>
           </div>
         </div>
       </td>
       <td class="ex-sets">
-        <span style="font-family:'DM Mono',monospace;font-size:13px;color:${ex.type==='optional'?'var(--text-muted)':'var(--text)'}">
+        <span class="ex-set-count${ex.type === 'optional' ? ' optional' : ''}">
           ${getCurrentMesoWeek() === 5 ? '2' : getMesoSetTarget(getCurrentMesoWeek())}
         </span>
-        <span class="edit-val" data-session="${session.id}" data-ex="${ex.num}" data-field="sets" style="display:none">${ex.sets}</span>
-        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">${ex.sets} meso</div>
-        <div class="ex-sets-range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.7;margin-top:1px">${ex.reps} reps</div>
+        <span class="edit-val hidden" data-session="${session.id}" data-ex="${ex.num}" data-field="sets">${ex.sets}</span>
+        <div class="ex-sets-meso">${ex.sets} meso</div>
+        <div class="ex-sets-range" style="--exercise-color:${session.color}">${ex.reps} reps</div>
       </td>
       <td class="ex-load">
         <span class="edit-val" data-session="${session.id}" data-ex="${ex.num}" data-field="load">${ex.load}</span>
@@ -1926,7 +1928,7 @@ function buildSessionCard(session) {
   }).join('');
 
   return `<div class="session-card ${session.class}" id="card-${session.id}">
-    <div class="session-head" onclick="toggleSession('${session.id}')">
+    <div class="session-head" onclick="toggleSession('${session.id}')" role="button" tabindex="0" aria-expanded="false" aria-controls="body-${session.id}">
       <div class="session-pip"></div>
       <span class="session-tag">${session.name}</span>
       <span class="session-title">${session.subtitle}</span>
@@ -1936,20 +1938,20 @@ function buildSessionCard(session) {
       </div>
       <span class="session-chevron">›</span>
     </div>
-    <div class="session-body">
+    <div class="session-body" id="body-${session.id}">
       <div class="session-note"><strong>Order:</strong> ${session.note}</div>
       <div class="rest-row">
         <span class="rest-label">Rest Period</span>
         <span class="rest-value" id="${restId}">${session.rest}s</span>
-        <input class="rest-input" id="${restInputId}" type="number" min="30" max="300" value="${session.rest}" style="display:none">
+        <input class="rest-input" id="${restInputId}" type="number" min="30" max="300" value="${session.rest}">
         <button class="rest-edit-btn" onclick="editRest(event,'${session.id}')">Edit</button>
       </div>
       <table class="ex-table">
         <thead><tr>
-          <th style="width:28px"></th>
-          <th style="width:30%">Exercise</th>
-          <th style="width:14%">Sets / Meso</th>
-          <th style="width:22%">Load</th>
+          <th class="ex-col-num"></th>
+          <th class="ex-col-name">Exercise</th>
+          <th class="ex-col-sets">Sets / Meso</th>
+          <th class="ex-col-load">Load</th>
           <th>Notes</th>
         </tr></thead>
         <tbody>${exRows}</tbody>
@@ -1961,6 +1963,8 @@ function buildSessionCard(session) {
 function toggleSession(id) {
   const card = document.getElementById(`card-${id}`);
   card.classList.toggle('open');
+  const head = card.querySelector('.session-head');
+  if (head) head.setAttribute('aria-expanded', card.classList.contains('open') ? 'true' : 'false');
 }
 
 function toggleEditMode(e, sessionId) {
@@ -1981,9 +1985,7 @@ function toggleEditMode(e, sessionId) {
         if (ex) ex[field] = el.textContent.trim();
       }
       el.contentEditable = false;
-      el.style.background = '';
-      el.style.borderRadius = '';
-      el.style.padding = '';
+      el.classList.remove('editing');
     });
     saveLocalState();
     btn.classList.remove('active');
@@ -1993,9 +1995,7 @@ function toggleEditMode(e, sessionId) {
     if (!card.classList.contains('open')) card.classList.add('open');
     card.querySelectorAll('.edit-val').forEach(el => {
       el.contentEditable = true;
-      el.style.background = 'var(--surface3)';
-      el.style.borderRadius = '3px';
-      el.style.padding = '2px 5px';
+      el.classList.add('editing');
     });
     btn.classList.add('active');
     btn.textContent = '✓ Save';
@@ -2008,9 +2008,9 @@ function editRest(e, sessionId) {
   const input = document.getElementById(`rest-input-${sessionId}`);
   const btn = e.target;
 
-  if (input.style.display === 'none') {
-    input.style.display = 'inline-block';
-    display.style.display = 'none';
+  if (!input.classList.contains('visible')) {
+    input.classList.add('visible');
+    display.classList.add('hidden');
     btn.textContent = 'Save';
   } else {
     const val = parseInt(input.value);
@@ -2021,8 +2021,8 @@ function editRest(e, sessionId) {
       saveLocalState();
       toast('Rest period updated', 'success');
     }
-    input.style.display = 'none';
-    display.style.display = 'inline';
+    input.classList.remove('visible');
+    display.classList.remove('hidden');
     btn.textContent = 'Edit';
   }
 }
@@ -2036,8 +2036,8 @@ function renderTracker() {
   // Always ensure tracker is in session-select state when re-rendered
   const activeView = document.getElementById('active-session-view');
   const selectView = document.getElementById('session-select-view');
-  if (activeView) { activeView.classList.remove('visible'); activeView.style.display = ''; }
-  if (selectView) { selectView.style.display = 'block'; }
+  if (activeView) activeView.classList.remove('visible');
+  if (selectView) selectView.classList.remove('hidden');
 
   const grid = document.getElementById('tracker-select-grid');
   grid.innerHTML = state.programme.sessions.map(session => `
@@ -2060,7 +2060,7 @@ function selectTrackerSession(sessionId) {
   clearNotesPills();
   state.endTime = null;
 
-  document.getElementById('session-select-view').style.display = 'none';
+  document.getElementById('session-select-view').classList.add('hidden');
   const activeView = document.getElementById('active-session-view');
   activeView.classList.add('visible');
   activeView.style.setProperty('--session-color', session.color);
@@ -2068,7 +2068,6 @@ function selectTrackerSession(sessionId) {
 
   // Session name + pip
   document.getElementById('active-session-name').textContent = `${session.name} — ${session.subtitle}`;
-  document.getElementById('active-session-pip').style.background = session.color;
 
   // Deload banner
   const deloadBanner = document.getElementById('deload-banner');
@@ -2112,8 +2111,8 @@ function buildTrackerExercises(session) {
     if (ex.type === 'optional') {
       return `<div class="tracker-ex-card optional-ex-card">
         <div class="tracker-ex-head">
-          <span class="drag-handle" style="cursor:default">⋮⋮</span>
-          <div class="tracker-ex-name">${ex.name} <span style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace">· optional</span></div>
+          <span class="drag-handle static" aria-hidden="true">⋮⋮</span>
+          <div class="tracker-ex-name">${ex.name} <span class="tracker-ex-optional-label">· optional</span></div>
           <div class="tracker-ex-target">
             <div>${ex.sets} sets</div>
             <div class="range">${ex.reps} reps</div>
@@ -2124,25 +2123,16 @@ function buildTrackerExercises(session) {
 
     const prev2 = getPrev2Sessions(session.id, ex.name);
     const previousSetRefs = getPreviousSetRefs(session.id, ex.name);
-    // Determine correct starting set count.
-    // If the last suggestion for this exercise was increase_load, reset to 3 sets.
-    // Otherwise carry forward the last session's set count (up to the weekly target).
-    const _lastCompleteSess = state.sessions
-      .filter(s => s.sessionId === session.id && s.status === 'complete')
-      .slice(-1)[0];
-    const _lastExData = _lastCompleteSess?.exercises?.find(e => e.name === ex.name);
-    const _lastSetCount = _lastExData ? _lastExData.sets.length : 3;
+    // Default working sets follow the mesocycle target, not last session's set count.
     const _suggestion = state.profile === 'alex'
       ? getProgressionSuggestion(session.id, ex.name, ex.repRange)
       : null;
     const _loadIncreaseSignalled = _suggestion && _suggestion.type === 'increase_load';
-    const setCount = deload ? 2 : (_loadIncreaseSignalled ? 3 : Math.min(_lastSetCount, getMesoSetTarget(week)));
+    const setCount = deload ? 2 : getMesoSetTarget(week);
     const targetSets = deload ? 2 : getMesoSetTarget(week);
-    const loadResetNote = (!deload && _loadIncreaseSignalled)
-      ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--pull);margin-bottom:8px">↑ Load increase — sets reset to 3. Increase load before starting.</div>`
+    const loadIncreaseNote = (!deload && _loadIncreaseSignalled)
+      ? `<div class="tracker-ex-note load-up">Load increase available. Increase load before starting if today's warm-up confirms it.</div>`
       : '';
-
-
     const prevRef = prev2.length > 0
       ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
       : 'No previous data';
@@ -2168,13 +2158,13 @@ function buildTrackerExercises(session) {
     });
 
     const deloadNote = deload
-      ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--deload);margin-bottom:8px">Deload: 2 sets · ~50% load · 5+ RIR target</div>`
+      ? `<div class="tracker-ex-note deload">Deload: 2 sets · ~50% load · 5+ RIR target</div>`
       : '';
 
     return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
-      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" role="button" tabindex="0" aria-label="Toggle ${ex.name}">
-        <span class="drag-handle" onclick="event.stopPropagation()">⋮⋮</span>
-        <div style="flex:1">
+      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" role="button" tabindex="0" aria-label="Toggle ${ex.name}" aria-expanded="true" aria-controls="tex-body-${session.id}-${idx}">
+        <span class="drag-handle" onclick="event.stopPropagation()" aria-hidden="true">⋮⋮</span>
+        <div class="tracker-ex-main">
           <div class="tracker-ex-name">
             ${ex.name}
             ${ex.desc ? `<sup class="exercise-info-dot" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">i</sup>` : ''}
@@ -2193,14 +2183,13 @@ function buildTrackerExercises(session) {
         <button class="tracker-ex-collapse-btn" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" title="Collapse">▾</button>
       </div>
       <div class="tracker-ex-body" id="tex-body-${session.id}-${idx}">
-        <div class="prev-sessions-ref">${prevRef}</div>
-        ${deloadNote}${loadResetNote}
+        ${deloadNote}${loadIncreaseNote}
         <div class="set-rows" id="sets-${session.id}-${idx}">
           ${initialSets.join('')}
         </div>
         <button class="add-set-btn" onclick="addSet('${session.id}',${idx},'${ex.name}')">+ Add Set</button>
         <div class="next-ex-prompt" id="next-prompt-${session.id}-${idx}">
-          <span style="flex:1">All sets done —</span>
+          <span class="next-ex-prompt-label">All sets done —</span>
           <button class="prompt-add-set" onclick="addSet('${session.id}',${idx},'${ex.name}');hideNextPrompt('${session.id}',${idx})">+ Add set</button>
           <button class="prompt-next-ex" onclick="collapseExerciseCard('tex-${session.id}-${idx}')">Next exercise ›</button>
         </div>
@@ -2656,7 +2645,7 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
     loadSection = `<div class="bw-band-wrap">
       <span class="bw-label">BW</span>
       <input type="hidden" class="set-load-val bw-load-store" value="BW">
-      ${buildBandPills(setIdx, exIdx, sessionId, true, ghostLoad)}
+      ${buildBandPills(setIdx, exIdx, sessionId, true, prevLoad)}
     </div>`;
   } else if (isBand) {
     // Restore multi-band pill selections from prevLoad if in template mode
@@ -2675,7 +2664,8 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
     <div class="set-row-main">
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
-      ${ghostHint}
+      ${suggestionBubble}
+      ${previousBubble}
       <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" aria-label="Remove set">✕</button>
     </div>
     <div class="set-row-pills">
@@ -2691,8 +2681,6 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
         <span class="pill-section-label">RIR</span>
         ${rirSection}
       </div>
-      ${suggestionBubble}
-      ${previousBubble}
     </div>
   </div>`;
 }
@@ -2741,6 +2729,26 @@ function evaluateSet(inputEl, repRange) {
   }
 }
 
+function getSameMesoSetSuggestion(sessionId, exName, setIdx) {
+  const mesoStart = state.mesoStartDate ? new Date(state.mesoStartDate) : null;
+  const relevant = state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .filter(s => !mesoStart || new Date(s.date || 0) >= mesoStart)
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  for (const sess of relevant) {
+    const ex = sess.exercises?.find(e => e.name === exName);
+    const set = ex?.sets?.[setIdx];
+    if (set && (set.load || set.reps)) {
+      return {
+        load: set.load || '',
+        reps: set.reps || '',
+      };
+    }
+  }
+  return null;
+}
+
 function addSet(sessionId, exIdx, exName) {
   const session = state.programme.sessions.find(s => s.id === sessionId);
   const ex = session.exercises.find(e => e.name === exName);
@@ -2752,11 +2760,13 @@ function addSet(sessionId, exIdx, exName) {
   const lastRepsEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-reps-val') : null;
   const lastRIREl  = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-rir') : null;
   const previousRef = getPreviousSetRefs(sessionId, exName)[currentSets] || null;
+  const suggestedSet = getSameMesoSetSuggestion(sessionId, exName, currentSets);
+  const suggestedLoad = suggestedSet?.load || lastLoadEl?.value || '';
+  const suggestedReps = suggestedSet?.reps || '';
   const newRow = document.createElement('div');
   newRow.innerHTML = buildSetRow(
     currentSets, ex, isDeloadWeek(), sessionId, exIdx,
-    lastLoadEl?.value || '', lastRepsEl?.value || '', lastRIREl?.value || '',
-    '', '', previousRef
+    suggestedLoad, suggestedReps, '', suggestedLoad, suggestedReps, previousRef
   );
   container.appendChild(newRow.firstElementChild);
   const countEl = document.getElementById(`set-count-${sessionId}-${exIdx}`);
@@ -2866,6 +2876,7 @@ function startSession() {
     if (titleEl) titleEl.textContent = warmup.title || '';
     if (list) list.innerHTML = warmup.cues.map(c => `<li>${c}</li>`).join('');
     overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
   }
 }
 
@@ -3011,7 +3022,10 @@ function getWarmupCues(sessionId) {
 
 function dismissWarmupOverlay() {
   const overlay = document.getElementById('warmup-overlay');
-  if (overlay) overlay.classList.add('hidden');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
   toast('Session running', 'success');
 }
 
@@ -3121,7 +3135,7 @@ function cancelSession() {
   state.startTime = null;
   state.endTime = null;
   document.getElementById('active-session-view').classList.remove('visible');
-  document.getElementById('session-select-view').style.display = 'block';
+  document.getElementById('session-select-view').classList.remove('hidden');
 }
 
 /* ═══════════════════════════════════════════
@@ -3132,6 +3146,7 @@ function cancelSession() {
 function renderHistory() {
   const container = document.getElementById('history-list');
   const sessions = [...state.sessions].reverse();
+  renderHistoryAnalytics();
 
   if (sessions.length === 0) {
     container.innerHTML = `<div class="empty-state">
@@ -3169,6 +3184,7 @@ function removeHistoryCard(id) {
     return;
   }
   card.remove();
+  renderHistoryAnalytics();
   _renderHistoryFilters();
 }
 
@@ -3185,11 +3201,8 @@ function updateHistoryCard(session) {
   // Restore open state if the card was expanded
   if (wasOpen) {
     built.classList.add('open');
-    const body = document.getElementById(`hbody-${session.id}`);
-    if (body) body.style.display = 'block';
-    const chev = built.querySelector('.session-chevron');
-    if (chev) chev.style.transform = 'rotate(90deg)';
   }
+  renderHistoryAnalytics();
 }
 
 // Prepend a new session card to the top of the history list without rebuilding.
@@ -3202,6 +3215,7 @@ function prependHistoryCard(session) {
   const newCard = document.createElement('div');
   newCard.innerHTML = buildHistoryCard(session);
   container.insertBefore(newCard.firstElementChild, container.firstChild);
+  renderHistoryAnalytics();
   _renderHistoryFilters();
 }
 
@@ -3210,6 +3224,133 @@ function prependHistoryCard(session) {
    Pure data-preparation functions. No DOM access.
    Future home: /js/logic/charts.js
 ═══════════════════════════════════════════ */
+
+function getBestRecentPerformance(days = 45) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+
+  let best = null;
+  state.sessions
+    .filter(s => s.status === 'complete' && s.date && new Date(s.date) >= cutoff)
+    .forEach(sess => {
+      (sess.exercises || []).forEach(ex => {
+        const mode = getExerciseMode(ex.name, state.sessions);
+        const vol = calcVolume(ex, mode);
+        if (!vol || !vol.volume) return;
+        const candidate = {
+          name: ex.name,
+          score: Math.round(vol.volume),
+          unit: vol.unit,
+          date: sess.date,
+          sessionName: sess.sessionName,
+        };
+        if (!best || candidate.score > best.score) best = candidate;
+      });
+    });
+  return best;
+}
+
+function getHistoryAttentionItems(limit = 4) {
+  const items = [];
+  state.programme.sessions.forEach(sess => {
+    sess.exercises.forEach(exConfig => {
+      if (exConfig.type === 'optional' || exConfig.type === 'prehab') return;
+      const recent = state.sessions
+        .filter(s => s.status === 'complete' && s.exercises?.some(ex => ex.name === exConfig.name))
+        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+        .slice(0, 3);
+      if (!recent.length) return;
+
+      let lowRIR = 0;
+      let misses = 0;
+      let total = 0;
+      recent.forEach(sess => {
+        const ex = sess.exercises.find(e => e.name === exConfig.name);
+        (ex?.sets || []).forEach(set => {
+          const reps = parseInt(set.reps);
+          if (!isNaN(reps)) {
+            total++;
+            const range = Array.isArray(ex.repRange) ? ex.repRange : exConfig.repRange;
+            if (Array.isArray(range) && reps < range[0]) misses++;
+          }
+          const rir = parseRIRValue(set.rir);
+          if (rir !== null && rir <= 1) lowRIR++;
+        });
+      });
+      const score = misses * 2 + lowRIR;
+      if (score > 0 && total > 0) {
+        items.push({
+          name: exConfig.name,
+          score,
+          detail: `${misses} misses · ${lowRIR} low-RIR sets`
+        });
+      }
+    });
+  });
+  return items.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+function renderHistoryAnalytics() {
+  const wrap = document.getElementById('history-analytics');
+  if (!wrap) return;
+  const complete = state.sessions.filter(s => s.status === 'complete');
+  if (!complete.length) {
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const trends = getExerciseTrendData(4);
+  const best = getBestRecentPerformance();
+  const attention = getHistoryAttentionItems(4);
+  const topTrend = trends[0] || null;
+  const trendText = topTrend
+    ? `${topTrend.name} ${topTrend.pct > 0 ? '+' : ''}${topTrend.pct}%`
+    : 'Need more data';
+  const bestText = best
+    ? `${best.name} · ${best.score} ${best.unit}`
+    : 'Need more data';
+  const attentionText = attention.length
+    ? `${attention[0].name} · ${attention[0].detail}`
+    : 'No current flags';
+
+  wrap.innerHTML = `<div class="history-analytics-card collapsed" id="history-analytics-card">
+    <div class="history-analytics-head" role="button" tabindex="0" onclick="toggleHistoryAnalytics()" aria-expanded="false">
+      <div>
+        <div class="history-analytics-title">History Analytics</div>
+        <div class="history-analytics-sub">${complete.length} complete sessions · ${trends.length} trends</div>
+      </div>
+      <span class="history-analytics-chev">›</span>
+    </div>
+    <div class="history-analytics-grid">
+      <div class="history-analytics-tile">
+        <span class="history-analytics-label">Top trend</span>
+        <strong>${trendText}</strong>
+      </div>
+      <div class="history-analytics-tile">
+        <span class="history-analytics-label">Best recent</span>
+        <strong>${bestText}</strong>
+      </div>
+      <div class="history-analytics-tile attention">
+        <span class="history-analytics-label">Needs attention</span>
+        <strong>${attentionText}</strong>
+      </div>
+    </div>
+    <div class="history-analytics-detail">
+      ${trends.length ? trends.map(t => `<div class="history-analytics-row ${t.status}">
+        <span>${t.name}</span><strong>${t.pct > 0 ? '+' : ''}${t.pct}%</strong><em>${t.score} ${t.unit}${t.lastRIR !== null ? ' · RIR ' + t.lastRIR : ''}</em>
+      </div>`).join('') : '<div class="history-analytics-empty">Complete more sessions to build trend data.</div>'}
+      ${attention.length ? '<div class="history-analytics-attention">' + attention.map(a => `<span>${a.name}: ${a.detail}</span>`).join('') + '</div>' : ''}
+    </div>
+  </div>`;
+}
+
+function toggleHistoryAnalytics() {
+  const card = document.getElementById('history-analytics-card');
+  if (!card) return;
+  card.classList.toggle('collapsed');
+  card.querySelector('.history-analytics-head')?.setAttribute('aria-expanded', card.classList.contains('collapsed') ? 'false' : 'true');
+}
 
 function getExerciseMode(exName, sessions) {
   // Determine chart mode: 'kb', 'band', 'bw', 'bw+band'
@@ -3430,11 +3571,11 @@ function buildHistoryCard(s) {
     if (!completeSets.length) return '';
     // Compact: one line per exercise — name + all sets inline
     const setChips = completeSets.map((set, i) =>
-      `<span style="font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;background:var(--surface3);border-radius:3px;border:1px solid var(--border);white-space:nowrap">${set.load || 'BW'} × ${set.reps || '—'}${set.rir ? ' <span style=\'opacity:0.5\'>RIR ' + set.rir + '</span>' : ''}</span>`
+      `<span class="history-set-chip">${set.load || 'BW'} × ${set.reps || '—'}${set.rir ? ' <span class="history-set-rir">RIR ' + set.rir + '</span>' : ''}</span>`
     ).join(' ');
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
-      <div style="font-size:11px;font-weight:600;min-width:140px;flex-shrink:0;padding-top:2px;color:var(--text)">${ex.name}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:3px">${setChips}</div>
+    return `<div class="history-ex-row">
+      <div class="history-ex-name">${ex.name}</div>
+      <div class="history-set-chip-row">${setChips}</div>
     </div>`;
   }).join('');
 
@@ -3444,29 +3585,30 @@ function buildHistoryCard(s) {
 
   const exPills = chartExes.map((ex, i) =>
     `<button class="chart-ex-pill${i===0?' active':''}" 
-      style="${i===0?'background:'+color+';border-color:'+color+';':''}"
+      style="--history-accent:${color}"
+      aria-pressed="${i===0?'true':'false'}"
       onclick="switchChartExercise('${s.id}','${ex.name}',this)">${ex.name}</button>`
   ).join('');
 
   return `<div class="history-card ${partialCls}" id="hcard-${s.id}">
-    <div class="history-card-head" onclick="toggleHistoryCard('${s.id}')">
+    <div class="history-card-head" role="button" tabindex="0" aria-expanded="false" aria-controls="hbody-${s.id}" onclick="toggleHistoryCard('${s.id}')">
       <div class="history-card-date">${formatDateIT(s.date)}</div>
-      <div class="session-pip" style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0"></div>
+      <div class="session-pip history-session-pip" style="--history-accent:${color}"></div>
       <div class="history-card-name">${s.sessionName || '—'}</div>
       <div class="history-card-meta">
         <div>${s.duration || '—'}</div>
         <div>${totalSets} sets</div>
       </div>
       <span class="history-card-status ${statusCls}">${statusLabel}</span>
-      ${s._conflict ? `<span style="font-family:'DM Mono',monospace;font-size:9px;background:var(--amber)22;color:var(--amber);border:1px solid var(--amber)44;border-radius:4px;padding:1px 6px;margin-left:4px;cursor:pointer" onclick="reviewConflicts()">⚠ duplicate</span>` : ''}
-      <span class="session-chevron" style="font-size:14px;color:var(--text-muted);transition:transform 0.18s">›</span>
+      ${s._conflict ? `<span class="history-conflict-badge" onclick="reviewConflicts()">⚠ duplicate</span>` : ''}
+      <span class="session-chevron history-chevron">›</span>
     </div>
-    <div class="history-card-body" id="hbody-${s.id}" style="display:none">
-      ${s.notes ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:12px">📝 ${s.notes}</div>` : ''}
-      <div style="margin-bottom:10px">${exDetail || '<span style="color:var(--text-muted);font-size:11px">No exercise data logged.</span>'}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div class="history-card-body" id="hbody-${s.id}">
+      ${s.notes ? `<div class="history-card-notes">📝 ${s.notes}</div>` : ''}
+      <div class="history-ex-list">${exDetail || '<span class="history-empty-detail">No exercise data logged.</span>'}</div>
+      <div class="history-card-actions">
         <button class="show-graph-btn" id="graph-btn-${s.id}" onclick="toggleGraph('${s.id}','${firstEx}','${color}')">📈 Show Graph</button>
-        <button class="history-delete-btn" onclick="editSession('${s.id}')" style="margin-right:6px">✏ Edit</button>
+        <button class="history-delete-btn history-edit-btn" onclick="editSession('${s.id}')">✏ Edit</button>
         <button class="history-delete-btn" onclick="deleteSession('${s.id}')">Delete Session</button>
       </div>
       <div class="session-chart-wrap hidden" id="chart-wrap-${s.id}">
@@ -3483,21 +3625,18 @@ function buildHistoryCard(s) {
 
 function toggleHistoryCard(id) {
   const card = document.getElementById(`hcard-${id}`);
-  const body = document.getElementById(`hbody-${id}`);
-  const chev = card.querySelector('.session-chevron');
   const isOpen = card.classList.contains('open');
+  const head = card.querySelector('.history-card-head');
 
   if (!isOpen) {
     card.classList.add('open');
-    body.style.display = 'block';
-    chev.style.transform = 'rotate(90deg)';
+    if (head) head.setAttribute('aria-expanded', 'true');
   } else {
     card.classList.remove('open');
-    body.style.display = 'none';
-    chev.style.transform = '';
+    if (head) head.setAttribute('aria-expanded', 'false');
     // Destroy chart if open
     const canvas = document.getElementById(`chart-${id}`);
-    if (canvas && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+    if (canvas && window.Chart && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
     const wrap = document.getElementById(`chart-wrap-${id}`);
     if (wrap) wrap.classList.add('hidden');
     const btn = document.getElementById(`graph-btn-${id}`);
@@ -3515,7 +3654,7 @@ function toggleGraph(sessionId, exName, accentColor) {
     wrap.classList.add('hidden');
     btn.classList.remove('active');
     btn.textContent = '📈 Show Graph';
-    if (canvas && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+    if (canvas && window.Chart && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
     return;
   }
 
@@ -3536,16 +3675,13 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   const pillsContainer = document.getElementById(`chart-pills-${sessionId}`);
   if (pillsContainer) {
     const accent = _chartState[sessionId]?.accentColor || 'rgba(0,212,160,0.9)';
+    pillsContainer.style.setProperty('--history-accent', accent);
     pillsContainer.querySelectorAll('.chart-ex-pill').forEach(p => {
       p.classList.remove('active');
-      p.style.background = '';
-      p.style.borderColor = '';
-      p.style.color = '';
+      p.setAttribute('aria-pressed', 'false');
     });
     pillBtn.classList.add('active');
-    pillBtn.style.background = accent;
-    pillBtn.style.borderColor = accent;
-    pillBtn.style.color = '#080909';
+    pillBtn.setAttribute('aria-pressed', 'true');
   }
 
   if (_chartState[sessionId]) _chartState[sessionId].activeEx = exName;
@@ -3560,61 +3696,18 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   const canvas = document.getElementById(`chart-${sessionId}`);
   if (!canvas) return;
 
-  // Get 2 mesocycles of complete sessions for this session type
-  const related = get2MesoCycleSessions(s.sessionId);
-  if (related.length < 2) {
-    const wrap = document.getElementById(`chart-wrap-${sessionId}`);
-    if (wrap) wrap.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);padding:16px;text-align:center">Not enough data yet — complete more sessions to see your progression.</div>';
+  const chartData = buildExerciseChartData(sessionId, exName);
+
+  if (!chartData || chartData.labels.length < 2) {
+    renderChartFallback(sessionId, 'Not enough data yet — complete more sessions to see your progression.');
     return;
   }
 
-  // Determine chart mode for this exercise across all sessions
-  const mode = getExerciseMode(exName, related);
-  const repRange = getRepRange(exName);
+  clearChartFallback(sessionId);
 
-  // Build data arrays
-  const labels     = [];
-  const volData    = [];
-  const ceilData   = [];
-  const variantChanges = [];
-  let lastVariant  = null;
-  let axisLabel    = 'Volume (kg × reps)';
-  let hasBWAndBand = false;
-  const bwRepsData = [];
-
-  related.forEach((sess, i) => {
-    const ex = sess.exercises.find(e => e.name === exName);
-    if (!ex || !ex.sets.filter(s => s.reps).length) return;
-
-    // Detect variant change (exercise name change in same slot)
-    const currentVariant = ex.name;
-    if (lastVariant && currentVariant !== lastVariant) {
-      variantChanges.push({ date: sess.date, from: lastVariant, to: currentVariant });
-    }
-    lastVariant = currentVariant;
-
-    // Transition sessions: label by session number, not date
-    const sessConfig = state.programme.sessions.find(s => s.id === related[0]?.sessionId);
-    const isTransition = sessConfig && sessConfig.sessionType === 'transition';
-    labels.push(isTransition ? `S${labels.length + 1}` : formatDateITShort(sess.date));
-
-    const vol = calcVolume(ex, mode);
-    volData.push(vol ? Math.round(vol.volume) : 0);
-    if (vol) axisLabel = vol.label;
-
-    const ceil = calcCeilingPct(ex, repRange);
-    ceilData.push(ceil !== null ? ceil : 0);
-
-    // For BW+band dual axis: also collect pure reps
-    if (mode === 'bw+band' || mode === 'bw') {
-      const totalReps = ex.sets.filter(s=>s.reps).reduce((a,s)=>a+parseInt(s.reps),0);
-      bwRepsData.push(totalReps);
-    }
-  });
-
-  // Detect if mode switched from BW to BW+band mid-data
-  if (mode === 'bw+band' && bwRepsData.some(v=>v>0) && volData.some(v=>v>0)) {
-    hasBWAndBand = true;
+  if (!window.Chart) {
+    renderLocalExerciseChart(sessionId, exName, accentColor, chartData);
+    return;
   }
 
   // Destroy existing chart
@@ -3622,7 +3715,8 @@ function renderExerciseChart(sessionId, exName, accentColor) {
 
   const chartTheme = getChartTheme();
   const accent = resolveCssColor(accentColor);
-  const monoFont = { family: 'DM Mono', size: 9 };
+  const monoFont = { family: 'ui-monospace, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace', size: 9 };
+  const { labels, volData, ceilData, variantChanges, axisLabel, hasBWAndBand, bwRepsData, mode } = chartData;
 
   const datasets = [];
 
@@ -3726,6 +3820,177 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   _chartInstances[sessionId] = chart;
 
   // Update axis label below chart
+  updateChartNotes(sessionId, chartData, false);
+}
+
+function buildExerciseChartData(sessionId, exName) {
+  const s = state.sessions.find(s => s.id === sessionId);
+  if (!s) return null;
+
+  const related = get2MesoCycleSessions(s.sessionId);
+  if (related.length < 2) return null;
+
+  const mode = getExerciseMode(exName, related);
+  const repRange = getRepRange(exName);
+  const labels = [];
+  const volData = [];
+  const ceilData = [];
+  const variantChanges = [];
+  const bwRepsData = [];
+  let lastVariant = null;
+  let axisLabel = 'Volume (kg × reps)';
+  const sessConfig = state.programme.sessions.find(s => s.id === related[0]?.sessionId);
+  const isTransition = sessConfig && sessConfig.sessionType === 'transition';
+
+  related.forEach(sess => {
+    const ex = sess.exercises.find(e => e.name === exName);
+    if (!ex || !ex.sets.filter(s => s.reps).length) return;
+
+    const currentVariant = ex.name;
+    if (lastVariant && currentVariant !== lastVariant) {
+      variantChanges.push({ date: sess.date, from: lastVariant, to: currentVariant });
+    }
+    lastVariant = currentVariant;
+
+    labels.push(isTransition ? `S${labels.length + 1}` : formatDateITShort(sess.date));
+
+    const vol = calcVolume(ex, mode);
+    volData.push(vol ? Math.round(vol.volume) : 0);
+    if (vol) axisLabel = vol.label;
+
+    const ceil = calcCeilingPct(ex, repRange);
+    ceilData.push(ceil !== null ? ceil : 0);
+
+    if (mode === 'bw+band' || mode === 'bw') {
+      const totalReps = ex.sets.filter(s => s.reps).reduce((a, s) => a + parseInt(s.reps), 0);
+      bwRepsData.push(totalReps);
+    }
+  });
+
+  return {
+    labels,
+    volData,
+    ceilData,
+    variantChanges,
+    bwRepsData,
+    mode,
+    axisLabel,
+    hasBWAndBand: mode === 'bw+band' && bwRepsData.some(v => v > 0) && volData.some(v => v > 0),
+  };
+}
+
+function renderLocalExerciseChart(sessionId, exName, accentColor, chartData) {
+  const canvas = document.getElementById(`chart-${sessionId}`);
+  const canvasWrap = canvas?.closest('.chart-canvas-wrap');
+  if (!canvas || !canvasWrap) return;
+
+  canvasWrap.classList.remove('hidden');
+  const rect = canvasWrap.getBoundingClientRect();
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const width = Math.max(300, Math.round(rect.width || canvasWrap.clientWidth || 620));
+  const height = Math.max(150, Math.round(rect.height || 160));
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const theme = getChartTheme();
+  const accent = resolveCssColor(accentColor);
+  const pad = { top: 16, right: 34, bottom: 28, left: 42 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const rawMaxVol = Math.max(1, ...chartData.volData);
+  const rawMinVol = Math.min(...chartData.volData);
+  const flatPadding = Math.max(1, rawMaxVol * 0.1);
+  const maxVol = rawMaxVol === rawMinVol ? rawMaxVol + flatPadding : rawMaxVol;
+  const minVol = rawMaxVol === rawMinVol ? Math.max(0, rawMinVol - flatPadding) : rawMinVol;
+  const volSpan = Math.max(1, maxVol - minVol);
+  const xFor = i => pad.left + (chartData.labels.length === 1 ? plotW / 2 : (i / (chartData.labels.length - 1)) * plotW);
+  const yVol = v => pad.top + plotH - ((v - minVol) / volSpan) * plotH;
+  const yPct = v => pad.top + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = colorWithAlpha(theme.tooltipBg, 0.18);
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = theme.gridColor;
+  ctx.fillStyle = theme.mutedColor;
+  ctx.font = '9px ui-monospace, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.top + (plotH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(width - pad.right, y);
+    ctx.stroke();
+    const label = Math.round(maxVol - (volSpan / 3) * i);
+    ctx.fillText(label.toString(), pad.left - 7, y);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelEvery = Math.max(1, Math.ceil(chartData.labels.length / 5));
+  chartData.labels.forEach((label, i) => {
+    if (i % labelEvery !== 0 && i !== chartData.labels.length - 1) return;
+    ctx.fillText(label, xFor(i), height - pad.bottom + 12);
+  });
+
+  ctx.save();
+  ctx.beginPath();
+  chartData.volData.forEach((value, i) => {
+    const x = xFor(i);
+    const y = yVol(value);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(xFor(chartData.volData.length - 1), pad.top + plotH);
+  ctx.lineTo(xFor(0), pad.top + plotH);
+  ctx.closePath();
+  ctx.fillStyle = colorWithAlpha(accent, 0.14);
+  ctx.fill();
+  ctx.restore();
+
+  drawLocalChartLine(ctx, chartData.volData, xFor, yVol, accent, 2.2, []);
+  drawLocalChartLine(ctx, chartData.ceilData, xFor, yPct, colorWithAlpha(theme.mutedColor, 0.7), 1.3, [4, 3]);
+
+  chartData.volData.forEach((value, i) => {
+    ctx.beginPath();
+    ctx.arc(xFor(i), yVol(value), 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.strokeStyle = colorWithAlpha(theme.tooltipBg, 0.8);
+    ctx.stroke();
+  });
+
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', `${exName} trend: ${chartData.mode.toUpperCase()} ${chartData.axisLabel}, with percentage of sets at rep ceiling shown as a dashed line.`);
+  updateChartNotes(sessionId, chartData, true);
+}
+
+function drawLocalChartLine(ctx, values, xFor, yFor, color, width, dash) {
+  ctx.save();
+  ctx.beginPath();
+  values.forEach((value, i) => {
+    const x = xFor(i);
+    const y = yFor(value);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.setLineDash(dash);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function updateChartNotes(sessionId, chartData, isLocalFallback) {
+  const { mode, axisLabel, variantChanges } = chartData;
   const axisEl = document.getElementById(`chart-axis-label-${sessionId}`);
   if (axisEl) axisEl.textContent = `${mode.toUpperCase()} · ${axisLabel} (left) · % Sets at Rep Ceiling (right, dashed)`;
 
@@ -3739,6 +4004,34 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   } else if (noteEl) {
     noteEl.classList.add('hidden');
   }
+}
+
+function clearChartFallback(sessionId) {
+  const fallback = document.getElementById(`chart-fallback-${sessionId}`);
+  if (fallback) fallback.remove();
+  const canvasWrap = document.querySelector(`#chart-wrap-${sessionId} .chart-canvas-wrap`);
+  if (canvasWrap) canvasWrap.classList.remove('hidden');
+}
+
+function renderChartFallback(sessionId, message) {
+  const wrap = document.getElementById(`chart-wrap-${sessionId}`);
+  if (!wrap) return;
+  const canvasWrap = wrap.querySelector('.chart-canvas-wrap');
+  if (canvasWrap) canvasWrap.classList.add('hidden');
+  const axisEl = document.getElementById(`chart-axis-label-${sessionId}`);
+  if (axisEl) axisEl.textContent = '';
+  const noteEl = document.getElementById(`chart-variant-note-${sessionId}`);
+  if (noteEl) noteEl.classList.add('hidden');
+  let fallback = document.getElementById(`chart-fallback-${sessionId}`);
+  if (!fallback) {
+    fallback = document.createElement('div');
+    fallback.className = 'chart-fallback';
+    fallback.id = `chart-fallback-${sessionId}`;
+    const pills = document.getElementById(`chart-pills-${sessionId}`);
+    if (pills) pills.insertAdjacentElement('afterend', fallback);
+    else wrap.appendChild(fallback);
+  }
+  fallback.textContent = message;
 }
 
 function refreshVisibleCharts() {
@@ -3758,11 +4051,11 @@ function filterHistory(filter, btn) {
   const sessions = [...state.sessions].reverse();
 
   if (filter === 'all') {
-    cards.forEach(c => c.style.display = '');
+    cards.forEach(c => c.classList.remove('hidden'));
   } else {
     sessions.forEach((s, i) => {
       const card = document.getElementById(`hcard-${s.id}`);
-      if (card) card.style.display = s.sessionName === filter ? '' : 'none';
+      if (card) card.classList.toggle('hidden', s.sessionName !== filter);
     });
   }
 }
@@ -3844,12 +4137,12 @@ function renderGuide() {
   const container = document.getElementById('guide-sections');
   container.innerHTML = GUIDE_SECTIONS.map(section => `
     <div class="guide-section" id="guide-${section.num}">
-      <div class="guide-head" onclick="toggleGuide('guide-${section.num}')">
+      <div class="guide-head" onclick="toggleGuide('guide-${section.num}')" role="button" tabindex="0" aria-expanded="false" aria-controls="guide-body-${section.num}">
         <span class="guide-num">${section.num}</span>
         <span class="guide-title">${section.title}</span>
         <span class="guide-chevron">›</span>
       </div>
-      <div class="guide-body">
+      <div class="guide-body" id="guide-body-${section.num}">
         <div class="guide-content">${section.content}</div>
       </div>
     </div>
@@ -3857,7 +4150,9 @@ function renderGuide() {
 }
 
 function toggleGuide(id) {
-  document.getElementById(id).classList.toggle('open');
+  const section = document.getElementById(id);
+  section.classList.toggle('open');
+  section.querySelector('.guide-head')?.setAttribute('aria-expanded', section.classList.contains('open') ? 'true' : 'false');
 }
 
 /* ═══════════════════════════════════════════
@@ -4070,9 +4365,9 @@ function promptDriveClientId() {
   const current = localStorage.getItem('wt_drive_client_id') || '';
   showModal(
     'Set Google OAuth Client ID',
-    `<p style="margin-bottom:10px;font-size:13px;color:var(--text-dim)">Paste your Client ID from Google Cloud Console. It ends in <code>.apps.googleusercontent.com</code></p>` +
-    `<input id="modal-client-id-input" type="text" value="${current}"
-       style="width:100%;background:var(--surface3);border:1px solid var(--border-h);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;box-sizing:border-box"
+    `<p class="client-id-help">Paste your Client ID from Google Cloud Console. It ends in <code>.apps.googleusercontent.com</code></p>` +
+    `<input id="modal-client-id-input" type="text" value="${current}" aria-label="Google OAuth Client ID"
+       class="client-id-input"
        placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com">`,
     [
       { label: 'Cancel', cls: 'cancel', action: closeModal },
@@ -4110,7 +4405,7 @@ function updateDriveStatus(connected, message) {
   if (dot)     dot.className   = `drive-dot ${connected ? 'connected' : ''}`;
   if (text)    text.textContent = message || (connected ? 'Google Drive — connected ✓' : 'Google Drive — not connected');
   if (btn)     btn.textContent  = connected ? 'Manage' : (DRIVE_CLIENT_ID ? 'Connect' : 'Set up');
-  if (syncBtn) syncBtn.style.display = connected ? '' : 'none';
+  if (syncBtn) syncBtn.classList.toggle('hidden', !connected);
   const pushBtn = document.getElementById('settings-push-all-btn');
   if (pushBtn) pushBtn.disabled = !connected;
   const syncBtnSettings = document.getElementById('settings-sync-btn');
@@ -4141,17 +4436,14 @@ function updateDriveStatusDot(dotState, errorMessage) {
     if (!errEl) {
       errEl = document.createElement('div');
       errEl.id = 'drive-error-message';
-      errEl.style.cssText = `font-family:'DM Mono',monospace;font-size:9px;color:var(--red);
-        margin-top:8px;padding:6px 8px;background:color-mix(in srgb, var(--red) 8%, transparent);
-        border:1px solid color-mix(in srgb, var(--red) 25%, transparent);
-        border-radius:5px;line-height:1.6;`;
+      errEl.className = 'drive-error-message';
       const syncRow = document.getElementById('settings-sync-row');
       if (syncRow) syncRow.appendChild(errEl);
     }
     errEl.textContent = `⚠ ${errorMessage}`;
-    errEl.style.display = 'block';
+    errEl.classList.remove('hidden');
   } else if (errEl) {
-    errEl.style.display = 'none';
+    errEl.classList.add('hidden');
   }
 }
 
@@ -4229,11 +4521,12 @@ function pickerCallback(data) {
 function updateFolderPickerDisplay() {
   const el = document.getElementById('settings-folder-display');
   if (!el) return;
+  el.classList.add('settings-folder-display');
   const key    = `wt_drive_folder_${state.profile}`;
   const saved  = localStorage.getItem(key);
   const folder = saved ? JSON.parse(saved) : null;
   el.textContent = folder ? folder.name : 'Default (WorkoutApp)';
-  el.style.color = folder ? 'var(--text)' : 'var(--text-muted)';
+  el.classList.toggle('has-folder', !!folder);
 }
 
 // ── FOLDER MANAGEMENT ──────────────────────
@@ -4313,6 +4606,10 @@ async function saveProgrammeToDrive() {
       profile: state.profile,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
+      bodyweight: state.bodyweight,
+      weightLog: state.weightLog || [],
+      dashboardPanels: state.dashboardPanels || INITIAL_STATE.dashboardPanels,
+      dashboardPanelOpen: state.dashboardPanelOpen || {},
       sessions: state.programme.sessions.map(s => ({
         id: s.id, rest: s.rest,
         exercises: s.exercises.map(e => ({ num: e.num, name: e.name, sets: e.sets, reps: e.reps, load: e.load }))
@@ -4362,17 +4659,33 @@ async function loadProgrammeFromDrive() {
     // ── Restore settings from Drive config ──────────────────────
     // Only apply if the remote value is set and local is not —
     // local always wins if already configured (avoid overwrite loop)
-    if (config.mesoStartDate && !state.mesoStartDate) {
-      state.mesoStartDate = config.mesoStartDate;
-      const el = document.getElementById('meso-start-date');
-      if (el) el.value = config.mesoStartDate;
-      const sEl = document.getElementById('s-meso-date');
-      if (sEl) sEl.value = config.mesoStartDate;
+    const settingsPatch = {};
+    if ('mesoStartDate' in config) settingsPatch.mesoStartDate = config.mesoStartDate || null;
+    if ('mesoWeekOverride' in config) settingsPatch.mesoWeekOverride = config.mesoWeekOverride || null;
+    if (Array.isArray(config.weightLog)) {
+      settingsPatch.weightLog = config.weightLog;
+      settingsPatch.bodyweight = config.weightLog.length
+        ? config.weightLog[config.weightLog.length - 1].kg
+        : (config.bodyweight || null);
+    } else if ('bodyweight' in config) {
+      settingsPatch.bodyweight = config.bodyweight || null;
     }
-    if (config.mesoWeekOverride && !state.mesoWeekOverride) {
-      state.mesoWeekOverride = config.mesoWeekOverride;
-      const el = document.getElementById('meso-week-override');
-      if (el) el.value = config.mesoWeekOverride;
+    if (config.dashboardPanels) settingsPatch.dashboardPanels = config.dashboardPanels;
+    if (config.dashboardPanelOpen) settingsPatch.dashboardPanelOpen = config.dashboardPanelOpen;
+    if (Object.keys(settingsPatch).length) {
+      setState(settingsPatch);
+      const el = document.getElementById('meso-start-date');
+      if (el) el.value = state.mesoStartDate || '';
+      const sEl = document.getElementById('s-meso-date');
+      if (sEl) sEl.value = state.mesoStartDate || '';
+      const weekEl = document.getElementById('meso-week-override');
+      if (weekEl) weekEl.value = state.mesoWeekOverride || '';
+      const sWeekEl = document.getElementById('s-meso-week');
+      if (sWeekEl) sWeekEl.value = state.mesoWeekOverride || '';
+      const bwEl = document.getElementById('s-bw');
+      if (bwEl) bwEl.value = state.bodyweight || '';
+      renderWeightLog();
+      renderDashboardPanelSettings();
     }
 
     // ── Restore rest periods and exercise customisations ────────
@@ -4388,6 +4701,10 @@ async function loadProgrammeFromDrive() {
         }
       });
     }
+    renderProgramme();
+    renderTracker();
+    renderDashboard();
+    updateMesoDisplay();
   } catch(e) { console.warn('[Drive] Programme config load failed:', e); }
 }
 
@@ -4728,23 +5045,12 @@ function showConflictBanner(conflicts) {
 
   const banner = document.createElement('div');
   banner.id = 'sync-conflict-banner';
-  banner.style.cssText = `
-    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-    background:var(--surface2);border:1px solid var(--amber);border-radius:10px;
-    padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:9999;
-    font-family:'DM Mono',monospace;font-size:11px;color:var(--text);
-    box-shadow:0 4px 24px #00000066;white-space:nowrap;
-  `;
+  banner.className = 'app-banner warning';
   banner.innerHTML = `
-    <span style="color:var(--amber)">⚠</span>
+    <span class="app-banner-icon">⚠</span>
     <span>${conflicts.length} sessions flagged as possible duplicates</span>
-    <button onclick="reviewConflicts()" style="
-      background:var(--amber);color:#000;border:none;border-radius:6px;
-      padding:4px 12px;font-family:'DM Mono',monospace;font-size:11px;
-      font-weight:700;cursor:pointer">Review</button>
-    <button onclick="this.closest('#sync-conflict-banner').remove()" style="
-      background:none;border:none;color:var(--text-dim);font-size:14px;
-      cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    <button class="app-banner-action" onclick="reviewConflicts()">Review</button>
+    <button class="app-banner-dismiss" onclick="this.closest('#sync-conflict-banner').remove()">✕</button>
   `;
   document.body.appendChild(banner);
 }
@@ -4762,33 +5068,26 @@ function reviewConflicts() {
     groups[key].push(s);
   });
 
-  let html = `<p style="font-size:12px;color:var(--text-dim);margin-bottom:12px">
+  let html = `<p class="conflict-review-intro">
     These sessions were logged on different devices for the same workout. Keep one, delete the other.
   </p>`;
 
   Object.values(groups).forEach(group => {
-    html += `<div style="border:1px solid var(--border-h);border-radius:8px;padding:10px;margin-bottom:10px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--amber);margin-bottom:8px">
+    html += `<div class="conflict-group">
+      <div class="conflict-group-title">
         ${group[0].date} — ${group[0].sessionName}
       </div>`;
     group.forEach(s => {
       const sets = s.exercises.reduce((n, e) => n + e.sets.length, 0);
       const time = s.startTime ? new Date(s.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—';
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;
-        padding:6px 8px;border-radius:6px;background:var(--surface3);margin-bottom:6px">
-        <span style="font-family:'DM Mono',monospace;font-size:10px">
+      html += `<div class="conflict-row">
+        <span class="conflict-row-detail">
           Started ${time} · ${sets} sets · ${s.status}
-          ${s.notes ? `<br><span style="color:var(--text-dim)">${s.notes.substring(0,40)}${s.notes.length>40?'…':''}</span>` : ''}
+          ${s.notes ? `<br><span class="conflict-row-notes">${s.notes.substring(0,40)}${s.notes.length>40?'…':''}</span>` : ''}
         </span>
-        <div style="display:flex;gap:6px">
-          <button onclick="resolveConflict('${s.id}','keep')" style="
-            background:var(--green);color:#000;border:none;border-radius:5px;
-            padding:3px 10px;font-family:'DM Mono',monospace;font-size:10px;
-            font-weight:700;cursor:pointer">Keep</button>
-          <button onclick="resolveConflict('${s.id}','delete')" style="
-            background:var(--surface2);color:var(--red);border:1px solid var(--red)33;
-            border-radius:5px;padding:3px 10px;font-family:'DM Mono',monospace;
-            font-size:10px;cursor:pointer">Delete</button>
+        <div class="conflict-row-actions">
+          <button class="conflict-btn keep" onclick="resolveConflict('${s.id}','keep')">Keep</button>
+          <button class="conflict-btn delete" onclick="resolveConflict('${s.id}','delete')">Delete</button>
         </div>
       </div>`;
     });
@@ -4902,6 +5201,7 @@ function logBodyweight() {
   if (idx !== -1) log[idx] = { date: today, kg: val };
   else log.push({ date: today, kg: val });
   setState({ weightLog: log, bodyweight: val });
+  saveSettingsToDrive();
   renderWeightLog();
   toast(`Weight logged: ${val} kg`, 'success');
 }
@@ -4911,13 +5211,13 @@ function renderWeightLog() {
   if (!el) return;
   const log = (state.weightLog || []).slice(-5).reverse();
   if (!log.length) {
-    el.innerHTML = "<div style='font-size:9px;color:var(--text-muted)'>No entries yet</div>";
+    el.innerHTML = '<div class="weight-log-empty">No entries yet</div>';
     return;
   }
   el.innerHTML = log.map(function(e) {
-    return "<div style='display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:9px'>" +
-      "<span style='color:var(--text-dim)'>" + formatDateIT(e.date) + "</span>" +
-      "<span style='color:var(--text)'>" + e.kg + " kg</span>" +
+    return "<div class='weight-log-row'>" +
+      "<span class='weight-log-date'>" + formatDateIT(e.date) + "</span>" +
+      "<span class='weight-log-value'>" + e.kg + " kg</span>" +
       "</div>";
   }).join('');
 }
@@ -5061,6 +5361,7 @@ function toggleDashboardPanelVisibility(panelId) {
     state.dashboardPanelOpen = { ...(state.dashboardPanelOpen || {}), [panelId]: false };
   }
   saveSettings();
+  saveSettingsToDrive();
   renderDashboard();
   renderDashboardPanelSettings();
 }
@@ -5131,8 +5432,8 @@ function _renderDashboardRightCol() {
   const MESO_WEEKS = [
     { w:1, sets:'3',   rir:'3–4' },
     { w:2, sets:'4',   rir:'2–3' },
-    { w:3, sets:'4–5', rir:'2'   },
-    { w:4, sets:'5',   rir:'1–2' },
+    { w:3, sets:'4',   rir:'2'   },
+    { w:4, sets:'4',   rir:'1–2' },
     { w:5, sets:'2',   rir:'5+', deload: true },
   ];
   const weekVolumes = MESO_WEEKS.map(wk => ({ ...wk, vol: calcWeekVolume(wk.w) }));
@@ -5174,7 +5475,7 @@ function _renderDashboardNextSession() {
   const makeChip = s => {
     const isSelected = s.id === nextSess.session.id;
     const rgb = s.colorRgb || '0,212,160';
-    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-label="Choose ${s.name}"
+    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${isSelected ? 'true' : 'false'}" aria-label="Choose ${s.name}"
       style="--picker-rgb:${rgb}"
       onclick="setNextSessionOverride('${s.id}')"
       data-session-id="${s.id}">
@@ -5199,16 +5500,16 @@ function _renderDashboardNextSession() {
 
   section.innerHTML = `
     <div class="dash-section-label">Next Session</div>
-    <div class="dash-next-session-name" style="color:${nextColor}">${nextSess.session.name}</div>
-    <div class="dash-next-session-meta" style="margin-bottom:8px">${nextSess.label}${
+    <div class="dash-next-session-name" style="--dash-accent:${nextColor}">${nextSess.session.name}</div>
+    <div class="dash-next-session-meta compact">${nextSess.label}${
       pendingForNext.length > 0
-        ? ` · <span style="color:var(--amber)">${pendingForNext.length} suggestion${pendingForNext.length > 1 ? 's' : ''} pending</span>`
+        ? ` · <span class="dash-pending-count">${pendingForNext.length} suggestion${pendingForNext.length > 1 ? 's' : ''} pending</span>`
         : ' · Ready to train'
     }</div>
     <div class="session-picker" id="dash-session-picker">${chips}</div>
     <div class="session-picker-hint">Scroll · tap to select</div>
     <button class="dash-start-btn"
-      style="margin-top:10px;background:rgba(${nextColorRgb},0.1);border-color:rgba(${nextColorRgb},0.35);color:${nextColor}"
+      style="--dash-accent:${nextColor};--dash-accent-rgb:${nextColorRgb}"
       onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${nextSess.session.id}')">
       ▶ Start ${nextSess.session.name}
     </button>
@@ -5259,7 +5560,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     const barCls = wk.deload ? 'deload-bar' : isCurrent ? 'current' : '';
     return '<div class="dash-volume-bar-wrap ' + (isCurrent ? 'current-wrap' : '') + '">' +
       '<div class="dash-volume-bar-track">' +
-        '<div class="dash-volume-bar ' + barCls + '" style="height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
+        '<div class="dash-volume-bar ' + barCls + '" style="--bar-height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
       '</div>' +
       '<div class="dash-volume-bar-label">' + (wk.deload ? 'DL' : 'W'+wk.w) + '</div>' +
       '</div>';
@@ -5270,7 +5571,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     if (!panelEnabled(id) || !body) return '';
     const isOpen = !!state.dashboardPanelOpen?.[id];
     return '<div class="dash-insight-panel ' + (isOpen ? 'open' : 'collapsed') + '" data-panel-id="' + id + '">' +
-      '<div class="dash-insight-head" role="button" tabindex="0" onclick="toggleDashboardPanel(&quot;' + id + '&quot;)" aria-label="Toggle ' + title + '">' +
+      '<div class="dash-insight-head" role="button" tabindex="0" onclick="toggleDashboardPanel(&quot;' + id + '&quot;)" aria-label="Toggle ' + title + '" aria-expanded="' + (isOpen ? 'true' : 'false') + '">' +
         '<span class="dash-insight-title">' + title + '</span>' +
         '<span class="dash-insight-summary">' + summary + '</span>' +
         '<span class="dash-insight-chev">›</span>' +
@@ -5289,15 +5590,15 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     equipment_ceiling:'var(--red)'
   };
   const progBody = pending.length > 0
-    ? pending.slice(0,5).map(p => {
+      ? pending.slice(0,5).map(p => {
         const col = typeColors[p.type] || 'var(--text-dim)';
         return '<div class="dash-prog-item">' +
-          '<div class="dash-prog-dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + '88"></div>' +
+          '<div class="dash-prog-dot" style="--prog-color:' + col + '"></div>' +
           '<div class="dash-prog-name">' + p.exercise + '</div>' +
-          '<div class="dash-prog-type" style="color:' + col + '">' + p.type.replace(/_/g,' ') + '</div>' +
+          '<div class="dash-prog-type" style="--prog-color:' + col + '">' + p.type.replace(/_/g,' ') + '</div>' +
           '</div>';
       }).join('')
-    : '<div style="font-size:9px;color:var(--text-muted);margin-top:16px">No progressions pending</div>';
+    : '<div class="dash-empty-inline">No progressions pending</div>';
   const progHtml = collapsiblePanel('progressionPending', 'Progression Pending', progBody, pending.length ? pending.length + ' pending' : 'none');
   const fatigueWatchHtml = collapsiblePanel('fatigueWatch', 'Fatigue Watch', buildFatigueWatchPanel(week), analyseFatigueWatch(week).label);
   const blockReview = analyseCurrentBlock(week);
@@ -5365,8 +5666,8 @@ function renderDashboard() {
   const MESO_WEEKS = [
     { w:1, sets:'3',   rir:'3–4' },
     { w:2, sets:'4',   rir:'2–3' },
-    { w:3, sets:'4–5', rir:'2'   },
-    { w:4, sets:'5',   rir:'1–2' },
+    { w:3, sets:'4',   rir:'2'   },
+    { w:4, sets:'4',   rir:'1–2' },
     { w:5, sets:'2',   rir:'5+', deload: true },
   ];
 
@@ -5398,15 +5699,15 @@ function renderDashboard() {
           const cls = isSelected ? 'current' : wk.w < week ? 'past' : wk.w > week ? 'future' : '';
           const deloadCls = wk.deload ? ' deload' : '';
           return `<div class="dash-meso-block ${cls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
-            role="button" tabindex="0" aria-label="View week ${wk.w} data" title="View week ${wk.w} data">
+            ontouchend="event.preventDefault();selectMesoWeek(${wk.w})"
+            role="button" tabindex="0" aria-pressed="${isSelected ? 'true' : 'false'}" aria-label="View week ${wk.w} data" title="View week ${wk.w} data">
             <div class="dash-meso-block-week">W${wk.w}</div>
             <div class="dash-meso-block-sets">${wk.sets}</div>
             <div class="dash-meso-block-rir">${wk.rir}</div>
           </div>`;
         }).join('')}
       </div>
-      <div style="font-size:8px;color:var(--text-muted);font-family:'DM Mono',monospace;
-        letter-spacing:0.05em;margin-top:4px;text-align:right">
+      <div class="dash-compare-hint">
         ${state._selectedMesoWeek && state._selectedMesoWeek !== week ? `Viewing W${state._selectedMesoWeek} · ` : ''}Tap a week to compare
       </div>
     </div>
@@ -5422,7 +5723,7 @@ function renderDashboard() {
           const dotCls = done ? 'done' : isWeekend ? 'rest' : '';
           const icon = done ? (d.logged[0]?.sessionName?.[0] || '✓') : isWeekend ? '—' : '';
           return `<div class="dash-day-chip">
-            <div class="dash-day-label" style="${isToday ? 'color:var(--text)' : ''}">${d.dayName}</div>
+            <div class="dash-day-label ${isToday ? 'today' : ''}">${d.dayName}</div>
             <div class="dash-day-dot ${dotCls}" title="${done ? d.logged.map(s=>s.sessionName).join(', ') : ''}">${icon}</div>
           </div>`;
         }).join('')}
@@ -5448,7 +5749,7 @@ function renderDashboard() {
         function makeChip(s) {
           const isSelected = s.id === nextSess.session.id;
           const rgb = s.colorRgb || '0,212,160';
-          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-label="Choose ${s.name}"
+          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${isSelected ? 'true' : 'false'}" aria-label="Choose ${s.name}"
             style="--picker-rgb:${rgb}"
             onclick="setNextSessionOverride('${s.id}')"
             data-session-id="${s.id}">
@@ -5474,10 +5775,10 @@ function renderDashboard() {
         );
 
         return `
-          <div class="dash-next-session-name" style="color:${nextColor}">${nextSess.session.name}</div>
-          <div class="dash-next-session-meta" style="margin-bottom:8px">${nextSess.label}${
+          <div class="dash-next-session-name" style="--dash-accent:${nextColor}">${nextSess.session.name}</div>
+          <div class="dash-next-session-meta compact">${nextSess.label}${
             pendingForNext.length > 0
-              ? ` · <span style="color:var(--amber)">${pendingForNext.length} suggestion${pendingForNext.length > 1 ? 's' : ''} pending</span>`
+              ? ` · <span class="dash-pending-count">${pendingForNext.length} suggestion${pendingForNext.length > 1 ? 's' : ''} pending</span>`
               : ' · Ready to train'
           }</div>
 
@@ -5485,7 +5786,7 @@ function renderDashboard() {
           <div class="session-picker" id="dash-session-picker">${chips}</div>
           <div class="session-picker-hint">Scroll · tap to select</div>
 
-          <button class="dash-start-btn" style="margin-top:10px;background:rgba(${nextColorRgb},0.1);border-color:rgba(${nextColorRgb},0.35);color:${nextColor}"
+          <button class="dash-start-btn" style="--dash-accent:${nextColor};--dash-accent-rgb:${nextColorRgb}"
             onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${nextSess.session.id}')">
             ▶ Start ${nextSess.session.name}
           </button>
@@ -5520,19 +5821,19 @@ function renderDashboard() {
                 <div class="dash-ladder-name">${ex.name}</div>
                 <div class="dash-ladder-rung">${rungIdx + 1}/${ladder?.length || '?'}</div>
                 <div class="dash-ladder-bar-bg">
-                  <div class="dash-ladder-bar-fill ${atTop ? 'complete' : ''}" style="width:${pct}%"></div>
+                  <div class="dash-ladder-bar-fill ${atTop ? 'complete' : ''}" style="--ladder-pct:${pct}%"></div>
                 </div>
               </div>`;
             }).join('')
         }
 
         ${pending.length > 0 ? `
-          <div class="dash-section-label" style="margin-top:18px">Triggers Approaching</div>
+          <div class="dash-section-label spaced">Triggers Approaching</div>
           ${pending.map(p => `
             <div class="dash-prog-item">
-              <div class="dash-prog-dot" style="background:var(--amber);box-shadow:0 0 6px rgba(245,184,48,0.5)"></div>
+              <div class="dash-prog-dot" style="--prog-color:var(--amber)"></div>
               <div class="dash-prog-name">${p.exercise}</div>
-              <div class="dash-prog-type" style="color:var(--amber)">${p.type.replace(/_/g,' ')}</div>
+              <div class="dash-prog-type" style="--prog-color:var(--amber)">${p.type.replace(/_/g,' ')}</div>
             </div>`).join('')}
         ` : ''}
       </div>
@@ -5564,16 +5865,23 @@ function toggleExerciseCard(cardId, event) {
   const card = document.getElementById(cardId);
   if (!card) return;
   card.classList.toggle('collapsed');
+  card.querySelector('.tracker-ex-head')?.setAttribute('aria-expanded', card.classList.contains('collapsed') ? 'false' : 'true');
 }
 
 function collapseExerciseCard(cardId) {
   const card = document.getElementById(cardId);
-  if (card) card.classList.add('collapsed');
+  if (card) {
+    card.classList.add('collapsed');
+    card.querySelector('.tracker-ex-head')?.setAttribute('aria-expanded', 'false');
+  }
 }
 
 function expandExerciseCard(cardId) {
   const card = document.getElementById(cardId);
-  if (card) card.classList.remove('collapsed');
+  if (card) {
+    card.classList.remove('collapsed');
+    card.querySelector('.tracker-ex-head')?.setAttribute('aria-expanded', 'true');
+  }
 }
 
 function hideNextPrompt(sessionId, exIdx) {
@@ -5673,9 +5981,15 @@ function toggleNotesPill(pill) {
   // Deselect all in this group
   pill.closest('.session-notes-wrap')
     .querySelectorAll(`.notes-pill[data-group="${group}"]`)
-    .forEach(p => p.classList.remove('selected'));
+    .forEach(p => {
+      p.classList.remove('selected');
+      p.setAttribute('aria-pressed', 'false');
+    });
 
-  if (!wasSelected) pill.classList.add('selected');
+  if (!wasSelected) {
+    pill.classList.add('selected');
+    pill.setAttribute('aria-pressed', 'true');
+  }
 
   // Build sentence from all selected pills
   rebuildNotesFromPills();
@@ -5708,7 +6022,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function clearNotesPills() {
-  document.querySelectorAll('.notes-pill.selected').forEach(p => p.classList.remove('selected'));
+  document.querySelectorAll('.notes-pill').forEach(p => {
+    p.classList.remove('selected');
+    p.setAttribute('aria-pressed', 'false');
+  });
   const ta = document.getElementById('session-notes-input');
   if (ta) { ta.value = ''; ta.dataset.autoGenerated = 'false'; }
 }
@@ -5721,7 +6038,116 @@ function clearNotesPills() {
 function toggleSessionTemplate() {
   state._useTemplate = !state._useTemplate;
   const row = document.getElementById('template-toggle-row');
-  if (row) row.classList.toggle('active', state._useTemplate);
+  if (row) {
+    row.classList.toggle('active', state._useTemplate);
+    row.setAttribute('aria-pressed', state._useTemplate ? 'true' : 'false');
+  }
+  applySessionTemplateLoads(state._useTemplate);
+}
+
+function setBandPillsFromLoad(container, load, isBWContext) {
+  const normalized = (load || '').toString().toLowerCase().replace(/^bw[+]?/, '');
+  const activeBands = new Set();
+  normalized.split('+').forEach(part => {
+    const band = part.trim();
+    if (['yellow','green','red','blue','black'].includes(band)) activeBands.add(band);
+  });
+
+  container.querySelectorAll('.band-pill').forEach(btn => {
+    btn.className = 'band-pill';
+    const label = btn.textContent.trim().toLowerCase();
+    const band = label === '—' ? 'none' : label;
+    if ((band === 'none' && activeBands.size === 0) || activeBands.has(band)) {
+      btn.classList.add(`active-${band}`);
+    }
+  });
+
+  const row = container.closest('.set-row');
+  const loadInput = row?.querySelector('.set-load-val');
+  if (!loadInput) return;
+  if (isBWContext) {
+    const selected = [...activeBands][0];
+    loadInput.value = selected ? `BW+${selected.charAt(0).toUpperCase()+selected.slice(1)}` : 'BW';
+  } else {
+    loadInput.value = activeBands.size
+      ? [...activeBands].map(b => b.charAt(0).toUpperCase()+b.slice(1)).join('+')
+      : '';
+  }
+  loadInput.dataset.templateLoad = 'true';
+  loadInput.dispatchEvent(new Event('change'));
+}
+
+function setLoadPillsFromLoad(row, load) {
+  const hiddenEl = row.querySelector('.set-load-val');
+  const pillGroup = row.querySelector('.load-pills');
+  if (!hiddenEl || !pillGroup) return;
+
+  hiddenEl.value = load || '';
+  hiddenEl.dataset.templateLoad = load ? 'true' : '';
+  pillGroup.querySelectorAll('.input-pill').forEach(p => {
+    p.classList.toggle('selected', !!load && p.dataset.load === load);
+  });
+
+  const matched = !!load && Array.from(pillGroup.querySelectorAll('.input-pill'))
+    .some(pill => pill.dataset.load === load);
+  const customInput = pillGroup.querySelector('.pill-custom-input');
+  if (customInput) {
+    customInput.value = matched ? '' : (load || '');
+    customInput.classList.toggle('visible', !!load && !matched);
+  }
+  hiddenEl.dispatchEvent(new Event('change'));
+}
+
+function clearTemplateLoad(row) {
+  const hiddenEl = row.querySelector('.set-load-val');
+  if (!hiddenEl || hiddenEl.dataset.templateLoad !== 'true') return;
+
+  const bandPills = row.querySelector('.band-pills');
+  if (bandPills) {
+    setBandPillsFromLoad(bandPills, hiddenEl.classList.contains('bw-load-store') ? 'BW' : '', bandPills.dataset.ctx === 'bw');
+  } else {
+    setLoadPillsFromLoad(row, '');
+  }
+  hiddenEl.dataset.templateLoad = '';
+}
+
+function applyTemplateLoad(row, load) {
+  const hiddenEl = row.querySelector('.set-load-val');
+  if (!hiddenEl) return;
+
+  const userHasLoad = hiddenEl.value && hiddenEl.dataset.templateLoad !== 'true' && !hiddenEl.classList.contains('bw-load-store');
+  if (userHasLoad) return;
+
+  const bandPills = row.querySelector('.band-pills');
+  if (bandPills) {
+    setBandPillsFromLoad(bandPills, load, bandPills.dataset.ctx === 'bw');
+  } else {
+    setLoadPillsFromLoad(row, load);
+  }
+}
+
+function applySessionTemplateLoads(enabled) {
+  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  if (!session) return;
+
+  session.exercises.forEach((ex, exIdx) => {
+    const container = document.getElementById(`sets-${session.id}-${exIdx}`);
+    if (!container) return;
+    const prevSession = state.sessions
+      .filter(s => s.sessionId === session.id && s.status === 'complete')
+      .slice(-1)[0];
+    const prevEx = prevSession?.exercises?.find(e => e.name === ex.name);
+
+    container.querySelectorAll('.set-row').forEach((setRow, setIdx) => {
+      if (!enabled) {
+        clearTemplateLoad(setRow);
+        return;
+      }
+      const prevSet = prevEx?.sets?.[setIdx] || prevEx?.sets?.[0] || null;
+      applyTemplateLoad(setRow, prevSet?.load || '');
+      checkSetCompletion(setRow);
+    });
+  });
 }
 
 // Call this when building tracker exercises — applied in buildTrackerExercises
@@ -5739,7 +6165,7 @@ function updateTemplateToggleVisibility(sessionId) {
   const hasPrev = state.sessions.some(
     s => s.sessionId === sessionId && s.status === 'complete'
   );
-  row.style.display = hasPrev ? 'flex' : 'none';
+  row.classList.toggle('hidden', !hasPrev);
 
   // Reset toggle state on session change
   state._useTemplate = false;
@@ -5808,11 +6234,11 @@ function showDeloadReview() {
     </div>` : '';
 
   const html = `
-    <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px">
+    <p class="review-copy">
       Mesocycle complete. Recover well — new block starts next week.
     </p>
     ${statsHtml}
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:0.08em">How did this block feel?</div>
+    <div class="review-feel-label">How did this block feel?</div>
     <div class="review-feel-row" id="review-feel-row">
       <div class="review-feel-pill" onclick="selectReviewFeel(this,'Great block')">Great block</div>
       <div class="review-feel-pill" onclick="selectReviewFeel(this,'Solid')">Solid</div>
@@ -6026,45 +6452,36 @@ function editSession(sessionId) {
 
   const progSess = state.programme.sessions.find(s => s.id === sess.sessionId);
 
-  let html = `<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
+  let html = `<div class="edit-session-meta">
     ${sess.sessionName} · ${formatDateIT(sess.date)}
   </div>`;
 
   sess.exercises.forEach((ex, exIdx) => {
-    html += `<div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text)">${ex.name}</div>`;
+    html += `<div class="edit-ex-block" data-edit-ex-idx="${exIdx}">
+      <div class="edit-ex-title">${ex.name}</div>`;
 
     ex.sets.forEach((set, setIdx) => {
-      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">
-        <span style="font-size:10px;color:var(--text-muted);min-width:14px">${setIdx+1}</span>
-        <input type="text" id="edit-load-${exIdx}-${setIdx}" value="${set.load || ''}"
-          placeholder="load" style="width:70px;background:var(--surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <span style="color:var(--text-muted);font-size:10px">×</span>
-        <input type="number" id="edit-reps-${exIdx}-${setIdx}" value="${set.reps || ''}"
-          placeholder="reps" style="width:52px;background:var(--surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <input type="text" id="edit-rir-${exIdx}-${setIdx}" value="${set.rir || ''}"
-          placeholder="RIR" style="width:42px;background:var(--surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <button onclick="removeEditSet(${exIdx},${setIdx})" style="background:none;border:none;
-          color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+      html += `<div class="edit-set-row">
+        <span class="edit-set-num">${setIdx+1}</span>
+        <input type="text" id="edit-load-${exIdx}-${setIdx}" value="${set.load || ''}" aria-label="${ex.name} set ${setIdx + 1} load"
+          placeholder="load" class="edit-set-input load">
+        <span class="edit-set-times">×</span>
+        <input type="number" id="edit-reps-${exIdx}-${setIdx}" value="${set.reps || ''}" aria-label="${ex.name} set ${setIdx + 1} reps"
+          placeholder="reps" class="edit-set-input reps">
+        <input type="text" id="edit-rir-${exIdx}-${setIdx}" value="${set.rir || ''}" aria-label="${ex.name} set ${setIdx + 1} RIR"
+          placeholder="RIR" class="edit-set-input rir">
+        <button class="edit-set-remove" onclick="removeEditSet(${exIdx},${setIdx})" aria-label="Remove ${ex.name} set ${setIdx + 1}">✕</button>
       </div>`;
     });
 
-    html += `<button onclick="addEditSet(${exIdx})" style="font-family:'DM Mono',monospace;
-      font-size:9px;padding:3px 10px;border-radius:5px;border:1px solid var(--border-h);
-      background:none;color:var(--text-muted);cursor:pointer;margin-top:2px">+ set</button>
+    html += `<button class="edit-add-set-btn" onclick="addEditSet(${exIdx})">+ set</button>
     </div>`;
   });
 
   // Notes
-  html += `<div style="margin-top:10px">
-    <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">Notes</div>
-    <textarea id="edit-session-notes" style="width:100%;background:var(--surface3);
-      border:1px solid var(--border-h);border-radius:6px;padding:7px 9px;
-      font-family:'DM Mono',monospace;font-size:10px;color:var(--text);
-      resize:vertical;min-height:52px;box-sizing:border-box">${sess.notes || ''}</textarea>
+  html += `<div class="edit-notes-block">
+    <div class="edit-notes-label">Notes</div>
+    <textarea id="edit-session-notes" class="edit-session-notes" aria-label="Edit session notes">${sess.notes || ''}</textarea>
   </div>`;
 
   showModal(`Edit Session`, html, [
@@ -6080,7 +6497,7 @@ function removeEditSet(exIdx, setIdx) {
   // Remove the set input row from the modal DOM
   const loadEl = document.getElementById(`edit-load-${exIdx}-${setIdx}`);
   if (loadEl) {
-    const row = loadEl.closest('div[style*="display:flex"]');
+    const row = loadEl.closest('.edit-set-row');
     if (row) row.remove();
     // Re-index remaining inputs
     reindexEditSets(exIdx);
@@ -6098,26 +6515,22 @@ function addEditSet(exIdx) {
   if (!ex) return;
   // Count existing set rows for this exercise in the modal
   const container = document.getElementById(`edit-load-${exIdx}-0`)
-    ?.closest('div[style*="margin-bottom:14px"]');
+    ?.closest('.edit-ex-block');
   if (!container) return;
-  const rows = container.querySelectorAll('div[style*="display:flex"]');
+  const rows = container.querySelectorAll('.edit-set-row');
   const newIdx = rows.length;
   const row = document.createElement('div');
-  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:5px';
+  row.className = 'edit-set-row';
   row.innerHTML = `
-    <span style="font-size:10px;color:var(--text-muted);min-width:14px">${newIdx+1}</span>
-    <input type="text" id="edit-load-${exIdx}-${newIdx}" placeholder="load"
-      style="width:70px;background:var(--surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <span style="color:var(--text-muted);font-size:10px">×</span>
-    <input type="number" id="edit-reps-${exIdx}-${newIdx}" placeholder="reps"
-      style="width:52px;background:var(--surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <input type="text" id="edit-rir-${exIdx}-${newIdx}" placeholder="RIR"
-      style="width:42px;background:var(--surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <button onclick="removeEditSet(${exIdx},${newIdx})" style="background:none;border:none;
-      color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>`;
+    <span class="edit-set-num">${newIdx+1}</span>
+    <input type="text" id="edit-load-${exIdx}-${newIdx}" placeholder="load" aria-label="${ex.name} set ${newIdx + 1} load"
+      class="edit-set-input load">
+    <span class="edit-set-times">×</span>
+    <input type="number" id="edit-reps-${exIdx}-${newIdx}" placeholder="reps" aria-label="${ex.name} set ${newIdx + 1} reps"
+      class="edit-set-input reps">
+    <input type="text" id="edit-rir-${exIdx}-${newIdx}" placeholder="RIR" aria-label="${ex.name} set ${newIdx + 1} RIR"
+      class="edit-set-input rir">
+    <button class="edit-set-remove" onclick="removeEditSet(${exIdx},${newIdx})" aria-label="Remove ${ex.name} set ${newIdx + 1}">✕</button>`;
   rows[rows.length - 1].after(row);
 }
 
@@ -6235,23 +6648,12 @@ function showUpdateBanner(newVersion) {
 
   const banner = document.createElement('div');
   banner.id = 'update-banner';
-  banner.style.cssText = `
-    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-    background:var(--surface2);border:1px solid var(--green);border-radius:10px;
-    padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:9999;
-    font-family:'DM Mono',monospace;font-size:11px;color:var(--text);
-    box-shadow:0 4px 24px #00000066;white-space:nowrap;
-  `;
+  banner.className = 'app-banner success';
   banner.innerHTML = `
-    <span style="color:var(--green)">⟳</span>
+    <span class="app-banner-icon">⟳</span>
     <span>New version <strong>${newVersion}</strong> available</span>
-    <button onclick="applyAppUpdate()" style="
-      background:var(--green);color:#000;border:none;border-radius:6px;
-      padding:4px 12px;font-family:'DM Mono',monospace;font-size:11px;
-      font-weight:700;cursor:pointer">Update</button>
-    <button onclick="this.closest('#update-banner').remove()" style="
-      background:none;border:none;color:var(--text-dim);font-size:14px;
-      cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    <button class="app-banner-action" onclick="applyAppUpdate()">Update</button>
+    <button class="app-banner-dismiss" onclick="this.closest('#update-banner').remove()">✕</button>
   `;
   document.body.appendChild(banner);
 }
@@ -6287,7 +6689,7 @@ function initDragAndDrop() {
   list.addEventListener('dragstart', e => {
     dragSrc = e.target.closest('.tracker-ex-card');
     if (!dragSrc) return;
-    dragSrc.style.opacity = '0.4';
+    dragSrc.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
   });
 
@@ -6306,7 +6708,7 @@ function initDragAndDrop() {
   });
 
   list.addEventListener('dragend', e => {
-    if (dragSrc) dragSrc.style.opacity = '';
+    if (dragSrc) dragSrc.classList.remove('dragging');
     dragSrc = null;
     // Sync logged set data stays attached to cards — no re-indexing needed
     // since we use card IDs not position order for data collection
@@ -6321,7 +6723,7 @@ function initDragAndDrop() {
     if (!handle) return;
     touchDragCard = handle.closest('.tracker-ex-card');
     touchStartY = e.touches[0].clientY;
-    touchDragCard.style.opacity = '0.5';
+    touchDragCard.classList.add('touch-dragging');
   }, { passive: true });
 
   list.addEventListener('touchmove', e => {
@@ -6342,7 +6744,7 @@ function initDragAndDrop() {
   }, { passive: false });
 
   list.addEventListener('touchend', () => {
-    if (touchDragCard) touchDragCard.style.opacity = '';
+    if (touchDragCard) touchDragCard.classList.remove('touch-dragging');
     touchDragCard = null;
   });
 }
@@ -6387,15 +6789,8 @@ function renderConsecutivePartialWarning(sessionId) {
   if (existing) return;
   const el = document.createElement('div');
   el.id = 'partial-warning';
-  el.style.cssText = `
-    padding:12px 16px;margin-bottom:12px;
-    background:rgba(255,194,51,0.06);
-    border:1px solid rgba(255,194,51,0.2);
-    border-radius:var(--radius);
-    font-family:'DM Mono',monospace;font-size:10px;
-    color:rgba(255,194,51,0.8);line-height:1.65;
-  `;
-  el.innerHTML = `<strong style="display:block;margin-bottom:4px;font-size:9px;text-transform:uppercase;letter-spacing:0.1em">⚠ Consecutive Partial Sessions</strong>
+  el.className = 'partial-warning';
+  el.innerHTML = `<strong class="partial-warning-title">⚠ Consecutive Partial Sessions</strong>
     Your last 2 <strong>${state.programme.sessions.find(s=>s.id===sessionId)?.name}</strong> sessions were marked Partial. 
     Check your notes before starting — consider whether load or volume needs adjusting.`;
   const toolbar = document.querySelector('.session-toolbar');
@@ -6411,7 +6806,7 @@ function renderConsecutivePartialWarning(sessionId) {
    1. Suppress in week 1 and deload
    2. Check rep ceiling hit in last 2 complete sessions
    3a. Below set ceiling → add set
-   3b. At set ceiling, load can increase → increase load (sets reset to 3)
+   3b. At set ceiling, load can increase → increase load at the current week set target
    3c. At set ceiling, no tempo yet → suggest tempo
    3d. Tempo applied, ceiling still hit → equipment ceiling
 ═══════════════════════════════════════════ */
@@ -6685,7 +7080,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
    1. Suppress in week 1 and deload
    2. Check rep ceiling hit in last 2 complete sessions of same type
    3a. Below set ceiling → add set
-   3b. At set ceiling, load can increase → increase load (sets reset to 3)
+   3b. At set ceiling, load can increase → increase load at the current week set target
    3c. At set ceiling, load cannot increase, no tempo flag → suggest tempo
    3d. At set ceiling, tempo already applied → equipment ceiling flag
 ═══════════════════════════════════════════ */
@@ -7191,7 +7586,7 @@ function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, curren
     return {
       exercise: exerciseName,
       type: 'band_tension',
-      message: `Set ceiling reached (${currentSets} sets). Increase band tension, then reset to 3 sets.`
+      message: `Week set target reached (${currentSets} sets). Increase band tension and keep the current week set target.`
     };
   }
 
@@ -7199,7 +7594,7 @@ function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, curren
     return {
       exercise: exerciseName,
       type: 'variant_advancement',
-      message: `Set ceiling reached (${currentSets} sets). Progress to the next harder bodyweight variant or reduce assistance, then reset to 3 sets.`
+      message: `Week set target reached (${currentSets} sets). Progress to the next harder bodyweight variant or reduce assistance.`
     };
   }
 
@@ -7208,7 +7603,7 @@ function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, curren
       return {
         exercise: exerciseName,
         type: 'variant_advancement',
-        message: `Tempo already applied and the rep ceiling is still easy. Move to a harder bodyweight setup, then reset to 3 sets.`
+        message: `Tempo already applied and the rep ceiling is still easy. Move to a harder bodyweight setup.`
       };
     }
     return {
@@ -7222,7 +7617,7 @@ function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, curren
     return {
       exercise: exerciseName,
       type: 'increase_load',
-      message: `Set ceiling reached (${currentSets} sets). Increase load - sets reset to 3.`
+      message: `Week set target reached (${currentSets} sets). Increase load and keep the current week set target.`
     };
   }
 
@@ -7285,12 +7680,12 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
     return withEffortContext({
       exercise: exerciseName,
       type: 'add_set',
-      message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.`
+      message: `Add a set (${currentSets} to ${currentSets + 1}). Rep ceiling hit in last 2 sessions.`
     }, readiness);
   }
 
   // At set ceiling — check if load can go up
-  return withEffortContext(buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, currentSets), readiness);
+  return withEffortContext(buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, Math.min(currentSets, targetSets)), readiness);
 
 }
 
@@ -7351,7 +7746,7 @@ function renderProgressionSuggestions(session) {
   if (suggestions.length > 0) {
     if (titleEl) {
       const hasHold = suggestions.some(s => s.type === 'hold_effort');
-      titleEl.textContent = hasHold ? 'Progression Review' : '↑ Progression Available';
+      titleEl.textContent = hasHold ? 'Progression Review' : 'Progression Available';
     }
     textEl.innerHTML = suggestions.map(s => {
       const typeColors = {
@@ -7368,11 +7763,11 @@ function renderProgressionSuggestions(session) {
       };
       const col = typeColors[s.type] || 'var(--text-dim)';
       const tempoBtn = s.type === 'tempo'
-        ? `<br><button onclick="markTempoApplied('${s.exercise.replace(/'/g,"\\'")}')" style="margin-top:5px;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid ${col}44;background:${col}15;color:${col};cursor:pointer">✓ Mark tempo applied this session</button>`
+        ? `<br><button class="suggestion-tempo-btn" onclick="markTempoApplied('${s.exercise.replace(/'/g,"\\'")}')">✓ Mark tempo applied this session</button>`
         : '';
-      return `<div style="margin-bottom:6px;padding:6px 8px;border-radius:5px;border:1px solid ${col}22;background:${col}0d">
-        <span style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:${col};margin-right:6px">${s.type.replace(/_/g,' ')}</span>
-        <strong>${s.exercise}</strong> — ${s.message}${tempoBtn}
+      return `<div class="suggestion-row" style="--suggestion-color:${col}">
+        <span class="suggestion-type">${s.type.replace(/_/g,' ')}</span>
+        <strong>${s.exercise}</strong> - ${s.message}${tempoBtn}
       </div>`;
     }).join('');
     card.classList.remove('hidden');
@@ -7413,13 +7808,17 @@ function showModal(title, body, actions) {
     `<button class="modal-btn ${a.cls}" onclick="modalAction(${i})">${a.label}</button>`
   ).join('');
   window._modalActions = actions;
-  document.getElementById('modal-overlay').classList.add('visible');
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
 }
 
 function modalAction(i) { window._modalActions[i].action(); }
 
 function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('visible');
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
 }
 
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
@@ -7435,7 +7834,7 @@ function toast(message, type = 'info') {
   el.className = `toast ${type}`;
   el.textContent = message;
   container.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+  setTimeout(() => { el.classList.add('exiting'); setTimeout(() => el.remove(), 300); }, 3000);
 }
 
 /* ═══════════════════════════════════════════
@@ -7477,12 +7876,17 @@ function initTheme() {
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.remove('active');
+    p.setAttribute('aria-hidden', 'true');
+  });
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.remove('active');
     b.setAttribute('aria-selected', 'false');
   });
-  document.getElementById(`panel-${tab}`)?.classList.add('active');
+  const panel = document.getElementById(`panel-${tab}`);
+  panel?.classList.add('active');
+  panel?.setAttribute('aria-hidden', 'false');
   const tabBtn = document.getElementById(`tab-${tab}`);
   tabBtn?.classList.add('active');
   tabBtn?.setAttribute('aria-selected', 'true');
@@ -7669,19 +8073,19 @@ function generateDummyData() {
     ]
   });
 
-  // ── WEEK 3 — 4-5 sets, approaching ceilings ───────────────────────────────
+  // ── WEEK 3 — 4-set work, approaching ceilings ───────────────────────────────
 
   // PUSH A — Week 3 (63 days ago) — load increase on floor press (was hitting 8 reps)
   sessions.push({
     id: 'dummy_9', _dummy: true, sessionId: 'push-a', sessionName: 'Push A',
     date: daysAgo(63), startTime: daysAgo(63)+'T09:00:00', endTime: daysAgo(63)+'T10:05:00',
-    duration: '65m 0s', status: 'complete', mesoWeek: 3, notes: 'Jumped to 20kg floor press. Sets reset to 3. Tough but manageable.',
+    duration: '65m 0s', status: 'complete', mesoWeek: 3, notes: 'Jumped to 20kg floor press. Load increased. Tough but manageable.',
     exercises: [
-      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 6, 3, 3) }, // load increased, sets reset
-      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 5, 2) },
-      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 5, 2) },
-      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 10, 5, 2) }, // note: 8+12 kg two KBs
+      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 6, 3, 3) }, // load increased
+      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 4, 2) },
+      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 4, 2) },
+      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 10, 4, 2) }, // note: 8+12 kg two KBs
     ]
   });
 
@@ -7691,12 +8095,12 @@ function generateDummyData() {
     date: daysAgo(61), startTime: daysAgo(61)+'T09:00:00', endTime: daysAgo(61)+'T10:00:00',
     duration: '60m 0s', status: 'complete', mesoWeek: 3, notes: 'Zottman at 12kg — hit ceiling, will apply 3s eccentric next session.',
     exercises: [
-      { name: 'Bent-Over Row',          type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 5, 2) },
-      { name: 'Face Pull',              type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 5, 2) },
-      { name: 'Banded Overhead Pull → Straight-Arm Pulldown', type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Zottman Curl',           type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 5, 2) }, // hitting ceiling
+      { name: 'Bent-Over Row',          type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 4, 2) },
+      { name: 'Face Pull',              type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 4, 2) },
+      { name: 'Banded Overhead Pull → Straight-Arm Pulldown', type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Zottman Curl',           type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 4, 2) }, // hitting ceiling
       { name: 'Banded Rear Delt Fly',   type: 'prehab',    repRange: [12,15], sets: makeSets('Yellow',15, 3, 5) },
-      { name: 'Supinated KB Curl',      type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 5, 2) },
+      { name: 'Supinated KB Curl',      type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 4, 2) },
     ]
   });
 
@@ -7706,11 +8110,11 @@ function generateDummyData() {
     date: daysAgo(59), startTime: daysAgo(59)+'T18:00:00', endTime: daysAgo(59)+'T19:02:00',
     duration: '62m 0s', status: 'complete', mesoWeek: 3, notes: 'Finally completed the full session. Nordic curl brutal.',
     exercises: [
-      { name: 'Goblet Squat',      type: 'compound',  repRange: [10,12], sets: makeSets(28, 12, 5, 2) },
-      { name: 'Lateral Band Walk', type: 'accessory', repRange: [20,20], sets: makeSets('Red',20, 5, 3) },
-      { name: 'Sissy Squat',       type: 'accessory', repRange: [8,10],  sets: makeSets('BW',10, 5, 2) },
-      { name: 'ATG Split Squat',   type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 5, 2) },
-      { name: 'Quad Nordic Curl',  type: 'accessory', repRange: [8,10],  sets: makeSets('BW', 8, 5, 2) },
+      { name: 'Goblet Squat',      type: 'compound',  repRange: [10,12], sets: makeSets(28, 12, 4, 2) },
+      { name: 'Lateral Band Walk', type: 'accessory', repRange: [20,20], sets: makeSets('Red',20, 4, 3) },
+      { name: 'Sissy Squat',       type: 'accessory', repRange: [8,10],  sets: makeSets('BW',10, 4, 2) },
+      { name: 'ATG Split Squat',   type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 4, 2) },
+      { name: 'Quad Nordic Curl',  type: 'accessory', repRange: [8,10],  sets: makeSets('BW', 8, 4, 2) },
     ]
   });
 
@@ -7720,17 +8124,17 @@ function generateDummyData() {
     date: daysAgo(57), startTime: daysAgo(57)+'T09:00:00', endTime: daysAgo(57)+'T10:08:00',
     duration: '68m 0s', status: 'complete', mesoWeek: 3, notes: 'Skullcrusher set 5 only hit 5 reps — triceps fatigued from pressing.',
     exercises: [
-      { name: 'Single-Arm KB Press',    type: 'compound',  repRange: [8,10],  sets: makeSets(12, 10, 5, 2) },
-      { name: 'Banded Overhead Press',  type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Banded Lateral Raise',   type: 'accessory', repRange: [12,15], sets: makeSets('Red',14, 5, 2) },
-      { name: 'Banded Upright Row',     type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 5, 2) },
+      { name: 'Single-Arm KB Press',    type: 'compound',  repRange: [8,10],  sets: makeSets(12, 10, 4, 2) },
+      { name: 'Banded Overhead Press',  type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Banded Lateral Raise',   type: 'accessory', repRange: [12,15], sets: makeSets('Red',14, 4, 2) },
+      { name: 'Banded Upright Row',     type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 4, 2) },
       { name: 'Skullcrusher',           type: 'accessory', repRange: [8,10],
         sets: [...makeSets(8, 8, 4, 3), { load: '8', reps: '5', rir: '1' }] }, // last set below range
       { name: 'Rotator Cuff External Rotation', type: 'prehab', repRange: [15,15], sets: makeSets('Red',15, 2, 5) },
     ]
   });
 
-  // ── WEEK 4 — Peak volume, 5 sets ───────────────────────────────────────────
+  // ── WEEK 4 — Peak effort, 4 sets ───────────────────────────────────────────
 
   // PUSH A — Week 4 (49 days ago)
   sessions.push({
@@ -7738,11 +8142,11 @@ function generateDummyData() {
     date: daysAgo(49), startTime: daysAgo(49)+'T09:00:00', endTime: daysAgo(49)+'T10:10:00',
     duration: '70m 0s', status: 'complete', mesoWeek: 4, notes: 'Peak week. Everything heavy. Floor press 20kg × 8 all sets.',
     exercises: [
-      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 8, 5, 2) }, // hitting ceiling for add-set suggestion
-      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 5, 2) },
-      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 5, 2) },
-      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 12, 5, 2) },
+      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 8, 4, 2) }, // hitting ceiling for add-set suggestion
+      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 4, 2) },
+      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 4, 2) },
+      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 12, 4, 2) },
     ]
   });
 
@@ -7752,12 +8156,12 @@ function generateDummyData() {
     date: daysAgo(47), startTime: daysAgo(47)+'T09:00:00', endTime: daysAgo(47)+'T10:05:00',
     duration: '65m 0s', status: 'complete', mesoWeek: 4, notes: '16kg row too easy at this point. Need 20kg.',
     exercises: [
-      { name: 'Bent-Over Row',          type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 5, 3) }, // set ceiling + top of range = load increase suggestion
-      { name: 'Face Pull',              type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 5, 2) },
-      { name: 'Banded Overhead Pull → Straight-Arm Pulldown', type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Zottman Curl',           type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 5, 2) },
+      { name: 'Bent-Over Row',          type: 'compound',  repRange: [8,10],  sets: makeSets(16, 10, 4, 3) }, // set ceiling + top of range = load increase suggestion
+      { name: 'Face Pull',              type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 4, 2) },
+      { name: 'Banded Overhead Pull → Straight-Arm Pulldown', type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Zottman Curl',           type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 4, 2) },
       { name: 'Banded Rear Delt Fly',   type: 'prehab',    repRange: [12,15], sets: makeSets('Yellow',15, 3, 5) },
-      { name: 'Supinated KB Curl',      type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 5, 2) },
+      { name: 'Supinated KB Curl',      type: 'accessory', repRange: [10,12], sets: makeSets(12, 12, 4, 2) },
     ]
   });
 
@@ -7767,11 +8171,11 @@ function generateDummyData() {
     date: daysAgo(45), startTime: daysAgo(45)+'T09:00:00', endTime: daysAgo(45)+'T10:00:00',
     duration: '60m 0s', status: 'complete', mesoWeek: 4, notes: '',
     exercises: [
-      { name: 'KB Deadlift',          type: 'compound',  repRange: [8,10],  sets: makeSets(20, 10, 5, 2) },
-      { name: 'Single-Leg RDL',       type: 'compound',  repRange: [10,10], sets: makeSets(16, 10, 5, 2) },
-      { name: 'Hip Thrust',           type: 'compound',  repRange: [12,15], sets: makeSets(16, 15, 5, 2) },
-      { name: 'KB Swing',             type: 'compound',  repRange: [12,15], sets: makeSets(16, 15, 5, 2) },
-      { name: 'Banded Hamstring Curl',type: 'accessory', repRange: [12,12], sets: makeSets('Yellow+Red',12, 5, 2) },
+      { name: 'KB Deadlift',          type: 'compound',  repRange: [8,10],  sets: makeSets(20, 10, 4, 2) },
+      { name: 'Single-Leg RDL',       type: 'compound',  repRange: [10,10], sets: makeSets(16, 10, 4, 2) },
+      { name: 'Hip Thrust',           type: 'compound',  repRange: [12,15], sets: makeSets(16, 15, 4, 2) },
+      { name: 'KB Swing',             type: 'compound',  repRange: [12,15], sets: makeSets(16, 15, 4, 2) },
+      { name: 'Banded Hamstring Curl',type: 'accessory', repRange: [12,12], sets: makeSets('Yellow+Red',12, 4, 2) },
     ]
   });
 
@@ -7870,11 +8274,11 @@ function generateDummyData() {
     date: daysAgo(10), startTime: daysAgo(10)+'T09:00:00', endTime: daysAgo(10)+'T10:10:00',
     duration: '70m 0s', status: 'complete', mesoWeek: 3, notes: '',
     exercises: [
-      { name: 'Single-Arm KB Press',    type: 'compound',  repRange: [8,10],  sets: makeSets(16, 8, 5, 2) }, // jumped to 16kg
-      { name: 'Banded Overhead Press',  type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Banded Lateral Raise',   type: 'accessory', repRange: [12,15], sets: makeSets('Red',15, 5, 2) },
-      { name: 'Banded Upright Row',     type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 5, 2) },
-      { name: 'Skullcrusher',           type: 'accessory', repRange: [8,10],  sets: makeSets(8, 10, 5, 2) },
+      { name: 'Single-Arm KB Press',    type: 'compound',  repRange: [8,10],  sets: makeSets(16, 8, 4, 2) }, // jumped to 16kg
+      { name: 'Banded Overhead Press',  type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Banded Lateral Raise',   type: 'accessory', repRange: [12,15], sets: makeSets('Red',15, 4, 2) },
+      { name: 'Banded Upright Row',     type: 'accessory', repRange: [12,12], sets: makeSets('Blue',12, 4, 2) },
+      { name: 'Skullcrusher',           type: 'accessory', repRange: [8,10],  sets: makeSets(8, 10, 4, 2) },
       { name: 'Rotator Cuff External Rotation', type: 'prehab', repRange: [15,15], sets: makeSets('Red',15, 2, 5) },
     ]
   });
@@ -7885,11 +8289,11 @@ function generateDummyData() {
     date: daysAgo(7), startTime: daysAgo(7)+'T09:00:00', endTime: daysAgo(7)+'T10:05:00',
     duration: '65m 0s', status: 'complete', mesoWeek: 3, notes: 'Felt strong. Deadlift at 20kg comfortable.',
     exercises: [
-      { name: 'KB Deadlift',          type: 'compound',  repRange: [8,10],  sets: makeSets(20, 10, 5, 2) },
-      { name: 'Single-Leg RDL',       type: 'compound',  repRange: [10,10], sets: makeSets(16, 10, 5, 2) },
-      { name: 'Hip Thrust',           type: 'compound',  repRange: [12,15], sets: makeSets(20, 15, 5, 2) },
-      { name: 'KB Swing',             type: 'compound',  repRange: [12,15], sets: makeSets(20, 15, 5, 2) },
-      { name: 'Banded Hamstring Curl',type: 'accessory', repRange: [12,12], sets: makeSets('Yellow+Red',12, 5, 2) },
+      { name: 'KB Deadlift',          type: 'compound',  repRange: [8,10],  sets: makeSets(20, 10, 4, 2) },
+      { name: 'Single-Leg RDL',       type: 'compound',  repRange: [10,10], sets: makeSets(16, 10, 4, 2) },
+      { name: 'Hip Thrust',           type: 'compound',  repRange: [12,15], sets: makeSets(20, 15, 4, 2) },
+      { name: 'KB Swing',             type: 'compound',  repRange: [12,15], sets: makeSets(20, 15, 4, 2) },
+      { name: 'Banded Hamstring Curl',type: 'accessory', repRange: [12,12], sets: makeSets('Yellow+Red',12, 4, 2) },
     ]
   });
 
@@ -7897,13 +8301,13 @@ function generateDummyData() {
   sessions.push({
     id: 'dummy_24', _dummy: true, sessionId: 'push-a', sessionName: 'Push A',
     date: daysAgo(3), startTime: daysAgo(3)+'T09:00:00', endTime: daysAgo(3)+'T10:12:00',
-    duration: '72m 0s', status: 'complete', mesoWeek: 4, notes: 'Peak week. Floor press 20kg × 8 all 5 sets. Load increase due.',
+    duration: '72m 0s', status: 'complete', mesoWeek: 4, notes: 'Peak week. Floor press 20kg × 8 all 4 sets. Load increase due.',
     exercises: [
-      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 8, 5, 1) }, // top of range, set ceiling → load increase
-      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 5, 1) },
-      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 5, 1) },
-      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 5, 1) },
-      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 12, 5, 1) },
+      { name: 'KB Floor Press',         type: 'compound',  repRange: [6,8],   sets: makeSets(20, 8, 4, 1) }, // top of range, set ceiling → load increase
+      { name: 'Banded Incline Press',   type: 'compound',  repRange: [10,12], sets: makeSets('Blue',12, 4, 1) },
+      { name: 'Archer Push-up',         type: 'compound',  repRange: [8,10],  sets: makeSets('BW',10, 4, 1) },
+      { name: 'Banded Chest Fly',       type: 'accessory', repRange: [12,15], sets: makeSets('Blue',15, 4, 1) },
+      { name: 'Overhead Tricep Extension', type: 'accessory', repRange: [10,12], sets: makeSets(20, 12, 4, 1) },
     ]
   });
 
@@ -8039,6 +8443,7 @@ function showExerciseInfo(event, exName) {
   // Position near the icon
   const rect = event.target.getBoundingClientRect();
   tooltip.classList.remove('hidden');
+  tooltip.setAttribute('aria-hidden', 'false');
 
   const tWidth  = 300;
   const tHeight = tooltip.offsetHeight || 120;
@@ -8059,7 +8464,9 @@ function showExerciseInfo(event, exName) {
 }
 
 function closeInfoTooltip() {
-  document.getElementById('info-tooltip')?.classList.add('hidden');
+  const tooltip = document.getElementById('info-tooltip');
+  tooltip?.classList.add('hidden');
+  tooltip?.setAttribute('aria-hidden', 'true');
 }
 
 /* ═══════════════════════════════════════════
@@ -8068,6 +8475,7 @@ function closeInfoTooltip() {
 function openSettings() {
   const overlay = document.getElementById('settings-overlay');
   overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
 
   // Sync profile fields
   const profile = state.programme;
@@ -8096,10 +8504,7 @@ function openSettings() {
   if (_driveLastError && state.driveConnected) {
     const errEl = document.createElement('div');
     errEl.id = 'drive-error-message';
-    errEl.style.cssText = `font-family:'DM Mono',monospace;font-size:9px;color:var(--red);
-      margin-top:8px;padding:6px 8px;background:color-mix(in srgb, var(--red) 8%, transparent);
-      border:1px solid color-mix(in srgb, var(--red) 25%, transparent);
-      border-radius:5px;line-height:1.6;`;
+    errEl.className = 'drive-error-message';
     errEl.textContent = `⚠ ${_driveLastError}`;
     const syncRow = document.getElementById('settings-sync-row');
     if (syncRow) syncRow.appendChild(errEl);
@@ -8132,7 +8537,7 @@ function openSettings() {
     clientIdDisplay.textContent = saved
       ? saved.substring(0, 20) + '…' + saved.slice(-28)
       : 'Not set';
-    clientIdDisplay.style.color = saved ? 'var(--text-dim)' : 'var(--text-muted)';
+    clientIdDisplay.classList.toggle('configured', !!saved);
   }
 
   // Band config
@@ -8144,11 +8549,16 @@ function openSettings() {
 }
 
 function closeSettings() {
-  document.getElementById('settings-overlay')?.classList.add('hidden');
+  const overlay = document.getElementById('settings-overlay');
+  overlay?.classList.add('hidden');
+  overlay?.setAttribute('aria-hidden', 'true');
 }
 
 function toggleSettingsSection(id) {
-  document.getElementById(id)?.classList.toggle('open');
+  const section = document.getElementById(id);
+  if (!section) return;
+  section.classList.toggle('open');
+  section.querySelector('.settings-section-head')?.setAttribute('aria-expanded', section.classList.contains('open') ? 'true' : 'false');
 }
 
 function renderDashboardPanelSettings() {
@@ -8164,9 +8574,9 @@ function renderDashboardPanelSettings() {
   const current = { ...INITIAL_STATE.dashboardPanels, ...(state.dashboardPanels || {}) };
   wrap.innerHTML = Object.entries(panels).map(([id, label]) => {
     const on = current[id] !== false;
-    return `<button class="settings-toggle-row ${on ? 'active' : ''}" onclick="toggleDashboardPanelVisibility('${id}')">
+    return `<button class="settings-toggle-row ${on ? 'active' : ''}" onclick="toggleDashboardPanelVisibility('${id}')" aria-pressed="${on ? 'true' : 'false'}">
       <span>${label}</span>
-      <span class="settings-toggle-pill">${on ? 'On' : 'Off'}</span>
+      <span class="settings-toggle-pill" aria-hidden="true">${on ? 'On' : 'Off'}</span>
     </button>`;
   }).join('');
 }
@@ -8184,11 +8594,11 @@ function renderBandConfig() {
   ];
   container.innerHTML = bands.map(b => `
     <div class="band-config-row">
-      <div class="band-config-swatch" style="background:${b.color}${b.key==='black'?';border:1px solid rgba(255,255,255,0.15)':''}"></div>
+      <div class="band-config-swatch ${b.key === 'black' ? 'black' : ''}" style="--band-config-color:${b.color}"></div>
       <span class="band-config-label">${b.name}</span>
-      <input class="settings-input" style="width:80px" type="number" step="0.1" 
+      <input class="settings-input band-config-input" type="number" step="0.1" aria-label="${b.name} band resistance in kilograms"
         id="band-${b.key}" value="${BAND_KG[b.key] || ''}" placeholder="kg">
-      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted)">kg</span>
+      <span class="band-config-unit">kg</span>
     </div>
   `).join('');
 }
@@ -8249,6 +8659,7 @@ function saveProfileSettings() {
 
   renderProgramme();
   renderTracker();
+  saveSettingsToDrive();
   toast('Profile settings saved', 'success');
 }
 
@@ -8258,16 +8669,16 @@ function renderSettingsProgramme() {
   if (!container) return;
 
   container.innerHTML = state.programme.sessions.map(session => `
-    <div style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <div class="session-pip" style="background:${session.color};width:7px;height:7px;border-radius:50%"></div>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em">${session.name}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)">${session.subtitle}</span>
+    <div class="settings-session-block">
+      <div class="settings-session-head">
+        <div class="session-pip settings-session-pip" style="--session-dot-color:${session.color}"></div>
+        <span class="settings-session-name">${session.name}</span>
+        <span class="settings-session-subtitle">${session.subtitle}</span>
       </div>
       <div id="prog-ex-list-${session.id}">
         ${session.exercises.map((ex, i) => buildProgExRow(session, ex, i)).join('')}
       </div>
-      <button class="settings-btn primary" style="width:100%;margin-top:4px" 
+      <button class="settings-btn primary full-width mt-4" 
         onclick="showAddExerciseForm('${session.id}')">+ Add Exercise</button>
       <div id="add-ex-form-${session.id}" class="hidden"></div>
     </div>
@@ -8275,12 +8686,12 @@ function renderSettingsProgramme() {
 }
 
 function buildProgExRow(session, ex, idx) {
-  const dotStyle = ex.type === 'optional' ? 'background:var(--text-muted)' : `background:${session.color}`;
+  const dotColor = ex.type === 'optional' ? 'var(--text-muted)' : session.color;
   const model = getExerciseProgressionModel(ex);
   const modelLabel = PROGRESSION_MODELS[model]?.short || getProgressionModelLabel(model);
   return `<div class="prog-ex-row" id="prog-row-${session.id}-${idx}">
     <span class="prog-ex-drag">⋮⋮</span>
-    <div class="prog-ex-dot" style="${dotStyle}"></div>
+    <div class="prog-ex-dot" style="--prog-ex-color:${dotColor}"></div>
     <span class="prog-ex-name">${ex.name}</span>
     <span class="prog-ex-type">${ex.type}</span>
     <span class="prog-ex-type" title="${getProgressionModelLabel(model)}">${modelLabel}</span>
@@ -8320,56 +8731,56 @@ function buildExerciseEditForm(ex, sessionId, idx) {
   const tagsList = (ex.tags || []).filter(t => !['compound','accessory','prehab','optional'].includes(t));
 
   return `<div class="ex-edit-form">
-    <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--pull);margin-bottom:10px">Editing: ${ex.name}</div>
+    <div class="ex-edit-title">Editing: ${ex.name}</div>
     <div class="form-row">
-      <div class="form-field" style="flex:2">
-        <label>Exercise Name *</label>
+      <div class="form-field form-field-wide">
+        <label for="ef-name-${sessionId}-${idx}">Exercise Name *</label>
         <input id="ef-name-${sessionId}-${idx}" value="${ex.name}" placeholder="Exercise name">
       </div>
       <div class="form-field">
-        <label>Type</label>
+        <label for="ef-type-${sessionId}-${idx}">Type</label>
         <select id="ef-type-${sessionId}-${idx}">${typeOpts}</select>
       </div>
       <div class="form-field">
-        <label>Progression Model</label>
+        <label for="ef-prog-model-${sessionId}-${idx}">Progression Model</label>
         <select id="ef-prog-model-${sessionId}-${idx}">${modelOpts}</select>
       </div>
     </div>
     <div class="form-row">
       <div class="form-field">
-        <label>Rep Range (e.g. 8–12)</label>
+        <label for="ef-reps-${sessionId}-${idx}">Rep Range (e.g. 8–12)</label>
         <input id="ef-reps-${sessionId}-${idx}" value="${ex.reps || ''}" placeholder="8–12">
       </div>
       <div class="form-field">
-        <label>Sets (meso range)</label>
+        <label for="ef-sets-${sessionId}-${idx}">Sets (meso range)</label>
         <input id="ef-sets-${sessionId}-${idx}" value="${ex.sets || ''}" placeholder="3–5">
       </div>
       <div class="form-field">
-        <label>Default Load</label>
+        <label for="ef-load-${sessionId}-${idx}">Default Load</label>
         <input id="ef-load-${sessionId}-${idx}" value="${ex.load || ''}" placeholder="16 kg">
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Tags (comma-separated)</label>
+      <div class="form-field">
+        <label for="ef-tags-${sessionId}-${idx}">Tags (comma-separated)</label>
         <input id="ef-tags-${sessionId}-${idx}" value="${tagsList.join(', ')}" placeholder="unilateral, bw">
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Description (shown in ℹ tooltip)</label>
+      <div class="form-field">
+        <label for="ef-desc-${sessionId}-${idx}">Description (shown in ℹ tooltip)</label>
         <textarea id="ef-desc-${sessionId}-${idx}">${ex.desc || ''}</textarea>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Coaching Notes</label>
-        <textarea id="ef-notes-${sessionId}-${idx}" style="min-height:45px">${ex.notes || ''}</textarea>
+      <div class="form-field">
+        <label for="ef-notes-${sessionId}-${idx}">Coaching Notes</label>
+        <textarea id="ef-notes-${sessionId}-${idx}" class="ex-edit-notes">${ex.notes || ''}</textarea>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Substitution Alternatives (comma-separated)</label>
+      <div class="form-field">
+        <label for="ef-subs-${sessionId}-${idx}">Substitution Alternatives (comma-separated)</label>
         <input id="ef-subs-${sessionId}-${idx}" value="${(ex.substitutions||[]).join(', ')}" placeholder="Alternative A, Alternative B">
       </div>
     </div>
@@ -8699,7 +9110,7 @@ function renderImportPreview() {
       `<option value="${h}"${ImportState.colMap[field]===h?' selected':''}>${h}</option>`
     ).join('');
     return `<div class="col-map-row">
-      <label>${field}</label>
+      <label for="colmap-${field}">${field}</label>
       <select class="col-map-select" onchange="ImportState.colMap['${field}']=this.value" id="colmap-${field}">${options}</select>
     </div>`;
   }).join('');
@@ -8710,27 +9121,27 @@ function renderImportPreview() {
   ).join('');
 
   wrap.innerHTML = `
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);margin:10px 0 6px">
+    <div class="import-preview-status">
       ${ImportState.data.totalLines} rows detected. Map columns below:
     </div>
-    <div style="margin-bottom:12px">${colMapRows}</div>
+    <div class="import-col-map-list">${colMapRows}</div>
     <div class="import-preview">
-      <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-bottom:4px">Preview (first 5 rows)</div>
+      <div class="import-preview-label">Preview (first 5 rows)</div>
       <table class="import-table">
         <thead><tr>${previewHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
         <tbody>${previewRows}</tbody>
       </table>
     </div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <input class="settings-input" id="import-default-session" placeholder="Default session name if not in CSV" style="flex:1">
-      <select class="col-map-select" id="import-meso-week" style="width:auto">
+    <div class="import-options-row">
+      <input class="settings-input flex-1" id="import-default-session" placeholder="Default session name if not in CSV" aria-label="Default session name if not in CSV">
+      <select class="col-map-select auto-width" id="import-meso-week" aria-label="Imported mesocycle week">
         <option value="">Meso week (optional)</option>
         <option value="1">Week 1</option><option value="2">Week 2</option>
         <option value="3">Week 3</option><option value="4">Week 4</option>
         <option value="5">Week 5 (Deload)</option>
       </select>
     </div>
-    <button class="settings-btn primary" style="width:100%;margin-top:10px" onclick="executeImport()">
+    <button class="settings-btn primary full-width mt-10" onclick="executeImport()">
       Import ${ImportState.data.totalLines} Rows
     </button>
   `;
@@ -8874,18 +9285,18 @@ function showManualEntryForm() {
 
   container.innerHTML = `
     <div class="ex-edit-form">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--pull);margin-bottom:10px">Add Historical Session</div>
+      <div class="ex-edit-title">Add Historical Session</div>
       <div class="form-row">
         <div class="form-field">
-          <label>Date *</label>
+          <label for="me-date">Date *</label>
           <input type="date" id="me-date" value="${new Date().toISOString().split('T')[0]}">
         </div>
         <div class="form-field">
-          <label>Session *</label>
+          <label for="me-session">Session *</label>
           <select id="me-session">${sessionOptions}</select>
         </div>
         <div class="form-field">
-          <label>Meso Week</label>
+          <label for="me-meso">Meso Week</label>
           <select id="me-meso">
             <option value="1">Week 1</option><option value="2">Week 2</option>
             <option value="3">Week 3</option><option value="4">Week 4</option>
@@ -8894,18 +9305,18 @@ function showManualEntryForm() {
         </div>
       </div>
       <div class="form-row">
-        <div class="form-field" style="flex:1">
-          <label>Duration (e.g. 58m 0s)</label>
+        <div class="form-field">
+          <label for="me-duration">Duration (e.g. 58m 0s)</label>
           <input type="text" id="me-duration" placeholder="58m 0s">
         </div>
-        <div class="form-field" style="flex:1">
-          <label>Notes</label>
+        <div class="form-field">
+          <label for="me-notes">Notes</label>
           <input type="text" id="me-notes" placeholder="Optional session notes">
         </div>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);margin:8px 0 6px">Exercise Data (paste or type: Exercise Name, Load, Reps per set)</div>
+      <div class="manual-entry-label">Exercise Data (paste or type: Exercise Name, Load, Reps per set)</div>
       <div id="me-exercises"></div>
-      <button class="settings-btn" style="width:100%;margin-bottom:8px" onclick="addManualExRow()">+ Add Exercise Row</button>
+      <button class="settings-btn full-width mb-8" onclick="addManualExRow()">+ Add Exercise Row</button>
       <div class="form-actions">
         <button class="settings-btn" onclick="document.getElementById('manual-entry-form').classList.add('hidden')">Cancel</button>
         <button class="settings-btn primary" onclick="saveManualSession()">Save Session</button>
@@ -8929,15 +9340,15 @@ function addManualExRow() {
 
   const idx = container.children.length;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;margin-bottom:5px;align-items:center';
+  div.className = 'manual-ex-row';
   div.innerHTML = `
-    <select style="flex:2;font-family:'DM Mono',monospace;font-size:10px;background:var(--surface3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px"
+    <select class="manual-ex-select" aria-label="Manual exercise ${idx + 1} name"
       id="me-ex-${idx}">${exOptions}<option value="">Other...</option></select>
-    <input style="flex:1;font-family:'DM Mono',monospace;font-size:10px;background:var(--surface3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px"
+    <input class="manual-ex-input" aria-label="Manual exercise ${idx + 1} load"
       id="me-load-${idx}" placeholder="Load (kg/band)">
-    <input style="width:80px;font-family:'DM Mono',monospace;font-size:10px;background:var(--surface3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px"
+    <input class="manual-ex-reps" aria-label="Manual exercise ${idx + 1} reps"
       id="me-reps-${idx}" placeholder="Reps (e.g 8,8,7)">
-    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px">✕</button>
+    <button class="manual-ex-remove" onclick="this.parentElement.remove()" aria-label="Remove manual exercise row ${idx + 1}">✕</button>
   `;
   container.appendChild(div);
 }
@@ -9044,7 +9455,6 @@ function buildTrackedBody(displayName, logName, sessionId, exDef) {
   const safeId   = logName.replace(/[^a-zA-Z0-9]/g, '_');
   const initialSets = Array.from({length: setCount}, (_, i) => buildSetRow(i, exDef, isDeloadWeek()));
   return `
-    <div class="prev-sessions-ref">${prevRef}</div>
     <div class="set-rows" id="sets-${sessionId}-${safeId}">
       ${initialSets.join('')}
     </div>
@@ -9112,7 +9522,7 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
       if (nameEl) {
         nameEl.innerHTML = altDef.name
           + ' <span class="alt-tag">ALT</span>'
-          + ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
+          + ` <sup class="exercise-info-dot"
               onclick="showExerciseInfo(event,'${safeExName(altDef.name)}')">ℹ</sup>`;
       }
 
@@ -9141,7 +9551,7 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
       if (nameEl && primaryEx) {
         nameEl.innerHTML = exName
           + (primaryEx.desc
-              ? ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
+              ? ` <sup class="exercise-info-dot"
                   onclick="showExerciseInfo(event,'${safeExName(exName)}')">ℹ</sup>`
               : '');
       }
