@@ -451,7 +451,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.1.7';
+const APP_VERSION = '4.1.8';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1918,7 +1918,7 @@ function buildSessionCard(session) {
         </span>
         <span class="edit-val hidden" data-session="${session.id}" data-ex="${ex.num}" data-field="sets">${ex.sets}</span>
         <div class="ex-sets-meso">${ex.sets} meso</div>
-        <div class="ex-sets-range" style="--exercise-color:${session.color}">${ex.reps} reps</div>
+        <div class="ex-sets-range" style="--exercise-color:${session.color}">${formatRepRangeLabel(ex.repRange, 'reps', ex.reps)}</div>
       </td>
       <td class="ex-load">
         <span class="edit-val" data-session="${session.id}" data-ex="${ex.num}" data-field="load">${ex.load}</span>
@@ -2117,7 +2117,7 @@ function buildTrackerExercises(session) {
           <div class="tracker-ex-name">${ex.name} <span class="tracker-ex-optional-label">· optional</span></div>
           <div class="tracker-ex-target">
             <div>${ex.sets} sets</div>
-            <div class="range">${ex.reps} reps</div>
+            <div class="range">${formatRepRangeLabel(ex.repRange, 'reps', ex.reps)}</div>
           </div>
         </div>
       </div>`;
@@ -2175,7 +2175,7 @@ function buildTrackerExercises(session) {
         </div>
         <div class="tracker-ex-target">
           <div class="tracker-ex-setcount" id="set-count-${session.id}-${idx}">${setCount} sets</div>
-          <div class="range tracker-ex-reps" style="--exercise-color:${session.color}">${ex.reps}</div>
+          <div class="range tracker-ex-reps" style="--exercise-color:${session.color}">${formatRepRangeLabel(ex.repRange, '', ex.reps)}</div>
           <div class="range tracker-ex-load">${ex.load}</div>
         </div>
         ${EXERCISE_SWAP_MAP[ex.name]
@@ -2363,6 +2363,7 @@ function selectBandPill(btn, band) {
     if (loadStore) {
       loadStore.value = band === 'none' ? 'BW' : `BW+${band.charAt(0).toUpperCase()+band.slice(1)}`;
     }
+    checkSetCompletion(row);
     return;
   }
 
@@ -2405,6 +2406,7 @@ function selectBandPill(btn, band) {
     }
     loadInput.dispatchEvent(new Event('change'));
   }
+  checkSetCompletion(row);
 }
 
 
@@ -2476,7 +2478,7 @@ function buildLoadPills(setIdx, exIdx, sessionId, exName, repRange, currentLoad)
 
 // Build rep pills spanning repRange ± 2
 function buildRepPills(setIdx, exIdx, repRange, currentReps) {
-  const [lo, hi] = repRange || [8, 12];
+  const [lo, hi] = normalizeRepRange(repRange);
   const min = Math.max(1, lo - 2);
   const max = hi + 3;
   const pills = [];
@@ -2491,6 +2493,27 @@ function buildRepPills(setIdx, exIdx, repRange, currentReps) {
     ${pills.join('')}
   </div>
   <input type="hidden" class="set-reps-val" id="rep-val-${exIdx}-${setIdx}" value="${currentReps || ''}">`;
+}
+
+function normalizeRepRange(repRange) {
+  const rawLo = parseInt(repRange?.[0]);
+  const rawHi = parseInt(repRange?.[1]);
+  const lo = Number.isFinite(rawLo) ? rawLo : 8;
+  const hi = Number.isFinite(rawHi) ? rawHi : lo + 2;
+  if (hi > lo) return [lo, hi];
+  if (hi <= 5) return [hi, hi + 2];
+  if (hi <= 12) return [hi, hi + 2];
+  if (hi <= 15) return [hi, hi + 3];
+  return [hi, hi + 5];
+}
+
+function formatRepRangeLabel(repRange, unit = 'reps', sourceText = '') {
+  const rawText = (sourceText || '').toString().trim();
+  if (/\b\d+\s*s\b|sec|second|hold/i.test(rawText)) {
+    return unit && !rawText.toLowerCase().includes(unit) ? `${rawText} ${unit}` : rawText;
+  }
+  const [lo, hi] = normalizeRepRange(repRange);
+  return `${lo}-${hi}${unit ? ' ' + unit : ''}`;
 }
 
 // Build RIR pills
@@ -2553,6 +2576,7 @@ function customLoadChanged(input, exIdx, setIdx, repRange) {
   if (row) {
     const repsEl = row.querySelector('.set-reps-val');
     if (repsEl) evaluateSetByValues(row, parseInt(repsEl.value), val);
+    checkSetCompletion(row);
   }
 }
 
@@ -2581,13 +2605,14 @@ function selectRIRPill(btn, rir, exIdx, setIdx) {
   const wasSelected = btn.classList.contains('selected');
   container.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
   const hiddenEl = document.getElementById(`rir-val-${exIdx}-${setIdx}`);
+  const row = btn.closest('.set-row');
   if (wasSelected) {
     if (hiddenEl) hiddenEl.value = '';
   } else {
     btn.classList.add('selected');
     if (hiddenEl) hiddenEl.value = rir;
   }
-  // RIR alone doesn't trigger set completion — RIR is optional
+  if (row) checkSetCompletion(row);
 }
 
 // Evaluate set row glow from values directly (no DOM input event needed)
@@ -2602,7 +2627,7 @@ function evaluateSetByValues(row, reps, load, repRange) {
       repRange = parts.length === 2 ? [parseInt(parts[0]), parseInt(parts[1])] : [8,12];
     } else repRange = [8,12];
   }
-  const [lo, hi] = repRange;
+  const [lo, hi] = normalizeRepRange(repRange);
   row.classList.remove('hit-target','miss-target');
   if (!reps || isNaN(reps)) return;
   if (reps >= hi) row.classList.add('hit-target');
@@ -2633,7 +2658,7 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
         <span class="set-prev-value">${previousRef.text}</span>
       </div>`
     : '';
-  const setSuggestion = getSetAutoregSuggestion(sessionId, ex, previousRef);
+  const setSuggestion = getSetAutoregSuggestion(sessionId, ex, previousRef, setIdx);
   const suggestionBubble = setSuggestion
     ? `<div class="set-action-bubble ${setSuggestion.direction}" title="${setSuggestion.title}">
         <span class="set-action-label">${setSuggestion.label}</span>
@@ -2713,6 +2738,7 @@ function evaluateSet(inputEl, repRange) {
   const inputs = row.querySelectorAll('.set-input');
   const reps = parseInt(inputs[1].value);
   const label = row.querySelector('.set-glow-label');
+  const [lo, hi] = normalizeRepRange(repRange);
 
   if (!reps || isNaN(reps)) {
     row.classList.remove('hit-target', 'miss-target');
@@ -2720,11 +2746,11 @@ function evaluateSet(inputEl, repRange) {
     return;
   }
 
-  if (reps >= repRange[0] && reps <= repRange[1] + 3) {
+  if (reps >= lo && reps <= hi + 3) {
     row.classList.add('hit-target');
     row.classList.remove('miss-target');
-    label.textContent = reps >= repRange[1] ? '↑ top' : '✓';
-  } else if (reps < repRange[0]) {
+    label.textContent = reps >= hi ? '↑ top' : '✓';
+  } else if (reps < lo) {
     row.classList.add('miss-target');
     row.classList.remove('hit-target');
     label.textContent = '↓ below';
@@ -3413,16 +3439,17 @@ function calcVolume(ex, mode) {
 
 function calcCeilingPct(ex, repRange) {
   if (!ex || !ex.sets.length) return null;
+  const [, hi] = normalizeRepRange(repRange);
   const completeSets = ex.sets.filter(s => s.reps && parseInt(s.reps) > 0);
   if (!completeSets.length) return null;
-  const atCeiling = completeSets.filter(s => parseInt(s.reps) >= repRange[1]).length;
+  const atCeiling = completeSets.filter(s => parseInt(s.reps) >= hi).length;
   return Math.round((atCeiling / completeSets.length) * 100);
 }
 
 function getRepRange(exName) {
   for (const sess of state.programme.sessions) {
     const ex = sess.exercises.find(e => e.name === exName);
-    if (ex) return ex.repRange || [8,12];
+    if (ex) return normalizeRepRange(ex.repRange || [8,12]);
   }
   return [8,12];
 }
@@ -5899,33 +5926,98 @@ function hideNextPrompt(sessionId, exIdx) {
 }
 
 // Called after a rep pill or load pill is selected — check if set is complete
-function checkSetCompletion(row) {
+function getSetMetricState(row) {
   const loadEl = row.querySelector('.set-load-val');
   const repsEl = row.querySelector('.set-reps-val');
+  const rirEl = row.querySelector('.set-rir');
   const load   = loadEl ? loadEl.value.trim() : '';
   const reps   = repsEl ? repsEl.value.trim() : '';
+  const rir    = rirEl ? rirEl.value.trim() : '';
+  return {
+    load,
+    reps,
+    rir,
+    hasLoad: load !== '',
+    hasReps: reps !== '' && !isNaN(parseInt(reps)),
+    hasRIR: rir !== '',
+  };
+}
 
-  // Set is complete when both load and reps have values
-  const isComplete = load !== '' && reps !== '' && !isNaN(parseInt(reps));
+function isSetComplete(row) {
+  const m = getSetMetricState(row);
+  return m.hasLoad && m.hasReps && m.hasRIR;
+}
+
+function updateSetCollapsedSummary(row) {
+  const { load, reps, rir } = getSetMetricState(row);
+  let summary = row.querySelector('.set-collapsed-summary');
+  if (!summary) {
+    summary = document.createElement('span');
+    summary.className = 'set-collapsed-summary';
+    const setNum = row.querySelector('.set-num');
+    if (setNum) setNum.insertAdjacentElement('afterend', summary);
+    else row.querySelector('.set-row-main')?.prepend(summary);
+  }
+  const loadDisplay = load === 'BW' ? 'BW' : `${load}`;
+  summary.textContent = `${loadDisplay} x ${reps} (${rir})`;
+}
+
+function flashMissingSetMetrics(row) {
+  const m = getSetMetricState(row);
+  const missing = [
+    ['load', !m.hasLoad],
+    ['reps', !m.hasReps],
+    ['rir', !m.hasRIR],
+  ].filter(([, isMissing]) => isMissing).map(([key]) => key);
+
+  if (!missing.length) return false;
+  const map = {
+    load: '.load-group',
+    reps: '.reps-group',
+    rir: '.rir-group',
+  };
+  missing.forEach(key => {
+    const el = row.querySelector(map[key]);
+    if (!el) return;
+    el.classList.remove('metric-missing');
+    void el.offsetWidth;
+    el.classList.add('metric-missing');
+    setTimeout(() => el.classList.remove('metric-missing'), 900);
+  });
+  row.classList.remove('set-missing-metrics');
+  void row.offsetWidth;
+  row.classList.add('set-missing-metrics');
+  setTimeout(() => row.classList.remove('set-missing-metrics'), 900);
+  return true;
+}
+
+function tryToggleSetCollapse(row) {
+  if (!row) return;
+  if (row.classList.contains('set-collapsed')) {
+    row.classList.remove('set-collapsed');
+    hideNextPromptForCard(row);
+    return;
+  }
+  if (!isSetComplete(row)) {
+    flashMissingSetMetrics(row);
+    return;
+  }
+  updateSetCollapsedSummary(row);
+  row.classList.add('set-collapsed');
+}
+
+function checkSetCompletion(row) {
+  const { load, reps, rir, hasLoad, hasReps, hasRIR } = getSetMetricState(row);
+
+  const isComplete = hasLoad && hasReps && hasRIR;
   if (!isComplete) return;
 
   const container = row.closest('.set-rows');
   if (!container) return;
 
   const allRows = Array.from(container.querySelectorAll('.set-row'));
-  const rowIndex = allRows.indexOf(row);
-  const isLast   = rowIndex === allRows.length - 1;
 
-  // Add summary to the set row before collapsing
-  let summary = row.querySelector('.set-collapsed-summary');
-  if (!summary) {
-    summary = document.createElement('span');
-    summary.className = 'set-collapsed-summary';
-    row.querySelector('.set-row-main')?.appendChild(summary);
-  }
-  // Format load display
-  const loadDisplay = load === 'BW' ? 'BW' : `${load}`;
-  summary.textContent = `${loadDisplay} × ${reps}`;
+  updateSetCollapsedSummary(row);
 
   // Collapse this set regardless of position
   setTimeout(() => {
@@ -5934,13 +6026,7 @@ function checkSetCompletion(row) {
 
   // Check if ALL sets in the card are now complete
   const allComplete = allRows.every(r => {
-    const rEl = r.querySelector('.set-reps-val');
-    const lEl = r.querySelector('.set-load-val');
-    const reps = rEl ? rEl.value.trim() : '';
-    const load = lEl ? lEl.value.trim() : '';
-    // BW exercises only need reps
-    const isBWRow = load === 'BW';
-    return reps !== '' && (isBWRow || load !== '');
+    return isSetComplete(r);
   });
 
   if (allComplete) {
@@ -5954,13 +6040,14 @@ function checkSetCompletion(row) {
   }
 }
 
-// Re-expand a collapsed set when tapped
+// Collapse/expand a completed set by clicking its top bar.
 document.addEventListener('click', function(e) {
-  const row = e.target.closest('.set-row.set-collapsed');
+  const head = e.target.closest('.set-row-main');
+  if (!head) return;
+  if (e.target.closest('button, input, select, textarea, .input-pill, .pill-custom-btn, .pill-custom-input')) return;
+  const row = head.closest('.set-row');
   if (!row) return;
-  // Don't re-expand if clicking the summary itself (that's just reading)
-  row.classList.remove('set-collapsed');
-  hideNextPromptForCard(row);
+  tryToggleSetCollapse(row);
 });
 
 document.addEventListener('keydown', function(e) {
@@ -6964,7 +7051,7 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
   // "Clean" means: same rung AND all sets hit the rep ceiling
   const ladder = getJeLadder(exerciseName);
   const prog    = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
-  const repRange = prog?.repRange || [10, 12];
+  const [, repHigh] = normalizeRepRange(prog?.repRange || [10, 12]);
 
   // Get last 5 complete sessions of this type, most recent first (no mutation)
   const sessions = state.sessions
@@ -7003,7 +7090,7 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
     if (rung !== latestRung) break;
 
     // Check all sets hit rep ceiling
-    const allHit = ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
+    const allHit = ex.sets.every(set => parseInt(set.reps) >= repHigh);
     if (!allHit) break;
 
     count++;
@@ -7014,6 +7101,7 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
 function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
   if (isDeloadWeek()) return null;
   const ladder = getJeLadder(exerciseName);
+  const [, repHigh] = normalizeRepRange(repRange);
 
   // ── Load-driven exercises (no ladder) ────────────────────────
   if (!ladder) {
@@ -7025,7 +7113,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     const bothHit = completeSessions.every(sess => {
       const ex = sess.exercises.find(e => e.name === exerciseName);
       if (!ex || !ex.sets.length) return false;
-      return ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
+      return ex.sets.every(set => parseInt(set.reps) >= repHigh);
     });
     if (!bothHit) return null;
     return {
@@ -7068,7 +7156,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     // Must be at the same rung
     const rung = typeof ex.ladderRungIndex === 'number' ? ex.ladderRungIndex : currentIdx;
     if (rung !== currentIdx) return false;
-    return ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
+    return ex.sets.every(set => parseInt(set.reps) >= repHigh);
   });
 
   if (!bothHitCeiling) return null;
@@ -7321,8 +7409,9 @@ function analyseFatigueWatch(week) {
       (ex.sets || []).forEach(set => {
         const reps = parseInt(set.reps);
         if (isNaN(reps)) return;
+        const [repLow] = normalizeRepRange(ex.repRange);
         totalSets++;
-        if (Array.isArray(ex.repRange) && reps < ex.repRange[0]) missedSets++;
+        if (reps < repLow) missedSets++;
       });
     });
   });
@@ -7562,24 +7651,100 @@ function getAutoregulationAction(model, direction) {
   return actions[model]?.[direction] || actions.kb_load[direction];
 }
 
-function getSetAutoregSuggestion(sessionId, ex, previousRef) {
+function getProgressionLoadAction(model, targetReps) {
+  const repText = targetReps ? ` · ${targetReps} reps` : '';
+  const actions = {
+    kb_load: `Increase load${repText}`,
+    band_tension: `Heavier band${repText}`,
+    bodyweight_variant: `Harder variant${repText}`,
+    bodyweight_reps: `Harder setup${repText}`,
+    explosive_quality: `Increase load${repText}`,
+    prehab_quality: `Increase tension${repText}`
+  };
+  return actions[model] || actions.kb_load;
+}
+
+function findCompletedExercise(session, exerciseName) {
+  const target = (exerciseName || '').toLowerCase();
+  return session?.exercises?.find(ex => (ex.name || '').toLowerCase() === target) || null;
+}
+
+function getPreviousBlockSetPattern(sessionId, exerciseName, setIdx) {
+  if (!state.mesoStartDate) return null;
+  const start = new Date(state.mesoStartDate);
+  if (Number.isNaN(start.getTime())) return null;
+
+  const values = state.sessions
+    .filter(s => s.status === 'complete' && s.sessionId === sessionId && s.date && new Date(s.date) < start)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map(session => {
+      const completedEx = findCompletedExercise(session, exerciseName);
+      const set = completedEx?.sets?.[setIdx];
+      const reps = parseInt(set?.reps);
+      return Number.isFinite(reps) ? reps : null;
+    })
+    .filter(reps => reps !== null);
+
+  const recent = values.slice(-3);
+  if (recent.length < 2) return null;
+
+  return {
+    reps: recent[recent.length - 1],
+    maintained: recent.every(reps => reps === recent[0]),
+    samples: recent.length,
+    values: recent
+  };
+}
+
+function getSetAutoregSuggestion(sessionId, ex, previousRef, setIdx = 0) {
   if (isDeloadWeek() || !previousRef?.set) return null;
   const rir = parseRIRValue(previousRef.set.rir);
-  if (rir === null) return null;
-
   const week = getCurrentMesoWeek();
   const [targetLow, targetHigh] = getTargetRIRRange(week);
   const model = getExerciseProgressionModel(ex);
-  let direction = 'hold';
+  const [repLow, repHigh] = normalizeRepRange(ex.repRange);
 
-  if (rir < targetLow - 0.5) direction = 'reduce';
-  else if (rir > targetHigh + 1.5) direction = 'push';
+  if (rir !== null && rir < targetLow - 0.5) {
+    return {
+      direction: 'reduce',
+      label: 'Reduce',
+      action: getAutoregulationAction(model, 'reduce'),
+      title: `Previous RIR ${previousRef.set.rir} was below the week ${week} target (${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}).`
+    };
+  }
+
+  const previousReps = parseInt(previousRef.set.reps);
+  const pattern = getPreviousBlockSetPattern(sessionId, ex.name, setIdx);
+  const evidenceReps = pattern?.maintained ? pattern.reps : previousReps;
+
+  if (!Number.isFinite(evidenceReps)) return null;
+
+  if (pattern?.maintained && evidenceReps >= repHigh) {
+    return {
+      direction: 'push',
+      label: 'Push',
+      action: getProgressionLoadAction(model, repLow),
+      title: `Previous block held set ${setIdx + 1} at ${evidenceReps} reps across ${pattern.samples} exposures. Top of range reached, so increase resistance and restart at ${repLow} reps.`
+    };
+  }
+
+  if (pattern?.maintained && evidenceReps < repHigh) {
+    const targetReps = Math.max(repLow, Math.min(repHigh, evidenceReps + 1));
+    return {
+      direction: 'push',
+      label: 'Push',
+      action: `Aim ${targetReps} reps`,
+      title: `Previous block held set ${setIdx + 1} at ${evidenceReps} reps across ${pattern.samples} exposures. Progress reps inside the ${repLow}-${repHigh} range.`
+    };
+  }
 
   return {
-    direction,
-    label: direction === 'push' ? 'Push' : direction === 'reduce' ? 'Reduce' : 'Hold',
-    action: getAutoregulationAction(model, direction),
-    title: `Previous RIR ${previousRef.set.rir}. Week ${week} target: ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}.`
+    direction: 'hold',
+    label: 'Hold',
+    action: Number.isFinite(previousReps) ? `Match ${previousReps} reps` : getAutoregulationAction(model, 'hold'),
+    title: rir === null
+      ? `No previous RIR recorded. Hold the last known set target inside the ${repLow}-${repHigh} range.`
+      : `Previous RIR ${previousRef.set.rir}. No repeated previous-block rep pattern found for set ${setIdx + 1}, so hold before progressing.`
   };
 }
 
@@ -7648,6 +7813,7 @@ function buildModelAwareCeilingSuggestion(model, sessionId, exerciseName, curren
 function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const week = getCurrentMesoWeek();
   if (week === 1 || isDeloadWeek()) return null;
+  const [, repHigh] = normalizeRepRange(repRange);
 
   const exConfig = findExerciseConfig(sessionId, exerciseName);
   const model = getExerciseProgressionModel(exConfig);
@@ -7664,7 +7830,7 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
     if (!ex || !ex.sets.length) return false;
     return ex.sets.every(set => {
       const reps = parseInt(set.reps);
-      return !isNaN(reps) && reps >= repRange[1];
+      return !isNaN(reps) && reps >= repHigh;
     });
   });
 
