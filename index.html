@@ -36,7 +36,7 @@
     <div class="profile-card alex" onclick="selectProfile('alex')" role="button" tabindex="0" aria-label="Select Alex profile">
       <div class="profile-avatar">A</div>
       <div class="profile-name">Alex</div>
-      <div class="profile-meta">PPL Split<br>5 days / week<br>Mass & Strength</div>
+      <div class="profile-meta">PPL Split<br>5 days + 2 mini-blocks<br>Mass & Strength</div>
     </div>
     <div class="profile-card je" onclick="selectProfile('je')" role="button" tabindex="0" aria-label="Select Je profile">
       <div class="profile-avatar">Je ❤️</div>
@@ -118,7 +118,7 @@
       <div class="meso-settings">
         <label for="meso-start-date">Start Date</label>
         <input type="date" id="meso-start-date" onchange="saveMesoSettings()">
-        <label for="meso-week-override">Current Week</label>
+        <label for="meso-week-override">Set Week</label>
         <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" placeholder="Auto">
         <button class="meso-save-btn" onclick="saveMesoSettings()">Save</button>
       </div>
@@ -306,7 +306,7 @@
             <input class="settings-input" id="s-meso-date" type="date">
           </div>
           <div class="settings-field">
-            <label for="s-meso-week">Current Week Override (leave blank for auto)</label>
+            <label for="s-meso-week">Set Current Week (leave blank for auto)</label>
             <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto">
           </div>
           <div class="section-label section-label-spaced">Band Resistance Config</div>
@@ -990,15 +990,15 @@ const PROGRAMMES = {
     name: 'Alex',
     color: 'var(--push-a)',
     goal: 'Mass & Strength',
-    frequency: '5 days / week',
+    frequency: '5 days / week + 2 mini-blocks',
     schedule: [
       { day: 'Mon', session: 'Push A', color: 'var(--push-a)' },
       { day: 'Tue', session: 'Pull',   color: 'var(--pull)' },
       { day: 'Wed', session: 'Legs A', color: 'var(--legs-a)' },
-      { day: 'Thu', session: 'Push B', color: 'var(--push-b)' },
+      { day: 'Thu', session: 'Push B + Resilience A', color: 'var(--push-b)' },
       { day: 'Fri', session: 'Legs B', color: 'var(--legs-b)' },
       { day: 'Sat', session: 'KB Flow (opt)', color: 'var(--kb-flow)' },
-      { day: 'Sun', session: 'Rest / Run', color: null },
+      { day: 'Sun', session: 'Resilience B / Run', color: 'var(--transition-c)' },
     ],
     mesoWeeks: [
       { label: 'Week 1', sets: '3', desc: '3–4 RIR · Base volume', rir: '3–4' },
@@ -1097,13 +1097,46 @@ const PROGRAMMES = {
           { num: '03', name: 'Banded Lateral Raise', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
           desc: 'Band anchored low or under foot, one end in each hand. Raise arms to shoulder height leading with the elbows, not the hands. Stop at parallel. Primary medial delt isolation. The band provides ascending resistance — hardest at the top.' },
           { num: '04', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12', repRange: [12,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
-          desc: 'Band under feet, both hands. Pull to chin with elbows leading wide and high. Hits medial delt and upper traps. Stop if you feel any shoulder impingement — reduce range of motion before reducing weight.' },
+          desc: 'Band under feet, both hands. Pull to chin with elbows leading wide and high. Hits medial delt and upper traps. Stop if you feel any shoulder impingement — reduce range of motion before reducing weight.',
+          alternatives: [{
+            name: 'Lateral Raise Mechanical Drop Set',
+            tags: ['accessory'],
+            type: 'accessory',
+            sets: '3–5',
+            reps: '12 / 12 / 12',
+            repRange: [12,12],
+            load: 'Red → Yellow → partials',
+            prog: 'Add control before band tension',
+            notes: 'Strict lateral raise, then lighter band, then short partials. Shoulder-friendly medial delt substitute.',
+            desc: 'Perform strict banded lateral raises to a clean technical stop, immediately reduce band tension, then finish with short-range partials. Keeps the medial delt stimulus while avoiding the internally rotated high-elbow position of an upright row.'
+          }] },
           { num: '05', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
           desc: 'Lie on back, upper arm vertical. Lower KB to temple by bending the elbow only. Upper arm stays completely still. Targets the lateral head of the tricep. Moved to Push B so triceps receive direct isolation twice weekly.' },
           { num: '06', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
           desc: 'Band at waist height, elbow pinned to side at 90°. Rotate forearm outward only — no movement at the shoulder or elbow. Prehab. Never skip, never increase load aggressively. Keeps the shoulder healthy for all pressing.' },
           { num: '07', name: 'Plank', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '45s', repRange: [1,1], load: 'BW', prog: 'Extend hold → add plate on back', notes: 'Optional core. Full body tension. Hips level.' },
           { num: '08', name: 'Ab Wheel Rollout', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Extend ROM gradually', notes: 'Optional core. Full extension if lower back allows.' },
+        ]
+      },
+      {
+        id: 'resilience-a',
+        name: 'Resilience A',
+        subtitle: 'Stabilisers — Hip, Cuff, Feet & Neck',
+        class: 's-transition',
+        color: 'var(--transition-c)',
+        colorRgb: '0,180,204',
+        rest: 30,
+        sessionType: 'resilience',
+        note: 'Short stabiliser block. Keep every rep controlled and sub-fatigue. This is joint capacity work, not a conditioning finisher.',
+        exercises: [
+          { num: '01', name: 'Wall Hip Hike', tags: ['prehab', 'unilateral', 'bw'], type: 'prehab', sets: '2', reps: '12/side', repRange: [12,12], load: 'BW', prog: 'Add pause before load', notes: 'Stand side-on to wall. Lift pelvis without bending knee. Glute medius focus.',
+          desc: 'Stand side-on with the working leg near a wall and the other leg slightly off the floor. Use the stance-side glute medius to lift and lower the free-side pelvis. Keep the knee mostly straight and avoid leaning the torso.' },
+          { num: '02', name: 'Band External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Yellow band', prog: 'Control before tension', notes: 'Elbow pinned at 90°. Rotate forearm out only. No torso twist.',
+          desc: 'Band at waist height, elbow pinned to the side at 90 degrees. Rotate the forearm outward without moving the elbow or twisting the torso. Light, precise rotator cuff work for pressing resilience.' },
+          { num: '03', name: 'Towel Scrunches', tags: ['prehab', 'bw'], type: 'prehab', sets: '2', reps: '45s/foot', repRange: [1,1], load: 'BW', prog: 'Add slower toe control', notes: 'Barefoot. Pull towel toward you with toes. Keep arch active.',
+          desc: 'Place a towel under the foot and pull it toward you by curling and spreading the toes. Keep the heel planted and the arch active. Builds foot intrinsic strength for balance, squats, lunges, and gait.' },
+          { num: '04', name: 'Neck Series', tags: ['prehab'], type: 'prehab', sets: '1', reps: '8/direction', repRange: [8,8], load: 'BW → towel-wrapped 1-2 kg', prog: 'Add reps before load', notes: 'Flexion, extension, left and right lateral flexion. Slow only.',
+          desc: 'Train neck flexion, extension, and lateral flexion on both sides with slow controlled reps. Start bodyweight. If using load, wrap a very light plate in a towel and stop well before form breaks.' },
         ]
       },
       {
@@ -1126,6 +1159,27 @@ const PROGRAMMES = {
           desc: 'Hip hinge — not a squat. The KB is driven by a hip snap, not arm lift. Hike the KB back between the legs, then explosively extend the hips. The arms are just a lever. The bell should float at the top, not be lifted.' },
           { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '12/side', repRange: [12,12], load: 'Yellow + Red bands (~18 kg)', prog: 'Add Red band → full Red + Blue', notes: '3s eccentric. Always last. One leg at a time.',
           desc: 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Always last — hamstrings are already fatigued from hinging.' },
+        ]
+      },
+      {
+        id: 'resilience-b',
+        name: 'Resilience B',
+        subtitle: 'Stabilisers — Hip, Cuff, Feet & Neck',
+        class: 's-transition',
+        color: 'var(--transition-c)',
+        colorRgb: '0,180,204',
+        rest: 30,
+        sessionType: 'resilience',
+        note: 'Second weekly stabiliser block. Same movements as Resilience A so the pattern is repeated and easy to own.',
+        exercises: [
+          { num: '01', name: 'Wall Hip Hike', tags: ['prehab', 'unilateral', 'bw'], type: 'prehab', sets: '2', reps: '12/side', repRange: [12,12], load: 'BW', prog: 'Add pause before load', notes: 'Stand side-on to wall. Lift pelvis without bending knee. Glute medius focus.',
+          desc: 'Stand side-on with the working leg near a wall and the other leg slightly off the floor. Use the stance-side glute medius to lift and lower the free-side pelvis. Keep the knee mostly straight and avoid leaning the torso.' },
+          { num: '02', name: 'Band External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Yellow band', prog: 'Control before tension', notes: 'Elbow pinned at 90°. Rotate forearm out only. No torso twist.',
+          desc: 'Band at waist height, elbow pinned to the side at 90 degrees. Rotate the forearm outward without moving the elbow or twisting the torso. Light, precise rotator cuff work for pressing resilience.' },
+          { num: '03', name: 'Towel Scrunches', tags: ['prehab', 'bw'], type: 'prehab', sets: '2', reps: '45s/foot', repRange: [1,1], load: 'BW', prog: 'Add slower toe control', notes: 'Barefoot. Pull towel toward you with toes. Keep arch active.',
+          desc: 'Place a towel under the foot and pull it toward you by curling and spreading the toes. Keep the heel planted and the arch active. Builds foot intrinsic strength for balance, squats, lunges, and gait.' },
+          { num: '04', name: 'Neck Series', tags: ['prehab'], type: 'prehab', sets: '1', reps: '8/direction', repRange: [8,8], load: 'BW → towel-wrapped 1-2 kg', prog: 'Add reps before load', notes: 'Flexion, extension, left and right lateral flexion. Slow only.',
+          desc: 'Train neck flexion, extension, and lateral flexion on both sides with slow controlled reps. Start bodyweight. If using load, wrap a very light plate in a towel and stop well before form breaks.' },
         ]
       },
       {
@@ -1415,7 +1469,7 @@ const GUIDE_SECTIONS = [
       <div class="guide-example"><strong>Example</strong>Archer Push-up at BW x 10 x 4 sets comfortably. Next: feet elevated. Once mastered: band across back for resistance.</div>
 
       <h4>How the Suggestion Card Works</h4>
-      <p>Before each session starts, a coloured card appears showing any progression actions due. It only fires when conditions are genuinely met across the last 2 complete sessions of that type.</p>
+      <p>Before each session starts, a coloured card appears showing any progression actions due. It only fires when conditions are genuinely met across the last 2 logged samples for that exercise.</p>
       <table class="guide-table">
         <thead><tr><th>Colour</th><th>Meaning</th><th>Action</th></tr></thead>
         <tbody>
@@ -1484,7 +1538,7 @@ const GUIDE_SECTIONS = [
         <thead><tr><th>Trigger</th><th>Condition</th><th>Card colour</th></tr></thead>
         <tbody>
           <tr><td>Support reduction</td><td>3 clean sessions at the current supported variant</td><td class="guide-token-amber">Amber</td></tr>
-          <tr><td>Variant advancement</td><td>Rep ceiling hit in last 2 complete sessions at the same rung</td><td class="guide-token-push">Purple</td></tr>
+          <tr><td>Variant advancement</td><td>Rep ceiling hit in last 2 logged samples at the same rung</td><td class="guide-token-push">Purple</td></tr>
         </tbody>
       </table>
 
@@ -1493,7 +1547,7 @@ const GUIDE_SECTIONS = [
       <div class="guide-example"><strong>Example</strong>Supported Squat — full hand grip. Session 1: all sets hit 12 reps. Session 2: same. Session 3: same. Amber card appears: “Try fingertips only.” Switch grip next session.</div>
 
       <h4>Variant Advancement (All Other Exercises)</h4>
-      <p>When you hit the rep ceiling across all sets in 2 consecutive complete sessions at the same rung, a purple card suggests moving to the next variant. The new variant name and a coaching cue are shown on the card.</p>
+      <p>When you hit the rep ceiling across all sets in 2 consecutive logged samples at the same rung, a purple card suggests moving to the next variant. The new variant name and a coaching cue are shown on the card.</p>
       <div class="guide-example"><strong>Example</strong>Knee Push-up × 12 reps × 3 sets — both sessions hit ceiling. Purple card: “Progress to: Full push-up — Toes on floor. Full body tension throughout.” Next session: attempt full push-up.</div>
 
       <h4>Example Ladders</h4>
@@ -1572,6 +1626,7 @@ const INITIAL_STATE = {
   // Transient tracker flags (not persisted)
   _useTemplate:         false,
   _tempoFlags:          {},
+  _exerciseSubstitutions: {},
   _nextSessionOverride: null,
   _selectedMesoWeek:    null,   // null = current week, integer = user-selected week
 };
@@ -1731,7 +1786,7 @@ async function loadLocalState() {
 
   // Apply all settings fields directly (no side effects during init)
   state.mesoStartDate    = data.mesoStartDate    || null;
-  state.mesoWeekOverride = data.mesoWeekOverride || null;
+  state.mesoWeekOverride = state.mesoStartDate ? null : (data.mesoWeekOverride || null);
   state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
   state.weightLog        = weightLog;
   state.bodyweight       = bodyweight;
@@ -1750,7 +1805,7 @@ async function loadLocalState() {
     document.getElementById('meso-start-date').value = state.mesoStartDate;
   }
   if (state.mesoWeekOverride) {
-    document.getElementById('meso-week-override').value = state.mesoWeekOverride;
+    document.getElementById('meso-week-override').value = state.mesoStartDate ? '' : state.mesoWeekOverride;
   }
 
   // ── 2. Sessions from IndexedDB (runs migration if needed) ───
@@ -1795,14 +1850,48 @@ function saveSettingsToDrive() {
    Pure functions. No DOM access.
    Future home: /js/logic/mesocycle.js
 ═══════════════════════════════════════════ */
+function startOfLocalDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function parseISODateLocal(value) {
+  if (!value) return null;
+  const parts = value.toString().split('-').map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+  const [year, month, day] = parts;
+  const d = new Date(year, month - 1, day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function parseMesoWeekOverride(value) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n >= 1 && n <= 5 ? n : null;
+}
+
 function getCurrentMesoWeek() {
-  if (state.mesoWeekOverride) return parseInt(state.mesoWeekOverride);
+  const override = parseMesoWeekOverride(state.mesoWeekOverride);
+  if (override && !state.mesoStartDate) return override;
   if (!state.mesoStartDate) return 1;
-  const start = new Date(state.mesoStartDate);
-  const now = new Date();
-  const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return 1;
+  const now = startOfLocalDay(new Date());
+  const diffDays = Math.floor((now - start) / 86400000);
   const week = Math.min(5, Math.max(1, Math.floor(diffDays / 7) + 1));
   return week;
+}
+
+function getMesoElapsedDays() {
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return 0;
+  const now = startOfLocalDay(new Date());
+  return Math.max(0, Math.floor((now - start) / 86400000));
+}
+
+function isMesoCycleComplete() {
+  return !!state.mesoStartDate && getMesoElapsedDays() >= 35;
 }
 
 function isDeloadWeek() { return getCurrentMesoWeek() === 5; }
@@ -1815,20 +1904,21 @@ function getMesoSetTarget(week) {
 function saveMesoSettings() {
   const dateVal = document.getElementById('meso-start-date').value;
   const ovVal   = document.getElementById('meso-week-override').value;
-  const week    = ovVal ? parseInt(ovVal) : null;
+  const week    = parseMesoWeekOverride(ovVal);
 
-  // If week override set, back-calculate start date for consistency
-  if (week && week !== state.mesoWeekOverride) {
-    const today = new Date();
+  // If a week is entered, recalibrate the start date and keep week tracking automatic.
+  if (week) {
+    const today = startOfLocalDay(new Date());
     today.setDate(today.getDate() - ((week - 1) * 7));
-    const backCalc = today.toISOString().split('T')[0];
+    const backCalc = localDateStr(today);
     document.getElementById('meso-start-date').value = backCalc;
+    document.getElementById('meso-week-override').value = '';
     // Sync settings panel if open
     const sDate = document.getElementById('s-meso-date');
     const sWeek = document.getElementById('s-meso-week');
     if (sDate) sDate.value = backCalc;
-    if (sWeek) sWeek.value = week;
-    setState({ mesoStartDate: backCalc, mesoWeekOverride: week });
+    if (sWeek) sWeek.value = '';
+    setState({ mesoStartDate: backCalc, mesoWeekOverride: null });
   } else {
     setState({ mesoStartDate: dateVal || null, mesoWeekOverride: week });
   }
@@ -1842,13 +1932,37 @@ function saveMesoSettings() {
 function updateMesoDisplay() {
   const week = getCurrentMesoWeek();
   const el = document.getElementById('topbar-meso');
-  if (isDeloadWeek()) {
+  if (isMesoCycleComplete()) {
+    el.textContent = 'Start New Meso';
+    el.className = 'topbar-meso meso-complete';
+  } else if (isDeloadWeek()) {
     el.textContent = 'Deload Week';
     el.className = 'topbar-meso deload-active';
   } else {
     el.textContent = `Week ${week} / 5`;
     el.className = 'topbar-meso';
   }
+}
+
+function startNewMesocycle() {
+  const today = localDateStr(new Date());
+  setState({ mesoStartDate: today, mesoWeekOverride: null });
+
+  const dateEl = document.getElementById('meso-start-date');
+  const weekEl = document.getElementById('meso-week-override');
+  const sDateEl = document.getElementById('s-meso-date');
+  const sWeekEl = document.getElementById('s-meso-week');
+  if (dateEl) dateEl.value = today;
+  if (weekEl) weekEl.value = '';
+  if (sDateEl) sDateEl.value = today;
+  if (sWeekEl) sWeekEl.value = '';
+
+  state._selectedMesoWeek = null;
+  renderProgramme();
+  renderTracker();
+  renderDashboard();
+  saveSettingsToDrive();
+  toast('New mesocycle started', 'success');
 }
 
 /* ═══════════════════════════════════════════
@@ -2057,6 +2171,7 @@ function selectTrackerSession(sessionId) {
 
   state.activeSessionId = sessionId;
   state.startTime = null;
+  state._exerciseSubstitutions = {};
   updateTemplateToggleVisibility(sessionId);
   clearNotesPills();
   state.endTime = null;
@@ -2123,11 +2238,13 @@ function buildTrackerExercises(session) {
       </div>`;
     }
 
-    const prev2 = getPrev2Sessions(session.id, ex.name);
-    const previousSetRefs = getPreviousSetRefs(session.id, ex.name);
+    const trackingEx = getEffectiveTrackerExercise(session.id, idx, ex);
+    const isSubstituted = trackingEx.name !== ex.name;
+    const prev2 = getPrev2Sessions(session.id, trackingEx.name);
+    const previousSetRefs = getPreviousSetRefs(session.id, trackingEx.name);
     // Default working sets follow the mesocycle target, not last session's set count.
     const _suggestion = state.profile === 'alex'
-      ? getProgressionSuggestion(session.id, ex.name, ex.repRange)
+      ? getProgressionSuggestion(session.id, trackingEx.name, trackingEx.repRange)
       : null;
     const _loadIncreaseSignalled = _suggestion && _suggestion.type === 'increase_load';
     const setCount = deload ? 2 : getMesoSetTarget(week);
@@ -2140,10 +2257,8 @@ function buildTrackerExercises(session) {
       : 'No previous data';
 
     // Pass previous load/reps/RIR for pill pre-selection
-    const _prevSess = state.sessions
-      .filter(s => s.sessionId === session.id && s.status === 'complete')
-      .slice(-1)[0];
-    const _prevExData = _prevSess?.exercises?.find(e => e.name === ex.name) || null;
+    const _prevSess = getExerciseProgressSessions(session.id, trackingEx.name).slice(-1)[0];
+    const _prevExData = _prevSess?.exercises?.find(e => e.name === trackingEx.name) || null;
 
     const initialSets = Array.from({length: setCount}, (_, i) => {
       const _prevSet = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
@@ -2156,32 +2271,29 @@ function buildTrackerExercises(session) {
       // Ghost reference values for the hint line
       const _ghostLoad = _prevSet?.load || '';
       const _ghostReps = _prevSet?.reps || '';
-      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps, _previousRef);
+      return buildSetRow(i, trackingEx, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps, _previousRef);
     });
 
     const deloadNote = deload
       ? `<div class="tracker-ex-note deload">Deload: 2 sets · ~50% load · 5+ RIR target</div>`
       : '';
 
-    return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
-      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" role="button" tabindex="0" aria-label="Toggle ${ex.name}" aria-expanded="true" aria-controls="tex-body-${session.id}-${idx}">
+    return `<div class="tracker-ex-card${isSubstituted ? ' is-alt' : ''}" id="tex-${session.id}-${idx}" draggable="true">
+      <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" role="button" tabindex="0" aria-label="Toggle ${trackingEx.name}" aria-expanded="true" aria-controls="tex-body-${session.id}-${idx}">
         <span class="drag-handle" onclick="event.stopPropagation()" aria-hidden="true">⋮⋮</span>
         <div class="tracker-ex-main">
           <div class="tracker-ex-name">
-            ${ex.name}
-            ${ex.desc ? `<sup class="exercise-info-dot" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">i</sup>` : ''}
+            ${trackingEx.name}${isSubstituted ? ' <span class="alt-tag">SUB</span>' : ''}
+            ${trackingEx.desc ? `<sup class="exercise-info-dot" onclick="showExerciseInfo(event,'${safeExName(trackingEx.name)}')">i</sup>` : ''}
           </div>
-          ${ex.tags.includes('unilateral') ? '<div class="tracker-ex-badge">Unilateral</div>' : ''}
+          ${trackingEx.tags.includes('unilateral') ? '<div class="tracker-ex-badge">Unilateral</div>' : ''}
         </div>
         <div class="tracker-ex-target">
           <div class="tracker-ex-setcount" id="set-count-${session.id}-${idx}">${setCount} sets</div>
-          <div class="range tracker-ex-reps" style="--exercise-color:${session.color}">${formatRepRangeLabel(ex.repRange, '', ex.reps)}</div>
-          <div class="range tracker-ex-load">${ex.load}</div>
+          <div class="range tracker-ex-reps" style="--exercise-color:${session.color}">${formatRepRangeLabel(trackingEx.repRange, '', trackingEx.reps)}</div>
+          <div class="range tracker-ex-load">${trackingEx.load}</div>
         </div>
-        ${EXERCISE_SWAP_MAP[ex.name]
-          ? `<button class="swap-btn" id="swap-btn-${idx}" onclick="toggleExerciseSwap('${ex.name}',this.closest('.tracker-ex-card'),this)">Alt ⇄</button>`
-          : `<button class="tracker-sub-btn" onclick="showSubstitution('${ex.name}')">Sub</button>`
-        }
+        <button class="tracker-sub-btn${hasExerciseAlternative(ex) ? ' has-alt' : ''}${isSubstituted ? ' is-alt' : ''}" onclick="showSubstitution('${session.id}',${idx},event)">Sub</button>
         <button class="tracker-ex-collapse-btn" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" title="Collapse">▾</button>
       </div>
       <div class="tracker-ex-body" id="tex-body-${session.id}-${idx}">
@@ -2189,10 +2301,10 @@ function buildTrackerExercises(session) {
         <div class="set-rows" id="sets-${session.id}-${idx}">
           ${initialSets.join('')}
         </div>
-        <button class="add-set-btn" onclick="addSet('${session.id}',${idx},'${ex.name}')">+ Add Set</button>
+        <button class="add-set-btn" onclick="addSet('${session.id}',${idx},'${safeExName(trackingEx.name)}')">+ Add Set</button>
         <div class="next-ex-prompt" id="next-prompt-${session.id}-${idx}">
           <span class="next-ex-prompt-label">All sets done —</span>
-          <button class="prompt-add-set" onclick="addSet('${session.id}',${idx},'${ex.name}');hideNextPrompt('${session.id}',${idx})">+ Add set</button>
+          <button class="prompt-add-set" onclick="addSet('${session.id}',${idx},'${safeExName(trackingEx.name)}');hideNextPrompt('${session.id}',${idx})">+ Add set</button>
           <button class="prompt-next-ex" onclick="collapseExerciseCard('tex-${session.id}-${idx}')">Next exercise ›</button>
         </div>
       </div><!-- end tracker-ex-body -->
@@ -2420,10 +2532,7 @@ function selectBandPill(btn, band) {
 function getRecentLoads(sessionId, exName) {
   const seen = new Set();
   const loads = [];
-  const relevant = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-8)
-    .reverse();
+  const relevant = getExerciseProgressSessions(sessionId, exName).slice(-8).reverse();
 
   for (const sess of relevant) {
     const ex = sess.exercises.find(e => e.name === exName);
@@ -2637,7 +2746,7 @@ function evaluateSetByValues(row, reps, load, repRange) {
 function isBandExercise(ex) {
   // Pure band exercise (not BW+band): load field contains a band colour but no 'BW'
   const load = (ex.load || '').toString().toLowerCase();
-  const hasBand = ['yellow','green','red','blue','black'].some(b => load.includes(b));
+  const hasBand = load.includes('band') || ['yellow','green','red','blue','black'].some(b => load.includes(b));
   const isBW = load.includes('bw') || ex.tags.includes('bw');
   return hasBand && !isBW;
 }
@@ -2761,11 +2870,10 @@ function evaluateSet(inputEl, repRange) {
 }
 
 function getSameMesoSetSuggestion(sessionId, exName, setIdx) {
-  const mesoStart = state.mesoStartDate ? new Date(state.mesoStartDate) : null;
-  const relevant = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .filter(s => !mesoStart || new Date(s.date || 0) >= mesoStart)
-    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  const mesoStart = parseISODateLocal(state.mesoStartDate);
+  const relevant = getExerciseProgressSessions(sessionId, exName)
+    .filter(s => !mesoStart || parseISODateLocal(s.date) >= mesoStart)
+    .sort((a, b) => (parseISODateLocal(b.date)?.getTime() || 0) - (parseISODateLocal(a.date)?.getTime() || 0));
 
   for (const sess of relevant) {
     const ex = sess.exercises?.find(e => e.name === exName);
@@ -2782,16 +2890,19 @@ function getSameMesoSetSuggestion(sessionId, exName, setIdx) {
 
 function addSet(sessionId, exIdx, exName) {
   const session = state.programme.sessions.find(s => s.id === sessionId);
-  const ex = session.exercises.find(e => e.name === exName);
+  const baseEx = session?.exercises?.[exIdx];
+  const ex = getEffectiveTrackerExercise(sessionId, exIdx, baseEx);
+  const logName = ex?.name || exName;
   const container = document.getElementById(`sets-${sessionId}-${exIdx}`);
+  if (!session || !ex || !container) return;
   const currentSets = container.querySelectorAll('.set-row').length;
   // Copy last row's values for pill pre-selection
   const lastRow = container.querySelectorAll('.set-row');
   const lastLoadEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-load-val') : null;
   const lastRepsEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-reps-val') : null;
   const lastRIREl  = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-rir') : null;
-  const previousRef = getPreviousSetRefs(sessionId, exName)[currentSets] || null;
-  const suggestedSet = getSameMesoSetSuggestion(sessionId, exName, currentSets);
+  const previousRef = getPreviousSetRefs(sessionId, logName)[currentSets] || null;
+  const suggestedSet = getSameMesoSetSuggestion(sessionId, logName, currentSets);
   const suggestedLoad = suggestedSet?.load || lastLoadEl?.value || '';
   const suggestedReps = suggestedSet?.reps || '';
   const newRow = document.createElement('div');
@@ -2811,8 +2922,7 @@ function addSet(sessionId, exIdx, exName) {
 }
 
 function getPrev2Sessions(sessionId, exName) {
-  const relevant = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+  const relevant = getExerciseProgressSessions(sessionId, exName)
     .slice(-2)
     .reverse();
 
@@ -2835,16 +2945,13 @@ function formatPreviousSetRef(set) {
 
 function getPreviousSetRefs(sessionId, exName) {
   const currentWeek = getCurrentMesoWeek();
-  const mesoStart = state.mesoStartDate ? new Date(state.mesoStartDate) : null;
-  const completed = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .filter(s => s.exercises?.some(e => e.name === exName && e.sets?.length))
-    .sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+  const mesoStart = parseISODateLocal(state.mesoStartDate);
+  const completed = getExerciseProgressSessions(sessionId, exName);
 
   const lastSession = completed[completed.length - 1] || null;
   const prevMesoSameWeek = completed
     .filter(s => s.mesoWeek === currentWeek)
-    .filter(s => !mesoStart || new Date(s.date || 0) < mesoStart)
+    .filter(s => !mesoStart || parseISODateLocal(s.date) < mesoStart)
     .slice(-1)[0] || null;
 
   const lastEx = lastSession?.exercises?.find(e => e.name === exName) || null;
@@ -2866,20 +2973,178 @@ function getPreviousSetRefs(sessionId, exName) {
 
 // dismissWarmup replaced by dismissWarmupOverlay
 
-function showSubstitution(exName) {
-  const subs = {
-    'KB Floor Press': ['Push-up (weighted)', 'Banded Chest Press (low anchor)'],
-    'Bent-Over Row': ['Banded Row (door anchor)', 'Incline Row (prone on chair)'],
-    'Goblet Squat': ['Paused Goblet Squat', 'Wall Squat with KB'],
-    'KB Deadlift': ['Romanian Deadlift', 'KB Sumo Deadlift'],
-  };
+function htmlEscape(value) {
+  return (value || '').toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-  const options = subs[exName] || ['No substitutions defined for this exercise.'];
-  showModal(
-    `Substitute: ${exName}`,
-    `Alternative exercises:<br><br>${options.map(o => `• ${o}`).join('<br>')}`,
-    [{ label: 'Close', cls: 'cancel', action: closeModal }]
-  );
+function getExerciseSubKey(sessionId, exIdx) {
+  return `${sessionId}:${exIdx}`;
+}
+
+function normaliseAlternativeDef(baseEx, alt) {
+  if (!baseEx) return null;
+  if (typeof alt === 'string') {
+    return {
+      name: alt,
+      type: baseEx.type,
+      tags: baseEx.tags || [],
+      sets: baseEx.sets,
+      reps: baseEx.reps,
+      repRange: baseEx.repRange,
+      load: baseEx.load,
+      prog: baseEx.prog || '',
+      notes: 'Substitute exercise. Use the same set and rep target unless you edit the programme.',
+      desc: ''
+    };
+  }
+  if (!alt || !alt.name) return null;
+  return {
+    ...baseEx,
+    ...alt,
+    num: baseEx.num,
+    type: alt.type || baseEx.type,
+    tags: alt.tags || baseEx.tags || [],
+    sets: alt.sets || baseEx.sets,
+    reps: alt.reps || baseEx.reps,
+    repRange: alt.repRange || baseEx.repRange,
+    load: alt.load || baseEx.load,
+    prog: alt.prog || baseEx.prog || '',
+    notes: alt.notes || baseEx.notes || '',
+    desc: alt.desc || ''
+  };
+}
+
+function getExerciseAlternatives(baseEx) {
+  if (!baseEx) return [];
+  const raw = [];
+  if (Array.isArray(baseEx.alternatives)) raw.push(...baseEx.alternatives);
+  if (EXERCISE_SWAP_MAP[baseEx.name]) raw.push(EXERCISE_SWAP_MAP[baseEx.name]);
+  if (Array.isArray(baseEx.substitutions)) raw.push(...baseEx.substitutions);
+
+  const seen = new Set();
+  return raw
+    .map(alt => normaliseAlternativeDef(baseEx, alt))
+    .filter(Boolean)
+    .filter(alt => {
+      if (seen.has(alt.name)) return false;
+      seen.add(alt.name);
+      return true;
+    });
+}
+
+function hasExerciseAlternative(baseEx) {
+  return getExerciseAlternatives(baseEx).length > 0;
+}
+
+function getEffectiveTrackerExercise(sessionId, exIdx, baseEx) {
+  if (!baseEx) return null;
+  const sub = state._exerciseSubstitutions?.[getExerciseSubKey(sessionId, exIdx)];
+  if (!sub) return baseEx;
+  return normaliseAlternativeDef(baseEx, sub) || baseEx;
+}
+
+function trackerHasLoggedData() {
+  return Array.from(document.querySelectorAll('#tracker-ex-list .set-row')).some(row => {
+    const reps = row.querySelector('.set-reps-val')?.value || '';
+    const rir  = row.querySelector('.set-rir')?.value || '';
+    return !!(reps || rir);
+  });
+}
+
+function registerAltDesc(ex) {
+  if (!ex?.name || !ex.desc) return;
+  window._altDescs = window._altDescs || {};
+  window._altDescs[ex.name] = ex.desc;
+}
+
+function showSubstitution(sessionId, exIdx, event) {
+  if (event) event.stopPropagation();
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const baseEx = session?.exercises?.[exIdx];
+  if (!session || !baseEx) return;
+
+  const key = getExerciseSubKey(sessionId, exIdx);
+  const activeSub = state._exerciseSubstitutions?.[key] || null;
+  const currentEx = getEffectiveTrackerExercise(sessionId, exIdx, baseEx);
+  const alternatives = getExerciseAlternatives(baseEx);
+
+  if (!activeSub && alternatives.length === 0) {
+    showModal(
+      `Substitute: ${baseEx.name}`,
+      'No alternative exercise is defined for this movement.',
+      [{ label: 'Close', cls: 'cancel', action: closeModal }]
+    );
+    return;
+  }
+
+  const optionsHtml = activeSub
+    ? `<div class="sub-option active">
+        <div class="sub-option-kicker">Current substitute</div>
+        <div class="sub-option-name">${htmlEscape(currentEx.name)}</div>
+        <div class="sub-option-meta">${htmlEscape(currentEx.load || '')} · ${htmlEscape(currentEx.reps || '')}</div>
+        <div class="sub-option-desc">${htmlEscape(currentEx.notes || currentEx.desc || '')}</div>
+      </div>
+      <div class="sub-option">
+        <div class="sub-option-kicker">Primary exercise</div>
+        <div class="sub-option-name">${htmlEscape(baseEx.name)}</div>
+        <div class="sub-option-meta">${htmlEscape(baseEx.load || '')} · ${htmlEscape(baseEx.reps || '')}</div>
+        <div class="sub-option-desc">${htmlEscape(baseEx.notes || baseEx.desc || '')}</div>
+      </div>`
+    : alternatives.map(alt => `
+      <div class="sub-option">
+        <div class="sub-option-kicker">Alternative</div>
+        <div class="sub-option-name">${htmlEscape(alt.name)}</div>
+        <div class="sub-option-meta">${htmlEscape(alt.load || '')} · ${htmlEscape(alt.reps || '')}</div>
+        <div class="sub-option-desc">${htmlEscape(alt.notes || alt.desc || '')}</div>
+      </div>
+    `).join('');
+
+  const actions = [{ label: 'Close', cls: 'cancel', action: closeModal }];
+  if (activeSub) {
+    actions.push({ label: 'Use Primary', cls: 'save', action: () => confirmAndApplySubstitution(sessionId, exIdx, null) });
+  } else {
+    alternatives.forEach((alt, i) => {
+      actions.push({ label: alternatives.length > 1 ? `Use Alt ${i + 1}` : 'Use Substitute', cls: 'save', action: () => confirmAndApplySubstitution(sessionId, exIdx, alt) });
+    });
+  }
+
+  showModal(`Substitute: ${baseEx.name}`, `<div class="sub-options">${optionsHtml}</div>`, actions);
+}
+
+function confirmAndApplySubstitution(sessionId, exIdx, altDef) {
+  if (trackerHasLoggedData()) {
+    const label = altDef ? `swap to ${altDef.name}` : 'return to the primary exercise';
+    showModal(
+      'Reset Tracker Rows?',
+      `You have logged set data in this active tracker view. To ${htmlEscape(label)}, the tracker rows will be rebuilt. Continue?`,
+      [
+        { label: 'Cancel', cls: 'cancel', action: closeModal },
+        { label: 'Continue', cls: 'save', action: () => applyExerciseSubstitution(sessionId, exIdx, altDef) }
+      ]
+    );
+    return;
+  }
+  applyExerciseSubstitution(sessionId, exIdx, altDef);
+}
+
+function applyExerciseSubstitution(sessionId, exIdx, altDef) {
+  const key = getExerciseSubKey(sessionId, exIdx);
+  state._exerciseSubstitutions = state._exerciseSubstitutions || {};
+  if (altDef) {
+    state._exerciseSubstitutions[key] = altDef;
+    registerAltDesc(altDef);
+  } else {
+    delete state._exerciseSubstitutions[key];
+  }
+  closeModal();
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (session) buildTrackerExercises(session);
+  toast(altDef ? `Substituted: ${altDef.name}` : 'Primary exercise restored', 'success');
 }
 
 /* ═══════════════════════════════════════════
@@ -3039,6 +3304,24 @@ function getWarmupCues(sessionId) {
         'Ankle bounces × 20 — prime tendons for explosive work',
       ]
     },
+    'resilience-a': {
+      title: 'Resilience Mini-Block — Prep',
+      cues: [
+        'Easy nasal breathing × 5 slow breaths — keep the block sub-fatigue',
+        'Hip circles × 6 each direction',
+        'Shoulder circles × 8 each direction',
+        'Barefoot toe spread × 10',
+      ]
+    },
+    'resilience-b': {
+      title: 'Resilience Mini-Block — Prep',
+      cues: [
+        'Easy nasal breathing × 5 slow breaths — keep the block sub-fatigue',
+        'Hip circles × 6 each direction',
+        'Shoulder circles × 8 each direction',
+        'Barefoot toe spread × 10',
+      ]
+    },
   };
 
   const result = cues[sessionId];
@@ -3072,6 +3355,7 @@ function endSession() {
 
   session.exercises.forEach((ex, idx) => {
     if (ex.type === 'optional') return;
+    const trackedEx = getEffectiveTrackerExercise(session.id, idx, ex);
     const setRows = document.querySelectorAll(`#sets-${session.id}-${idx} .set-row`);
     const sets = [];
     setRows.forEach(row => {
@@ -3085,17 +3369,17 @@ function endSession() {
       });
     });
     const hasData = sets.some(s => s.reps || s.load);
-    const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name]);
+    const tempoApplied = !!(state._tempoFlags && state._tempoFlags[trackedEx.name]);
     // For Je: store the ladder rung index explicitly so future reads don't need string matching
     let ladderRungIndex = undefined;
     if (state.profile === 'je') {
-      const _ladder = getJeLadder(ex.name);
+      const _ladder = getJeLadder(trackedEx.name);
       if (_ladder) {
-        ladderRungIndex = getCurrentVariantIndex(ex.name, state.activeSessionId);
+        ladderRungIndex = getCurrentVariantIndex(trackedEx.name, state.activeSessionId);
       }
     }
     exerciseData.push({
-      name: ex.name, type: ex.type, repRange: ex.repRange,
+      name: trackedEx.name, type: trackedEx.type, repRange: trackedEx.repRange,
       sets: hasData ? sets : [],
       ...(tempoApplied ? { tempoApplied: true } : {}),
       ...(ladderRungIndex !== undefined ? { ladderRungIndex } : {})
@@ -3139,7 +3423,7 @@ function saveSession(exerciseData, status) {
 
   // ── Post-save hooks ──────────────────────────
   // 1. Je milestone check (before cancelSession clears state)
-  if (status === 'complete') checkJeMilestones(exerciseData);
+  if (isProgressSession(session)) checkJeMilestones(exerciseData);
 
   // 2. Deload review prompt (week 5, complete session, Alex only)
   if (status === 'complete' && isDeloadWeek() && state.profile === 'alex') {
@@ -3161,6 +3445,7 @@ function cancelSession() {
   // Clear swap state, tempo flags, session override, template state
   Object.keys(_swapState).forEach(k => delete _swapState[k]);
   state._tempoFlags = {};
+  state._exerciseSubstitutions = {};
   state._nextSessionOverride = null;
   state._useTemplate = false;
   clearNotesPills();
@@ -3267,7 +3552,7 @@ function getBestRecentPerformance(days = 45) {
 
   let best = null;
   state.sessions
-    .filter(s => s.status === 'complete' && s.date && new Date(s.date) >= cutoff)
+    .filter(s => isProgressSession(s) && s.date && new Date(s.date) >= cutoff)
     .forEach(sess => {
       (sess.exercises || []).forEach(ex => {
         const mode = getExerciseMode(ex.name, state.sessions);
@@ -3292,7 +3577,7 @@ function getHistoryAttentionItems(limit = 4) {
     sess.exercises.forEach(exConfig => {
       if (exConfig.type === 'optional' || exConfig.type === 'prehab') return;
       const recent = state.sessions
-        .filter(s => s.status === 'complete' && s.exercises?.some(ex => ex.name === exConfig.name))
+        .filter(s => isProgressSession(s) && getLoggedExercise(s, exConfig.name))
         .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
         .slice(0, 3);
       if (!recent.length) return;
@@ -3329,8 +3614,8 @@ function getHistoryAttentionItems(limit = 4) {
 function renderHistoryAnalytics() {
   const wrap = document.getElementById('history-analytics');
   if (!wrap) return;
-  const complete = state.sessions.filter(s => s.status === 'complete');
-  if (!complete.length) {
+  const usable = state.sessions.filter(isProgressSession);
+  if (!usable.length) {
     wrap.innerHTML = '';
     return;
   }
@@ -3353,7 +3638,7 @@ function renderHistoryAnalytics() {
     <div class="history-analytics-head" role="button" tabindex="0" onclick="toggleHistoryAnalytics()" aria-expanded="false">
       <div>
         <div class="history-analytics-title">History Analytics</div>
-        <div class="history-analytics-sub">${complete.length} complete sessions · ${trends.length} trends</div>
+        <div class="history-analytics-sub">${usable.length} logged sessions · ${trends.length} trends</div>
       </div>
       <span class="history-analytics-chev">›</span>
     </div>
@@ -3510,14 +3795,14 @@ function get2MesoCycleSessions(sessionId) {
 
   if (isTransition) {
     return state.sessions
-      .filter(s => s.sessionId === sessionId && s.status === 'complete')
+      .filter(s => s.sessionId === sessionId && isProgressSession(s))
       .sort((a,b) => new Date(a.date) - new Date(b.date));
   }
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 70);
   return state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete' && new Date(s.date) >= cutoff)
+    .filter(s => s.sessionId === sessionId && isProgressSession(s) && new Date(s.date) >= cutoff)
     .sort((a,b) => new Date(a.date) - new Date(b.date));
 }
 
@@ -3533,7 +3818,7 @@ function getExerciseTrendData(limit = 5) {
   const trends = [];
   names.forEach(name => {
     const exerciseSessions = state.sessions
-      .filter(s => s.status === 'complete' && s.exercises?.some(ex => ex.name === name && ex.sets?.length))
+      .filter(s => isProgressSession(s) && getLoggedExercise(s, name))
       .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
     if (exerciseSessions.length < 4) return;
@@ -4697,7 +4982,7 @@ async function loadProgrammeFromDrive() {
     // local always wins if already configured (avoid overwrite loop)
     const settingsPatch = {};
     if ('mesoStartDate' in config) settingsPatch.mesoStartDate = config.mesoStartDate || null;
-    if ('mesoWeekOverride' in config) settingsPatch.mesoWeekOverride = config.mesoWeekOverride || null;
+    if ('mesoWeekOverride' in config) settingsPatch.mesoWeekOverride = settingsPatch.mesoStartDate ? null : (config.mesoWeekOverride || null);
     if (Array.isArray(config.weightLog)) {
       settingsPatch.weightLog = config.weightLog;
       settingsPatch.bodyweight = config.weightLog.length
@@ -4715,9 +5000,9 @@ async function loadProgrammeFromDrive() {
       const sEl = document.getElementById('s-meso-date');
       if (sEl) sEl.value = state.mesoStartDate || '';
       const weekEl = document.getElementById('meso-week-override');
-      if (weekEl) weekEl.value = state.mesoWeekOverride || '';
+      if (weekEl) weekEl.value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
       const sWeekEl = document.getElementById('s-meso-week');
-      if (sWeekEl) sWeekEl.value = state.mesoWeekOverride || '';
+      if (sWeekEl) sWeekEl.value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
       const bwEl = document.getElementById('s-bw');
       if (bwEl) bwEl.value = state.bodyweight || '';
       renderWeightLog();
@@ -5296,9 +5581,59 @@ function calcSessionVolume(session) {
   return Math.round(total);
 }
 
+function setHasLoggedWork(set) {
+  if (!set) return false;
+  const reps = parseInt(set.reps);
+  const load = (set.load || '').toString().trim();
+  return (!isNaN(reps) && reps > 0) || !!load;
+}
+
+function exerciseHasLoggedWork(exercise) {
+  return !!exercise?.sets?.some(setHasLoggedWork);
+}
+
+function sessionHasLoggedWork(session) {
+  return !!session?.exercises?.some(exerciseHasLoggedWork);
+}
+
+function getLoggedExercise(session, exerciseName) {
+  const target = (exerciseName || '').toLowerCase();
+  const ex = session?.exercises?.find(e => (e.name || '').toLowerCase() === target);
+  return exerciseHasLoggedWork(ex) ? ex : null;
+}
+
+function isWorkloadSession(session) {
+  return ['complete', 'partial', 'deload'].includes(session?.status) && sessionHasLoggedWork(session);
+}
+
+function isProgressSession(session) {
+  return ['complete', 'partial'].includes(session?.status) && sessionHasLoggedWork(session);
+}
+
+function getExerciseProgressSessions(sessionId, exerciseName) {
+  return state.sessions
+    .filter(s => s.sessionId === sessionId && isProgressSession(s) && getLoggedExercise(s, exerciseName))
+    .sort((a, b) => (parseISODateLocal(a.date)?.getTime() || 0) - (parseISODateLocal(b.date)?.getTime() || 0));
+}
+
+function estimateSessionCompletion(session) {
+  if (!sessionHasLoggedWork(session)) return 0;
+  if (session.status === 'complete' || session.status === 'deload') return 1;
+
+  const planned = state.programme.sessions
+    .find(s => s.id === session.sessionId)
+    ?.exercises
+    ?.filter(ex => ex.type !== 'optional' && ex.type !== 'prehab') || [];
+  if (!planned.length) return 0.5;
+
+  const logged = planned.filter(ex => getLoggedExercise(session, ex.name)).length;
+  return Math.max(0, Math.min(1, logged / planned.length));
+}
+
 function calcWeekVolume(weekNum) {
   if (!state.mesoStartDate) return 0;
-  const start = new Date(state.mesoStartDate);
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return 0;
   const weekStart = new Date(start);
   weekStart.setDate(start.getDate() + (weekNum - 1) * 7);
   const weekEnd = new Date(weekStart);
@@ -5306,9 +5641,9 @@ function calcWeekVolume(weekNum) {
 
   return state.sessions
     .filter(s => {
-      if (s.status === 'partial') return false;
+      if (!isWorkloadSession(s)) return false;
       if (!s.date) return false;
-      const d = new Date(s.date);
+      const d = parseISODateLocal(s.date);
       return d >= weekStart && d < weekEnd;
     })
     .reduce((sum, s) => sum + calcSessionVolume(s), 0);
@@ -5422,7 +5757,7 @@ function getThisWeekSessions() {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     const dateStr = localDateStr(d);
-    const logged = state.sessions.filter(s => s.date === dateStr && s.status !== 'partial');
+    const logged = state.sessions.filter(s => s.date === dateStr && isWorkloadSession(s));
     days.push({ date: d, dateStr, logged, dayName: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i], isToday: dateStr === todayStr });
   }
   return days;
@@ -5565,14 +5900,16 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     : volChange >= 0 ? 'var(--green)' : 'var(--legs-b)';
 
   const mesoSessions = state.sessions.filter(s => {
-    if (!s.date || s.status !== 'complete') return false;
+    if (!s.date || !isWorkloadSession(s)) return false;
     if (!state.mesoStartDate) return false;
-    return new Date(s.date) >= new Date(state.mesoStartDate);
+    const sessionDate = parseISODateLocal(s.date);
+    const mesoStart = parseISODateLocal(state.mesoStartDate);
+    return sessionDate && mesoStart && sessionDate >= mesoStart;
   });
   const sessionCount = mesoSessions.length;
 
   const sortedDates = [...new Set(
-    state.sessions.filter(s => s.status === 'complete').map(s => s.date)
+    state.sessions.filter(isWorkloadSession).map(s => s.date)
   )].sort().reverse();
   let streak = 0;
   const todayStr = new Date().toISOString().split('T')[0];
@@ -5689,6 +6026,8 @@ function renderDashboard() {
 
   const week       = getCurrentMesoWeek();
   const isDeload   = isDeloadWeek();
+  const mesoComplete = isMesoCycleComplete();
+  const elapsedDays = getMesoElapsedDays();
   const profile    = state.programme;
   const today      = new Date();
   const dateStr    = today.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
@@ -5723,8 +6062,22 @@ function renderDashboard() {
     <!-- Greeting -->
     <div class="dash-section dashboard-col-left">
       <div class="dash-greeting">${greeting}, ${profile.name}</div>
-      <div class="dash-greeting-sub">${dateStr} · Week ${week} of 5${isDeload ? ' · Deload' : ''}</div>
+      <div class="dash-greeting-sub">${dateStr} · ${mesoComplete ? 'Mesocycle complete' : `Week ${week} of 5${isDeload ? ' · Deload' : ''}`}</div>
     </div>
+
+    ${mesoComplete ? `
+      <div class="dash-section dashboard-col-left dash-meso-reset">
+        <div class="dash-meso-reset-kicker">New Mesocycle Due</div>
+        <div class="dash-meso-reset-title">Deload phase is complete</div>
+        <div class="dash-meso-reset-copy">
+          This block is ${elapsedDays} days old. Start a new mesocycle before using week targets, volume comparisons, or progression cues for the next block.
+        </div>
+        <div class="dash-meso-reset-actions">
+          <button class="dash-meso-reset-btn" onclick="startNewMesocycle()">Start New Mesocycle</button>
+          <button class="dash-meso-reset-secondary" onclick="switchTab('programme')">Set Date Manually</button>
+        </div>
+      </div>
+    ` : ''}
 
     <!-- Mesocycle timeline -->
     <div class="dash-section dashboard-col-left">
@@ -6229,9 +6582,7 @@ function applySessionTemplateLoads(enabled) {
   session.exercises.forEach((ex, exIdx) => {
     const container = document.getElementById(`sets-${session.id}-${exIdx}`);
     if (!container) return;
-    const prevSession = state.sessions
-      .filter(s => s.sessionId === session.id && s.status === 'complete')
-      .slice(-1)[0];
+    const prevSession = getExerciseProgressSessions(session.id, ex.name).slice(-1)[0];
     const prevEx = prevSession?.exercises?.find(e => e.name === ex.name);
 
     container.querySelectorAll('.set-row').forEach((setRow, setIdx) => {
@@ -6257,10 +6608,7 @@ function updateTemplateToggleVisibility(sessionId) {
   const row = document.getElementById('template-toggle-row');
   if (!row) return;
 
-  // Show only if there's a previous complete session of this type
-  const hasPrev = state.sessions.some(
-    s => s.sessionId === sessionId && s.status === 'complete'
-  );
+  const hasPrev = state.sessions.some(s => s.sessionId === sessionId && isProgressSession(s));
   row.classList.toggle('hidden', !hasPrev);
 
   // Reset toggle state on session change
@@ -6275,14 +6623,15 @@ function updateTemplateToggleVisibility(sessionId) {
 function buildMesoReviewStats() {
   // Gather stats for the current mesocycle (weeks 1–5)
   if (!state.mesoStartDate) return null;
-  const start = new Date(state.mesoStartDate);
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return null;
   const mesoEnd = new Date(start);
   mesoEnd.setDate(start.getDate() + 35); // 5 weeks
 
   const mesoSessions = state.sessions.filter(s => {
     if (!s.date) return false;
-    const d = new Date(s.date);
-    return d >= start && d <= mesoEnd && s.status === 'complete';
+    const d = parseISODateLocal(s.date);
+    return d >= start && d <= mesoEnd && isWorkloadSession(s);
   });
 
   if (!mesoSessions.length) return null;
@@ -6379,9 +6728,10 @@ function checkJeMilestones(exerciseData) {
 
     // Check if this rung is higher than any previously logged rung for this exercise
     const prevSessions = state.sessions
-      .filter(s => s.status === 'complete')
-      .flatMap(s => s.exercises)
-      .filter(e => e.name === ex.name);
+      .slice(0, -1)
+      .filter(isProgressSession)
+      .map(s => getLoggedExercise(s, ex.name))
+      .filter(Boolean);
 
     const prevMaxRung = prevSessions.reduce((max, e) =>
       typeof e.ladderRungIndex === 'number' ? Math.max(max, e.ladderRungIndex) : max, -1);
@@ -6900,7 +7250,7 @@ function renderConsecutivePartialWarning(sessionId) {
 
    Algorithm summary:
    1. Suppress in week 1 and deload
-   2. Check rep ceiling hit in last 2 complete sessions
+   2. Check rep ceiling hit in last 2 logged exercise samples
    3a. Below set ceiling → add set
    3b. At set ceiling, load can increase → increase load at the current week set target
    3c. At set ceiling, no tempo yet → suggest tempo
@@ -6993,13 +7343,11 @@ function getCurrentVariantIndex(exerciseName, sessionId) {
   const ladder = getJeLadder(exerciseName);
   if (!ladder) return 0;
 
-  // Find the most recent complete session of this type that contains this exercise
-  const recent = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-1)[0];
+  // Find the most recent logged sample of this exercise.
+  const recent = getExerciseProgressSessions(sessionId, exerciseName).slice(-1)[0];
   if (!recent) return 0;
 
-  const ex = recent.exercises.find(e => e.name === exerciseName);
+  const ex = getLoggedExercise(recent, exerciseName);
   if (!ex || !ex.sets.length) return 0;
 
   // ── Preferred: use explicitly stored rung index (set at save time) ──
@@ -7047,15 +7395,13 @@ function getCurrentVariantIndex(exerciseName, sessionId) {
 }
 
 function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
-  // Count consecutive complete sessions at the same rung (support or variant)
+  // Count consecutive logged exercise samples at the same rung (support or variant)
   // "Clean" means: same rung AND all sets hit the rep ceiling
   const ladder = getJeLadder(exerciseName);
   const prog    = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
   const [, repHigh] = normalizeRepRange(prog?.repRange || [10, 12]);
 
-  // Get last 5 complete sessions of this type, most recent first (no mutation)
-  const sessions = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+  const sessions = getExerciseProgressSessions(sessionId, exerciseName)
     .slice(-5)
     .slice()    // copy to avoid mutating
     .reverse();
@@ -7063,7 +7409,7 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
   if (!sessions.length) return 0;
 
   // Get the rung of the most recent session
-  const latestEx = sessions[0].exercises.find(e => e.name === exerciseName);
+  const latestEx = getLoggedExercise(sessions[0], exerciseName);
   if (!latestEx || !latestEx.sets.length) return 0;
 
   const latestRung = typeof latestEx.ladderRungIndex === 'number'
@@ -7072,7 +7418,7 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
 
   let count = 0;
   for (const s of sessions) {
-    const ex = s.exercises.find(e => e.name === exerciseName);
+    const ex = getLoggedExercise(s, exerciseName);
     if (!ex || !ex.sets.length) break;
 
     // Check same rung — prefer stored index, fall back to string match
@@ -7106,12 +7452,10 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
   // ── Load-driven exercises (no ladder) ────────────────────────
   if (!ladder) {
     // Use Alex-style logic: rep ceiling × 2 sessions
-    const completeSessions = state.sessions
-      .filter(s => s.sessionId === sessionId && s.status === 'complete')
-      .slice(-2);
+    const completeSessions = getExerciseProgressSessions(sessionId, exerciseName).slice(-2);
     if (completeSessions.length < 2) return null;
     const bothHit = completeSessions.every(sess => {
-      const ex = sess.exercises.find(e => e.name === exerciseName);
+      const ex = getLoggedExercise(sess, exerciseName);
       if (!ex || !ex.sets.length) return false;
       return ex.sets.every(set => parseInt(set.reps) >= repHigh);
     });
@@ -7144,14 +7488,12 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     return null;
   }
 
-  // Variant advancement trigger: rep ceiling × 2 complete sessions at same rung
-  const completeSessions = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-2);
+  // Variant advancement trigger: rep ceiling × 2 logged samples at same rung
+  const completeSessions = getExerciseProgressSessions(sessionId, exerciseName).slice(-2);
   if (completeSessions.length < 2) return null;
 
   const bothHitCeiling = completeSessions.every(sess => {
-    const ex = sess.exercises.find(e => e.name === exerciseName);
+    const ex = getLoggedExercise(sess, exerciseName);
     if (!ex || !ex.sets.length) return false;
     // Must be at the same rung
     const rung = typeof ex.ladderRungIndex === 'number' ? ex.ladderRungIndex : currentIdx;
@@ -7175,7 +7517,7 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
    ALEX — PROGRESSION ALGORITHM
    Steps:
    1. Suppress in week 1 and deload
-   2. Check rep ceiling hit in last 2 complete sessions of same type
+   2. Check rep ceiling hit in last 2 logged exercise samples
    3a. Below set ceiling → add set
    3b. At set ceiling, load can increase → increase load at the current week set target
    3c. At set ceiling, load cannot increase, no tempo flag → suggest tempo
@@ -7203,10 +7545,9 @@ function canIncreaseLoad(exerciseName) {
 
 // Check if tempo has already been flagged for this exercise
 function hasTempoApplied(sessionId, exerciseName) {
-  return state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+  return getExerciseProgressSessions(sessionId, exerciseName)
     .some(s => {
-      const ex = s.exercises.find(e => e.name === exerciseName);
+      const ex = getLoggedExercise(s, exerciseName);
       return ex && ex.tempoApplied === true;
     });
 }
@@ -7237,7 +7578,7 @@ function getTargetRIRRange(week) {
 function assessProgressionReadiness(completeSessions, exerciseName, week) {
   const rirValues = [];
   completeSessions.forEach(sess => {
-    const ex = sess.exercises.find(e => e.name === exerciseName);
+    const ex = getLoggedExercise(sess, exerciseName);
     (ex?.sets || []).forEach(set => {
       const rir = parseRIRValue(set.rir);
       if (rir !== null) rirValues.push(rir);
@@ -7282,10 +7623,8 @@ function withEffortContext(suggestion, readiness) {
 }
 
 function getAutoregulationHint(sessionId, exerciseName, week) {
-  const lastSession = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-1)[0];
-  const lastEx = lastSession?.exercises?.find(e => e.name === exerciseName);
+  const lastSession = getExerciseProgressSessions(sessionId, exerciseName).slice(-1)[0];
+  const lastEx = getLoggedExercise(lastSession, exerciseName);
   if (!lastEx || !lastEx.sets?.length) return null;
 
   const rirValues = lastEx.sets
@@ -7375,7 +7714,7 @@ function getRecentCompleteSessions(days = 10) {
   cutoff.setDate(cutoff.getDate() - days);
   cutoff.setHours(0, 0, 0, 0);
   return state.sessions
-    .filter(s => s.status === 'complete' && s.date && new Date(s.date) >= cutoff)
+    .filter(s => isProgressSession(s) && s.date && new Date(s.date) >= cutoff)
     .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 }
 
@@ -7386,7 +7725,7 @@ function analyseFatigueWatch(week) {
       status: 'neutral',
       label: 'Need data',
       title: 'Not enough recent sessions',
-      message: 'Complete at least 2 sessions in the last 10 days for a fatigue signal.',
+      message: 'Log at least 2 sessions in the last 10 days for a fatigue signal.',
       metrics: []
     };
   }
@@ -7531,11 +7870,20 @@ function analyseCurrentBlock(week) {
     };
   }
 
-  const start = new Date(state.mesoStartDate);
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) {
+    return {
+      status: 'neutral',
+      label: 'Unset',
+      title: 'No block start date',
+      message: 'Set a valid mesocycle start date to review block quality.',
+      metrics: []
+    };
+  }
   const now = new Date();
   const mesoSessions = state.sessions.filter(s => {
-    if (!s.date || s.status !== 'complete') return false;
-    const d = new Date(s.date);
+    if (!s.date || !isWorkloadSession(s)) return false;
+    const d = parseISODateLocal(s.date);
     return d >= start && d <= now;
   });
 
@@ -7547,10 +7895,11 @@ function analyseCurrentBlock(week) {
   const expectedSessions = state.profile === 'alex'
     ? Math.min(20, Math.ceil((elapsedDays / 7) * 5))
     : Math.min(12, Math.ceil((elapsedDays / 7) * 3));
-  const completion = expectedSessions ? Math.min(100, Math.round((mesoSessions.length / expectedSessions) * 100)) : 0;
+  const sessionEquiv = mesoSessions.reduce((sum, s) => sum + estimateSessionCompletion(s), 0);
+  const completion = expectedSessions ? Math.min(100, Math.round((sessionEquiv / expectedSessions) * 100)) : 0;
   const missedPartial = state.sessions.filter(s => {
     if (!s.date || s.status !== 'partial') return false;
-    const d = new Date(s.date);
+    const d = parseISODateLocal(s.date);
     return d >= start && d <= now;
   }).length;
   const avgRIRVals = mesoSessions.flatMap(getSessionRIRValues);
@@ -7592,8 +7941,9 @@ function analyseCurrentBlock(week) {
 
   const fmt = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${Math.round(v)}kg`;
   const metrics = [
-    `${completion}% complete`,
-    `${mesoSessions.length}/${expectedSessions} sessions`,
+    `${completion}% covered`,
+    `${Math.round(sessionEquiv * 10) / 10}/${expectedSessions} session equiv`,
+    `${mesoSessions.length} logged`,
     `${completedTypes} session types`,
     `${fmt(totalVolume)} total`,
     `W${week} ${fmt(currentVol)}`,
@@ -7664,21 +8014,19 @@ function getProgressionLoadAction(model, targetReps) {
   return actions[model] || actions.kb_load;
 }
 
-function findCompletedExercise(session, exerciseName) {
-  const target = (exerciseName || '').toLowerCase();
-  return session?.exercises?.find(ex => (ex.name || '').toLowerCase() === target) || null;
-}
-
 function getPreviousBlockSetPattern(sessionId, exerciseName, setIdx) {
   if (!state.mesoStartDate) return null;
-  const start = new Date(state.mesoStartDate);
-  if (Number.isNaN(start.getTime())) return null;
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return null;
 
   const values = state.sessions
-    .filter(s => s.status === 'complete' && s.sessionId === sessionId && s.date && new Date(s.date) < start)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .filter(s => {
+      const d = parseISODateLocal(s.date);
+      return isProgressSession(s) && s.sessionId === sessionId && d && d < start;
+    })
+    .sort((a, b) => (parseISODateLocal(a.date)?.getTime() || 0) - (parseISODateLocal(b.date)?.getTime() || 0))
     .map(session => {
-      const completedEx = findCompletedExercise(session, exerciseName);
+      const completedEx = getLoggedExercise(session, exerciseName);
       const set = completedEx?.sets?.[setIdx];
       const reps = parseInt(set?.reps);
       return Number.isFinite(reps) ? reps : null;
@@ -7819,14 +8167,12 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const model = getExerciseProgressionModel(exConfig);
   if (model === 'prehab_quality' || model === 'explosive_quality') return null;
 
-  const completeSessions = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-2);
+  const completeSessions = getExerciseProgressSessions(sessionId, exerciseName).slice(-2);
 
   if (completeSessions.length < 2) return null;
 
   const bothHitCeiling = completeSessions.every(sess => {
-    const ex = sess.exercises.find(e => e.name === exerciseName);
+    const ex = getLoggedExercise(sess, exerciseName);
     if (!ex || !ex.sets.length) return false;
     return ex.sets.every(set => {
       const reps = parseInt(set.reps);
@@ -7846,7 +8192,7 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   }
 
   const lastSess    = completeSessions[completeSessions.length - 1];
-  const lastEx      = lastSess.exercises.find(e => e.name === exerciseName);
+  const lastEx      = getLoggedExercise(lastSess, exerciseName);
   const currentSets = lastEx ? lastEx.sets.length : 0;
   const targetSets  = getMesoSetTarget(week);
 
@@ -8658,7 +9004,7 @@ function openSettings() {
   document.getElementById('s-name').value = profile.name;
   document.getElementById('s-bw').value = state.bodyweight || '';
   document.getElementById('s-meso-date').value = state.mesoStartDate || '';
-  document.getElementById('s-meso-week').value = state.mesoWeekOverride || '';
+  document.getElementById('s-meso-week').value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
 
   // Sync drive status
   const dot  = document.getElementById('settings-drive-dot');
@@ -8782,7 +9128,7 @@ function saveProfileSettings() {
   const name = document.getElementById('s-name').value.trim();
   const bw   = parseFloat(document.getElementById('s-bw').value) || null;
   const date = document.getElementById('s-meso-date').value;
-  const week = parseInt(document.getElementById('s-meso-week').value) || null;
+  const week = parseMesoWeekOverride(document.getElementById('s-meso-week').value);
 
   if (name) state.programme.name = name;
 
@@ -8790,7 +9136,7 @@ function saveProfileSettings() {
   const patch = {};
   if (bw) {
     const log = [...(state.weightLog || [])];
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr(new Date());
     const idx = log.findIndex(e => e.date === today);
     if (idx !== -1) log[idx] = { date: today, kg: bw };
     else log.push({ date: today, kg: bw });
@@ -8798,20 +9144,20 @@ function saveProfileSettings() {
     patch.bodyweight = bw;
   }
 
-  // If week override changed, back-calculate a consistent start date
-  if (week && week !== state.mesoWeekOverride) {
-    const today = new Date();
+  // If a week is entered, recalibrate the start date and keep week tracking automatic.
+  if (week) {
+    const today = startOfLocalDay(new Date());
     today.setDate(today.getDate() - ((week - 1) * 7));
-    const backCalcDate = today.toISOString().split('T')[0];
+    const backCalcDate = localDateStr(today);
     patch.mesoStartDate    = backCalcDate;
-    patch.mesoWeekOverride = week;
+    patch.mesoWeekOverride = null;
     // Update all date inputs to stay in sync
     const dateEl    = document.getElementById('s-meso-date');
     const mainDateEl = document.getElementById('meso-start-date');
     if (dateEl)      dateEl.value     = backCalcDate;
     if (mainDateEl)  mainDateEl.value = backCalcDate;
-    document.getElementById('s-meso-week').value         = week;
-    document.getElementById('meso-week-override').value  = week;
+    document.getElementById('s-meso-week').value         = '';
+    document.getElementById('meso-week-override').value  = '';
   } else if (date) {
     patch.mesoStartDate    = date || null;
     patch.mesoWeekOverride = week || null;
@@ -9587,6 +9933,8 @@ function saveManualSession() {
 const EXERCISE_SWAP_MAP = {
   'Tuck Jump': {
     name: 'Standing Hip Drive to Knee Raise (Banded)',
+    type: 'accessory',
+    tags: ['accessory', 'unilateral'],
     load: 'Light band',
     notes: 'Drive one knee explosively to 90°. Hold 1s at top. Same hip flexor demand without the jump.',
     desc: 'Stand on one leg, drive the opposite knee up to 90° as explosively as possible against a light band. Hold briefly at the top. Same hip flexor power demand as the tuck jump but with zero impact on the knee joint.',
