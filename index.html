@@ -1960,6 +1960,7 @@ function saveMesoSettings() {
   renderProgramme();
   renderTracker();
   saveSettingsToDrive();
+  autosyncAfterLocalChange('block-settings');
   toast('Rolling block settings saved', 'success');
 }
 
@@ -2002,6 +2003,7 @@ function startNewMesocycle() {
   renderTracker();
   renderDashboard();
   saveSettingsToDrive();
+  autosyncAfterLocalChange('new-block');
   toast('New rolling block started', 'success');
 }
 
@@ -3480,7 +3482,7 @@ function saveSession(exerciseData, status) {
     saveToDrive(session, true).catch(e => {
       console.warn('[Drive] Session upload failed:', e?.message || e);
       updateDriveStatusDot('warning', `Last session upload failed: ${e?.message || 'unknown error'}`);
-    });
+    }).finally(() => autosyncAfterLocalChange('session-added'));
   }
 }
 
@@ -4432,12 +4434,17 @@ function deleteSession(id) {
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Delete', cls: 'confirm', action: () => {
         const deleted = state.sessions.find(s => s.id === id);
+        if (deleted) queueDriveDelete(deleted);
         state.sessions = state.sessions.filter(s => s.id !== id);
         StorageManager.deleteSession(id).catch(e => console.warn('[deleteSession] IndexedDB delete failed:', e));
         removeHistoryCard(id);
         closeModal();
         toast('Session deleted', 'info');
-        if (deleted && state.driveConnected) deleteSessionFromDrive(deleted);
+        if (deleted && state.driveConnected) {
+          deleteSessionFromDrive(deleted)
+            .catch(e => console.warn('[deleteSession] Drive delete failed:', e))
+            .finally(() => autosyncAfterLocalChange('session-deleted'));
+        }
       }}
     ]
   );
@@ -4536,6 +4543,9 @@ const DriveState = {
   tokenClient:     null,    // Google Identity Services token client
   refreshTimer:    null,    // setTimeout handle for silent token refresh
   syncInterval:    null,    // setInterval handle for background sync
+  autosyncTimer:   null,    // short debounce for local-change/focus/online syncs
+  syncInFlight:    false,   // prevent overlapping Drive syncs
+  syncPending:     false,   // rerun once if a sync was requested mid-flight
   authBannerShown: false,   // prevent duplicate re-auth banners
   folderId:        { alex: null, je: null },  // cached Drive folder IDs
 };
@@ -4626,7 +4636,7 @@ async function handleDriveToken(response) {
   await loadProgrammeFromDrive();
   updateMesoDisplay();
   renderProgramme();
-  await syncSessionsFromDrive(false);
+  await runDriveAutoSync('connect');
 
   scheduleDriveRefresh();
   startDriveSyncInterval();
@@ -4647,6 +4657,9 @@ function disconnectDrive() {
 function clearDriveTimers() {
   if (DriveState.refreshTimer)  { clearTimeout(DriveState.refreshTimer);  DriveState.refreshTimer  = null; }
   if (DriveState.syncInterval)  { clearInterval(DriveState.syncInterval); DriveState.syncInterval  = null; }
+  if (DriveState.autosyncTimer) { clearTimeout(DriveState.autosyncTimer); DriveState.autosyncTimer = null; }
+  DriveState.syncInFlight = false;
+  DriveState.syncPending = false;
 }
 
 function tryRestoreToken() {
@@ -4664,7 +4677,7 @@ function tryRestoreToken() {
           await loadProgrammeFromDrive();
           updateMesoDisplay();
           renderProgramme();
-          await syncSessionsFromDrive(false);
+          await runDriveAutoSync('app-open');
           scheduleDriveRefresh();
           startDriveSyncInterval();
         }).catch(e => {
@@ -4713,7 +4726,7 @@ async function initTokenClientSilent() {
         await loadProgrammeFromDrive();
         updateMesoDisplay();
         renderProgramme();
-        await syncSessionsFromDrive(false);
+        await runDriveAutoSync('silent-open');
         scheduleDriveRefresh();
         startDriveSyncInterval();
       }
@@ -5086,6 +5099,7 @@ async function syncSessionsFromDrive(showToast) {
 
   try {
     if (showToast) toast('Syncing with Google Drive…', 'info');
+    await flushPendingDriveDeletes();
 
     const driveFiles = await listDriveSessionFiles();
     if (!driveFiles.length) {
@@ -5246,19 +5260,83 @@ async function fetchDriveSessionFile(fileId) {
 
 // ── DELETE SESSION FILE FROM DRIVE ─────────
 async function deleteSessionFromDrive(session) {
-  if (!state.driveToken) return;
+  if (!state.driveToken) return false;
   try {
     // Find the file by session ID embedded in the filename
     const q   = `name contains '_${session.id}.json' and trashed=false`;
     const res = await driveRequest(
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id,name)`
     );
-    if (!res.files || !res.files.length) return;
+    if (!res.files || !res.files.length) return true;
     await fetch(`https://www.googleapis.com/drive/v3/files/${res.files[0].id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${state.driveToken}` }
     });
-  } catch(e) { console.warn('Drive delete failed:', e); }
+    return true;
+  } catch(e) {
+    console.warn('Drive delete failed:', e);
+    return false;
+  }
+}
+
+function pendingDriveDeleteKey() {
+  return `wt_pending_drive_deletes_${state.profile}`;
+}
+
+function getPendingDriveDeletes() {
+  try {
+    return JSON.parse(localStorage.getItem(pendingDriveDeleteKey()) || '[]');
+  } catch(e) {
+    return [];
+  }
+}
+
+function setPendingDriveDeletes(items) {
+  localStorage.setItem(pendingDriveDeleteKey(), JSON.stringify(items));
+}
+
+function queueDriveDelete(session) {
+  if (!session?.id) return;
+  const pending = getPendingDriveDeletes();
+  if (!pending.some(item => item.id === session.id)) {
+    pending.push({ id: session.id });
+    setPendingDriveDeletes(pending);
+  }
+}
+
+async function flushPendingDriveDeletes() {
+  if (!state.driveToken) return;
+  const pending = getPendingDriveDeletes();
+  if (!pending.length) return;
+
+  const remaining = [];
+  for (const item of pending) {
+    const ok = await deleteSessionFromDrive({ id: item.id });
+    if (!ok) remaining.push(item);
+  }
+  setPendingDriveDeletes(remaining);
+}
+
+async function deleteAllProfileSessionsFromDrive() {
+  if (!state.driveToken) return;
+  try {
+    const files = await listDriveSessionFiles();
+    const prefix = `${state.profile}_session_`;
+    const ownFiles = files.filter(f => f.name?.startsWith(prefix));
+    const BATCH = 10;
+    for (let i = 0; i < ownFiles.length; i += BATCH) {
+      const batch = ownFiles.slice(i, i + BATCH);
+      await Promise.allSettled(batch.map(file =>
+        fetch(`https://www.googleapis.com/drive/v3/files/${file.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${state.driveToken}` }
+        })
+      ));
+    }
+    await saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme save failed after delete-all:', e));
+  } catch(e) {
+    console.warn('[Drive] Delete-all failed:', e);
+  }
 }
 
 // ── MAIN SYNC FUNCTION ──────────────────────
@@ -5268,6 +5346,7 @@ async function syncSessionsFromDrive(showToast) {
 
   try {
     if (showToast) toast('Syncing with Google Drive…', 'info');
+    await flushPendingDriveDeletes();
 
     const driveFiles = await listDriveSessionFiles();
     if (!driveFiles.length && showToast) {
@@ -5379,9 +5458,13 @@ async function syncSessionsFromDrive(showToast) {
       // Persist all sessions to IndexedDB after sync merge
       StorageManager.saveSessions(state.sessions).catch(e => console.warn('[sync] IndexedDB bulk save failed:', e));
       renderHistory();
+      renderDashboard();
+      updateMesoDisplay();
     }
 
     updateLastSynced();
+    _driveLastError = null;
+    updateDriveStatusDot('connected');
 
     // ── STEP 5: Surface conflicts to the user ────────────────────
     const conflicts = state.sessions.filter(s => s._conflict);
@@ -5398,8 +5481,11 @@ async function syncSessionsFromDrive(showToast) {
     }
 
   } catch(e) {
-    console.error('[Drive] Sync failed:', e?.message || e);
-    if (showToast) toast(`Sync failed — ${e?.message || 'check connection'}`, 'error');
+    const msg = e?.message || 'check connection';
+    console.error('[Drive] Sync failed:', msg);
+    _driveLastError = msg;
+    updateDriveStatusDot('error', msg);
+    if (showToast) toast(`Sync failed — ${msg}`, 'error');
   }
 }
 
@@ -6864,24 +6950,66 @@ async function attemptSilentRefresh() {
 }
 
 // ── PERIODIC BACKGROUND SYNC ────────────────
-const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const SYNC_INTERVAL_MS = 3 * 60 * 1000; // every few minutes
 
-function startDriveSyncInterval() {
-  if (DriveState.syncInterval) clearInterval(DriveState.syncInterval);
-  DriveState.syncInterval = setInterval(async () => {
-    if (!state.driveConnected || !state.driveToken) return;
+function canDriveAutoSync() {
+  if (!state.driveConnected || !state.driveToken) return false;
+  if (navigator.onLine === false) return false;
+  return true;
+}
 
-    const minsLeft = (state.driveTokenExpiry - Date.now()) / 60000;
+async function runDriveAutoSync(reason = 'auto', showToast = false) {
+  if (!canDriveAutoSync()) return;
+
+  if (DriveState.syncInFlight) {
+    DriveState.syncPending = true;
+    return;
+  }
+
+  DriveState.syncInFlight = true;
+  updateDriveStatusDot('syncing');
+
+  try {
+    const minsLeft = state.driveTokenExpiry
+      ? (state.driveTokenExpiry - Date.now()) / 60000
+      : 0;
     if (minsLeft < 2) {
       await attemptSilentRefresh();
       if (!state.driveToken) return;
     }
 
-    // Silent background sync — no toasts
-    await syncSessionsFromDrive(false);
+    await flushPendingDriveDeletes();
+    await syncSessionsFromDrive(showToast);
+    console.log(`[Drive] Autosync complete (${reason})`);
+  } finally {
+    DriveState.syncInFlight = false;
+    if (DriveState.syncPending) {
+      DriveState.syncPending = false;
+      scheduleDriveAutoSync('pending', 1500);
+    }
+  }
+}
+
+function scheduleDriveAutoSync(reason = 'auto', delay = 1200) {
+  if (!canDriveAutoSync()) return;
+  if (DriveState.autosyncTimer) clearTimeout(DriveState.autosyncTimer);
+  DriveState.autosyncTimer = setTimeout(() => {
+    DriveState.autosyncTimer = null;
+    runDriveAutoSync(reason, false);
+  }, delay);
+}
+
+function autosyncAfterLocalChange(reason = 'local-change') {
+  scheduleDriveAutoSync(reason, 1200);
+}
+
+function startDriveSyncInterval() {
+  if (DriveState.syncInterval) clearInterval(DriveState.syncInterval);
+  DriveState.syncInterval = setInterval(() => {
+    scheduleDriveAutoSync('interval', 0);
   }, SYNC_INTERVAL_MS);
 
-  console.log('[Drive] Background sync interval started (every 5 min)');
+  console.log('[Drive] Background sync interval started (every 3 min)');
 }
 
 // ── DRIVE AUTH BANNER ───────────────────────
@@ -6906,16 +7034,17 @@ function dismissDriveAuthBanner() {
 // ── VISIBILITY-BASED SYNC ───────────────────
 // Sync silently when user returns to the app (covers phone-to-desktop scenario)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state.driveConnected && state.driveToken) {
-    const minsLeft = (state.driveTokenExpiry - Date.now()) / 60000;
-    if (minsLeft < 2) {
-      attemptSilentRefresh().then(() => {
-        if (state.driveToken) syncSessionsFromDrive(false);
-      });
-    } else {
-      syncSessionsFromDrive(false);
-    }
+  if (document.visibilityState === 'visible') {
+    scheduleDriveAutoSync('visible', 300);
   }
+});
+
+window.addEventListener('focus', () => {
+  scheduleDriveAutoSync('focus', 300);
+});
+
+window.addEventListener('online', () => {
+  scheduleDriveAutoSync('online', 300);
 });
 
 
@@ -7038,7 +7167,11 @@ function saveEditedSession(sessionId) {
   if (notesEl) sess.notes = notesEl.value.trim();
 
   StorageManager.saveSession(sess).catch(e => console.warn('[saveEditedSession] IndexedDB save failed:', e));
-  if (state.driveConnected) saveToDrive(sess).catch(() => {});
+  if (state.driveConnected) {
+    saveToDrive(sess)
+      .catch(e => console.warn('[saveEditedSession] Drive save failed:', e))
+      .finally(() => autosyncAfterLocalChange('session-edited'));
+  }
   updateHistoryCard(sess);
   renderDashboard();
   closeModal();
@@ -9193,6 +9326,7 @@ function saveProfileSettings() {
   renderProgramme();
   renderTracker();
   saveSettingsToDrive();
+  autosyncAfterLocalChange('profile-settings');
   toast('Profile settings saved', 'success');
 }
 
@@ -9413,6 +9547,8 @@ function saveExerciseEdit(sessionId, idx) {
   }
 
   saveLocalState();
+  saveSettingsToDrive();
+  autosyncAfterLocalChange('programme-edited');
   renderProgramme();
   renderTracker();
   renderSettingsProgramme();
@@ -9443,6 +9579,8 @@ function confirmRemoveExercise(sessionId, idx) {
         // Renumber
         session.exercises.forEach((e, i) => e.num = String(i+1).padStart(2,'0'));
         saveLocalState();
+        saveSettingsToDrive();
+        autosyncAfterLocalChange('programme-exercise-removed');
         renderProgramme();
         renderTracker();
         renderSettingsProgramme();
@@ -9461,11 +9599,17 @@ function deleteAllData() {
     [
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Delete Everything', cls: 'confirm', action: () => {
+        state.sessions.forEach(queueDriveDelete);
         state.sessions = [];
         StorageManager.clearSessions(state.profile).catch(e => console.warn('[deleteAllData] IndexedDB clear failed:', e));
         renderHistory();
+        renderDashboard();
         closeModal();
         toast('All session data deleted', 'info');
+        if (state.driveConnected) {
+          deleteAllProfileSessionsFromDrive()
+            .finally(() => autosyncAfterLocalChange('all-sessions-deleted'));
+        }
       }}
     ]
   );
@@ -9598,6 +9742,7 @@ async function importJSON(text) {
   await StorageManager.saveSessions(toAdd);
   renderHistory();
   renderDashboard();
+  autosyncAfterLocalChange('json-import');
 
   const parts = [`${toAdd.length} session${toAdd.length !== 1 ? 's' : ''} imported`];
   if (skipped > 0) parts.push(`${skipped} already existed — skipped`);
@@ -9764,6 +9909,8 @@ function executeImport() {
   state.sessions.push(...toAdd);
   StorageManager.saveSessions(toAdd).catch(e => console.warn('[executeImport] IndexedDB save failed:', e));
   renderHistory();
+  renderDashboard();
+  autosyncAfterLocalChange('csv-import');
 
   const parts = [`${toAdd.length} session${toAdd.length !== 1 ? 's' : ''} imported from ${ImportState.data.rows.length} rows`];
   if (skipped > 0) parts.push(`${skipped} duplicate${skipped !== 1 ? 's' : ''} skipped`);
@@ -9933,6 +10080,8 @@ function saveManualSession() {
   state.sessions.push(newSession);
   StorageManager.saveSession(newSession).catch(e => console.warn('[saveManualSession] IndexedDB save failed:', e));
   renderHistory();
+  renderDashboard();
+  autosyncAfterLocalChange('manual-session');
   document.getElementById('manual-entry-form').classList.add('hidden');
   toast(`Session added: ${session.name} on ${formatDateIT(date)}`, 'success');
 }
