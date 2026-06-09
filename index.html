@@ -114,12 +114,12 @@
       <div id="drive-last-synced" class="drive-last-synced"></div>
 
       <!-- Mesocycle settings -->
-      <div class="section-label">Mesocycle</div>
+      <div class="section-label">Rolling Block</div>
       <div class="meso-settings">
         <label for="meso-start-date">Start Date</label>
         <input type="date" id="meso-start-date" onchange="saveMesoSettings()">
-        <label for="meso-week-override">Set Week</label>
-        <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" placeholder="Auto">
+        <label for="meso-week-override">Phase</label>
+        <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" placeholder="Auto" disabled title="Rolling block phase is calculated from logged core sessions">
         <button class="meso-save-btn" onclick="saveMesoSettings()">Save</button>
       </div>
 
@@ -152,7 +152,7 @@
       <div class="active-session" id="active-session-view">
         <!-- Deload banner (shown in week 5) -->
         <div class="deload-banner hidden" id="deload-banner">
-          <div class="deload-banner-title">⟳ Deload Week — Week 5</div>
+          <div class="deload-banner-title">⟳ Deload Phase — Phase 5</div>
           <div class="deload-banner-sub">Reduced volume and load. Focus on movement quality, not intensity.<br>Sets: 2 · Load: ~50% · Target RIR: 5+</div>
         </div>
 
@@ -302,12 +302,12 @@
             <div id="weight-log-list" class="mt-8"></div>
           </div>
           <div class="settings-field">
-            <label for="s-meso-date">Mesocycle Start Date</label>
+            <label for="s-meso-date">Rolling Block Start Date</label>
             <input class="settings-input" id="s-meso-date" type="date">
           </div>
           <div class="settings-field">
-            <label for="s-meso-week">Set Current Week (leave blank for auto)</label>
-            <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto">
+            <label for="s-meso-week">Current Phase</label>
+            <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto" disabled title="Rolling block phase is calculated from logged core sessions">
           </div>
           <div class="section-label section-label-spaced">Band Resistance Config</div>
           <div id="band-config-list"></div>
@@ -1001,11 +1001,11 @@ const PROGRAMMES = {
       { day: 'Sun', session: 'Resilience B / Run', color: 'var(--transition-c)' },
     ],
     mesoWeeks: [
-      { label: 'Week 1', sets: '3', desc: '3–4 RIR · Base volume', rir: '3–4' },
-      { label: 'Week 2', sets: '4', desc: '2–3 RIR · Build', rir: '2–3' },
-      { label: 'Week 3', sets: '4', desc: '2 RIR · Accumulate', rir: '2' },
-      { label: 'Week 4', sets: '4', desc: '1–2 RIR · Peak', rir: '1–2' },
-      { label: 'Week 5', sets: '2', desc: 'Deload · 5+ RIR', rir: '5+', deload: true },
+      { label: 'Phase 1', sets: '3', desc: '3–4 RIR · Base volume', rir: '3–4' },
+      { label: 'Phase 2', sets: '4', desc: '2–3 RIR · Build', rir: '2–3' },
+      { label: 'Phase 3', sets: '4', desc: '2 RIR · Accumulate', rir: '2' },
+      { label: 'Phase 4', sets: '4', desc: '1–2 RIR · Peak', rir: '1–2' },
+      { label: 'Phase 5', sets: '2', desc: 'Deload · 5+ RIR', rir: '5+', deload: true },
     ],
     sessions: [
       {
@@ -1217,7 +1217,7 @@ const PROGRAMMES = {
         colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
-        note: 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. Explosive alternatives available per exercise if knees are uncomfortable.',
+        note: 'Between-block session. Lighter, faster, athletic focus. Not counted in rolling block progression. Explosive alternatives available per exercise if knees are uncomfortable.',
         exercises: [
           { num: '01', name: 'Standing Banded Hip Flexion', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'Light band', prog: 'Heavier band → pause at top', notes: 'Band anchored behind you at ankle height. Drive knee explosively to 90°.',
             desc: 'Light band anchored low behind you. Drive one knee up to hip height against band resistance. Concentric iliopsoas loading. Focus on speed and height of the drive. Pause briefly at the top before lowering.' },
@@ -1249,7 +1249,7 @@ const PROGRAMMES = {
         colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
-        note: 'Between-mesocycle session. Slow, deliberate, mobility and stability focus. No explosive movements. Focus on movement quality and range.',
+        note: 'Between-block session. Slow, deliberate, mobility and stability focus. No explosive movements. Focus on movement quality and range.',
         exercises: [
           { num: '01', name: 'Turkish Get-Up', tags: ['compound', 'unilateral'], type: 'compound', sets: '2', reps: '3/side', repRange: [3,3], load: '8 kg', prog: '12 kg → 16 kg', notes: 'Slow and deliberate. KB overhead throughout.',
             desc: 'From lying with KB pressed overhead, navigate to standing through sweep, bridge, kneeling, standing positions. Every position addresses a different mobility and stability gap. Quality over speed — each rep takes 45–60 seconds.' },
@@ -1278,7 +1278,7 @@ const PROGRAMMES = {
         colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
-        note: 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
+        note: 'Between-block session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
         exercises: [
           { num: '01', name: 'KB Clean — Light and Fast', tags: ['compound', 'unilateral'], type: 'compound', sets: '4', reps: '6/side', repRange: [6,6], load: '12 kg', prog: '16 kg — focus is speed not load', notes: 'Lighter than working weight. Prioritise hip drive speed and clean rack catch.',
             desc: 'KB clean performed at lighter load with maximum hip drive speed. The goal is rate of force development — how fast you can produce power — not the load itself. Tight arc, fast snap, controlled catch in the rack position.' },
@@ -1319,11 +1319,11 @@ const PROGRAMMES = {
       { day: 'Sun', session: 'Rest', color: null },
     ],
     mesoWeeks: [
-      { label: 'Week 1', sets: '3', desc: 'Learn · Pattern focus', rir: '4–5' },
-      { label: 'Week 2', sets: '3', desc: 'Consolidate · Add reps', rir: '3–4' },
-      { label: 'Week 3', sets: '3–4', desc: 'Progress · Add support', rir: '3' },
-      { label: 'Week 4', sets: '4', desc: 'Build · Reduce support', rir: '2–3' },
-      { label: 'Week 5', sets: '2', desc: 'Deload · Recovery', rir: '5+', deload: true },
+      { label: 'Phase 1', sets: '3', desc: 'Learn · Pattern focus', rir: '4–5' },
+      { label: 'Phase 2', sets: '3', desc: 'Consolidate · Add reps', rir: '3–4' },
+      { label: 'Phase 3', sets: '3–4', desc: 'Progress · Add support', rir: '3' },
+      { label: 'Phase 4', sets: '4', desc: 'Build · Reduce support', rir: '2–3' },
+      { label: 'Phase 5', sets: '2', desc: 'Deload · Recovery', rir: '5+', deload: true },
     ],
     sessions: [
       {
@@ -1381,25 +1381,25 @@ const PROGRAMMES = {
 const GUIDE_SECTIONS = [
   {
     num: '01',
-    title: 'How the Mesocycle Works',
+    title: 'How the Rolling Block Works',
     content: `
       <h4>The 5-Week Block</h4>
-      <p>A mesocycle is a structured training block with a defined start, a progressive overload phase, and a planned recovery week. Your block runs 5 weeks — 4 weeks of increasing demand, then 1 deload week.</p>
+      <p>A rolling block is a structured training block with a defined start, progressive hard-session exposure, and a planned recovery phase. It advances by logged core sessions, not by calendar days.</p>
       <p>The core principle is <strong>accumulating stimulus across the block</strong>, not maxing out every session. Each week should feel slightly harder than the last — not because you're pushing harder emotionally, but because volume has increased systematically.</p>
 
       <h4>Week by Week</h4>
       <table class="guide-table">
         <thead><tr><th>Week</th><th>Sets</th><th>Target RIR</th><th>Focus</th></tr></thead>
         <tbody>
-          <tr><td>Week 1</td><td>3</td><td>3–4</td><td>Conservative start. Learn the loads.</td></tr>
-          <tr><td>Week 2</td><td>4</td><td>2–3</td><td>Add a set. Same load unless progressed.</td></tr>
-          <tr><td>Week 3</td><td>4</td><td>2</td><td>Volume accumulates. Stimulus is building.</td></tr>
-          <tr><td>Week 4</td><td>4</td><td>1–2</td><td>Peak effort. This week is meant to be hard without adding another set.</td></tr>
-          <tr><td>Week 5</td><td>2</td><td>5+</td><td>Deload. Recovery is non-negotiable.</td></tr>
+          <tr><td>Phase 1</td><td>3</td><td>3–4</td><td>Conservative start. Learn the loads.</td></tr>
+          <tr><td>Phase 2</td><td>4</td><td>2–3</td><td>Add a set. Same load unless progressed.</td></tr>
+          <tr><td>Phase 3</td><td>4</td><td>2</td><td>Volume accumulates. Stimulus is building.</td></tr>
+          <tr><td>Phase 4</td><td>4</td><td>1–2</td><td>Peak effort. This phase is meant to be hard without adding another set.</td></tr>
+          <tr><td>Phase 5</td><td>2</td><td>5+</td><td>Deload. Recovery is non-negotiable.</td></tr>
         </tbody>
       </table>
 
-      <div class="guide-rule">The mesocycle week advances on the calendar, but your set count only advances when you've earned it by completing the current target cleanly within the rep range.</div>
+      <div class="guide-rule">The rolling block phase advances from logged core-session exposure. Missed calendar days do not move the block forward.</div>
     `
   },
   {
@@ -1415,7 +1415,7 @@ const GUIDE_SECTIONS = [
         <div class="rir-state too-heavy"><span class="rir-icon">✕</span><div><strong>Too Heavy — 1 RIR or less</strong><br>Form is breaking down or you're at the edge of failure. Reduce weight next session.</div></div>
       </div>
 
-      <p>Week 1 should feel almost conservative. That's intentional. Fatigue accumulates across weeks 2–4, and what felt easy in week 1 will feel genuinely hard by week 4 at the same 4-set structure.</p>
+      <p>Phase 1 should feel almost conservative. That's intentional. Fatigue accumulates across phases 2–4, and what felt easy in phase 1 will feel genuinely hard by phase 4 at the same 4-set structure.</p>
     `
   },
   {
@@ -1482,12 +1482,12 @@ const GUIDE_SECTIONS = [
       </table>
       <p>No card appears in week 1 or during deload. Those weeks are intentionally suppressed.</p>
 
-      <h4>Deload Week — Week 5</h4>
-      <p>No progression during deload. 2 sets, ~50% load, 5+ RIR. Treat every rep as a technique session. When week 1 of the new mesocycle begins, return to working weights and restart the set climb from 3.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press working weight: 20 kg x 6-8 reps x 4 sets by end of week 4. Deload: 10 kg x 6-8 reps x 2 sets. New mesocycle week 1: 20 kg x 6 reps x 3 sets.</div>
+      <h4>Deload Phase — Phase 5</h4>
+      <p>No progression during deload. 2 sets, ~50% load, 5+ RIR. Treat every rep as a technique session. When the new rolling block begins, return to working weights and restart the set climb from 3.</p>
+      <div class="guide-example"><strong>Example</strong>Floor Press working weight: 20 kg x 6-8 reps x 4 sets by end of phase 4. Deload: 10 kg x 6-8 reps x 2 sets. New block phase 1: 20 kg x 6 reps x 3 sets.</div>
 
-      <h4>RIR Across the Mesocycle</h4>
-      <p>Your RIR will naturally decrease as weeks progress even at the same load, because fatigue is accumulating. A weight at 3 RIR in week 1 may feel like 1–2 RIR in week 4. This is correct and expected. Do not reduce load to chase a higher RIR.</p>
+      <h4>RIR Across the Rolling Block</h4>
+      <p>Your RIR will naturally decrease as phases progress even at the same load, because fatigue is accumulating. A weight at 3 RIR in phase 1 may feel like 1–2 RIR in phase 4. This is correct and expected. Do not reduce load to chase a higher RIR.</p>
 
       <h4>Summary</h4>
       <table class="guide-table">
@@ -1497,7 +1497,7 @@ const GUIDE_SECTIONS = [
           <tr><td>Top of rep range, week set target reached</td><td>Increase load, keep weekly set target</td></tr>
           <tr><td>At equipment ceiling, no tempo yet</td><td>Apply 3s eccentric tempo, mark it on the card</td></tr>
           <tr><td>Tempo applied, ceiling still hit after 2 sessions</td><td>Equipment ceiling — new kit needed</td></tr>
-          <tr><td>Week 5</td><td>Deload — no progression</td></tr>
+          <tr><td>Phase 5</td><td>Deload — no progression</td></tr>
         </tbody>
       </table>
     `
@@ -1572,7 +1572,7 @@ const GUIDE_SECTIONS = [
       <p>When you reach the final rung, no suggestion card appears. This is intentional — the goal is quality and consistency at that level, not further complexity. Load increases for KB exercises at the top follow the same add-set → increase-load logic as Alex’s programme.</p>
 
       <h4>No Deload Suppression for Je</h4>
-      <p>Je’s progression suggestions are suppressed during deload week, same as Alex’s. Week 5 sessions are logged normally but don’t count toward trigger conditions.</p>
+      <p>Je’s progression suggestions are suppressed during deload phase, same as Alex’s. Phase 5 sessions are logged normally but don’t count toward trigger conditions.</p>
     `
   }
 ];
@@ -1805,7 +1805,7 @@ async function loadLocalState() {
     document.getElementById('meso-start-date').value = state.mesoStartDate;
   }
   if (state.mesoWeekOverride) {
-    document.getElementById('meso-week-override').value = state.mesoStartDate ? '' : state.mesoWeekOverride;
+    document.getElementById('meso-week-override').value = state.mesoStartDate ? getCurrentMesoWeek() : state.mesoWeekOverride;
   }
 
   // ── 2. Sessions from IndexedDB (runs migration if needed) ───
@@ -1871,16 +1871,67 @@ function parseMesoWeekOverride(value) {
   return Number.isFinite(n) && n >= 1 && n <= 5 ? n : null;
 }
 
+function getRollingBlockConfig() {
+  const sessionsPerPhase = state.profile === 'je' ? 3 : 5;
+  return {
+    sessionsPerPhase,
+    hardPhases: 4,
+    deloadPhases: 1,
+    hardTarget: sessionsPerPhase * 4,
+    deloadTarget: sessionsPerPhase,
+  };
+}
+
+function isBlockCountedSession(session) {
+  if (!session?.sessionId) return false;
+  if (state.profile === 'je') return session.sessionId.startsWith('session-');
+  return ['push-a', 'pull', 'legs-a', 'push-b', 'legs-b'].includes(session.sessionId);
+}
+
+function getCurrentBlockSessions() {
+  const start = parseISODateLocal(state.mesoStartDate);
+  if (!start) return [];
+  return state.sessions
+    .filter(s => {
+      const d = parseISODateLocal(s.date);
+      return d && d >= start && isWorkloadSession(s) && isBlockCountedSession(s);
+    })
+    .sort((a, b) => (parseISODateLocal(a.date)?.getTime() || 0) - (parseISODateLocal(b.date)?.getTime() || 0));
+}
+
+function isLegacyDeloadSession(session) {
+  return session?.status === 'deload' || (session?.status === 'complete' && session?.mesoWeek === 5);
+}
+
+function getHardBlockSessionEquivalents() {
+  const sessions = getCurrentBlockSessions()
+    .filter(s => ['complete', 'partial'].includes(s.status) && !isLegacyDeloadSession(s));
+  return sessions.reduce((sum, s) => sum + estimateSessionCompletion(s), 0);
+}
+
+function getDeloadBlockSessionEquivalents() {
+  const sessions = getCurrentBlockSessions().filter(isLegacyDeloadSession);
+  return sessions.reduce((sum, s) => sum + estimateSessionCompletion(s), 0);
+}
+
+function getRollingBlockPhase() {
+  const cfg = getRollingBlockConfig();
+  const hardEquiv = getHardBlockSessionEquivalents();
+  const deloadEquiv = getDeloadBlockSessionEquivalents();
+  const hardComplete = hardEquiv >= cfg.hardTarget;
+  const complete = hardComplete && deloadEquiv >= cfg.deloadTarget;
+  const week = hardComplete
+    ? 5
+    : Math.min(4, Math.floor(hardEquiv / cfg.sessionsPerPhase) + 1);
+
+  return { ...cfg, week, hardEquiv, deloadEquiv, hardComplete, complete };
+}
+
 function getCurrentMesoWeek() {
   const override = parseMesoWeekOverride(state.mesoWeekOverride);
   if (override && !state.mesoStartDate) return override;
   if (!state.mesoStartDate) return 1;
-  const start = parseISODateLocal(state.mesoStartDate);
-  if (!start) return 1;
-  const now = startOfLocalDay(new Date());
-  const diffDays = Math.floor((now - start) / 86400000);
-  const week = Math.min(5, Math.max(1, Math.floor(diffDays / 7) + 1));
-  return week;
+  return getRollingBlockPhase().week;
 }
 
 function getMesoElapsedDays() {
@@ -1891,7 +1942,7 @@ function getMesoElapsedDays() {
 }
 
 function isMesoCycleComplete() {
-  return !!state.mesoStartDate && getMesoElapsedDays() >= 35;
+  return !!state.mesoStartDate && getRollingBlockPhase().complete;
 }
 
 function isDeloadWeek() { return getCurrentMesoWeek() === 5; }
@@ -1903,66 +1954,55 @@ function getMesoSetTarget(week) {
 
 function saveMesoSettings() {
   const dateVal = document.getElementById('meso-start-date').value;
-  const ovVal   = document.getElementById('meso-week-override').value;
-  const week    = parseMesoWeekOverride(ovVal);
-
-  // If a week is entered, recalibrate the start date and keep week tracking automatic.
-  if (week) {
-    const today = startOfLocalDay(new Date());
-    today.setDate(today.getDate() - ((week - 1) * 7));
-    const backCalc = localDateStr(today);
-    document.getElementById('meso-start-date').value = backCalc;
-    document.getElementById('meso-week-override').value = '';
-    // Sync settings panel if open
-    const sDate = document.getElementById('s-meso-date');
-    const sWeek = document.getElementById('s-meso-week');
-    if (sDate) sDate.value = backCalc;
-    if (sWeek) sWeek.value = '';
-    setState({ mesoStartDate: backCalc, mesoWeekOverride: null });
-  } else {
-    setState({ mesoStartDate: dateVal || null, mesoWeekOverride: week });
-  }
+  setState({ mesoStartDate: dateVal || null, mesoWeekOverride: null });
+  syncMesoInputs();
 
   renderProgramme();
   renderTracker();
   saveSettingsToDrive();
-  toast('Mesocycle settings saved', 'success');
+  toast('Rolling block settings saved', 'success');
 }
 
 function updateMesoDisplay() {
   const week = getCurrentMesoWeek();
   const el = document.getElementById('topbar-meso');
   if (isMesoCycleComplete()) {
-    el.textContent = 'Start New Meso';
+    el.textContent = 'Start New Block';
     el.className = 'topbar-meso meso-complete';
   } else if (isDeloadWeek()) {
-    el.textContent = 'Deload Week';
+    el.textContent = 'Deload Phase';
     el.className = 'topbar-meso deload-active';
   } else {
-    el.textContent = `Week ${week} / 5`;
+    el.textContent = `Block ${week} / 5`;
     el.className = 'topbar-meso';
   }
+  syncMesoInputs();
+}
+
+function syncMesoInputs() {
+  const dateValue = state.mesoStartDate || '';
+  const phaseValue = state.mesoStartDate ? getCurrentMesoWeek() : '';
+  const dateEl = document.getElementById('meso-start-date');
+  const weekEl = document.getElementById('meso-week-override');
+  const sDateEl = document.getElementById('s-meso-date');
+  const sWeekEl = document.getElementById('s-meso-week');
+  if (dateEl) dateEl.value = dateValue;
+  if (weekEl) weekEl.value = phaseValue;
+  if (sDateEl) sDateEl.value = dateValue;
+  if (sWeekEl) sWeekEl.value = phaseValue;
 }
 
 function startNewMesocycle() {
   const today = localDateStr(new Date());
   setState({ mesoStartDate: today, mesoWeekOverride: null });
-
-  const dateEl = document.getElementById('meso-start-date');
-  const weekEl = document.getElementById('meso-week-override');
-  const sDateEl = document.getElementById('s-meso-date');
-  const sWeekEl = document.getElementById('s-meso-week');
-  if (dateEl) dateEl.value = today;
-  if (weekEl) weekEl.value = '';
-  if (sDateEl) sDateEl.value = today;
-  if (sWeekEl) sWeekEl.value = '';
+  syncMesoInputs();
 
   state._selectedMesoWeek = null;
   renderProgramme();
   renderTracker();
   renderDashboard();
   saveSettingsToDrive();
-  toast('New mesocycle started', 'success');
+  toast('New rolling block started', 'success');
 }
 
 /* ═══════════════════════════════════════════
@@ -2242,7 +2282,7 @@ function buildTrackerExercises(session) {
     const isSubstituted = trackingEx.name !== ex.name;
     const prev2 = getPrev2Sessions(session.id, trackingEx.name);
     const previousSetRefs = getPreviousSetRefs(session.id, trackingEx.name);
-    // Default working sets follow the mesocycle target, not last session's set count.
+    // Default working sets follow the rolling block phase target, not last session's set count.
     const _suggestion = state.profile === 'alex'
       ? getProgressionSuggestion(session.id, trackingEx.name, trackingEx.repRange)
       : null;
@@ -2966,7 +3006,7 @@ function getPreviousSetRefs(sessionId, exName) {
     if (!text) return null;
     const source = prevMesoSet ? 'prev-meso' : 'last-session';
     const sourceDate = prevMesoSet ? prevMesoSameWeek?.date : lastSession?.date;
-    const title = `${source === 'prev-meso' ? 'Same week in previous mesocycle' : 'Last completed session'} · ${sourceDate ? formatDateIT(sourceDate) : ''}`;
+    const title = `${source === 'prev-meso' ? 'Same phase in previous block' : 'Last completed session'} · ${sourceDate ? formatDateIT(sourceDate) : ''}`;
     return { text, source, title, set: sourceSet };
   });
 }
@@ -3402,6 +3442,7 @@ function endSession() {
 
 function saveSession(exerciseData, status) {
   closeModal();
+  const storedStatus = status === 'complete' && isDeloadWeek() ? 'deload' : status;
   const session = {
     id: Date.now().toString(),
     sessionId: state.activeSessionId,
@@ -3411,12 +3452,14 @@ function saveSession(exerciseData, status) {
     endTime: state.endTime?.toISOString(),
     duration: state.startTime && state.endTime ? getDuration(state.startTime, state.endTime) : null,
     notes: document.getElementById('session-notes-input').value,
-    status,
+    status: storedStatus,
     mesoWeek: getCurrentMesoWeek(),
     exercises: exerciseData
   };
 
   state.sessions.push(session);
+  updateMesoDisplay();
+  if (document.body.dataset.tab === 'dashboard') renderDashboard();
   // Persist to IndexedDB (async — does not block UI)
   StorageManager.saveSession(session).catch(e => console.warn('[saveSession] IndexedDB write failed:', e));
   prependHistoryCard(session);
@@ -3426,7 +3469,7 @@ function saveSession(exerciseData, status) {
   if (isProgressSession(session)) checkJeMilestones(exerciseData);
 
   // 2. Deload review prompt (week 5, complete session, Alex only)
-  if (status === 'complete' && isDeloadWeek() && state.profile === 'alex') {
+  if (storedStatus === 'deload' && isMesoCycleComplete() && state.profile === 'alex') {
     setTimeout(() => showDeloadReview(), 400);
   }
 
@@ -5000,9 +5043,9 @@ async function loadProgrammeFromDrive() {
       const sEl = document.getElementById('s-meso-date');
       if (sEl) sEl.value = state.mesoStartDate || '';
       const weekEl = document.getElementById('meso-week-override');
-      if (weekEl) weekEl.value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
+      if (weekEl) weekEl.value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
       const sWeekEl = document.getElementById('s-meso-week');
-      if (sWeekEl) sWeekEl.value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
+      if (sWeekEl) sWeekEl.value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
       const bwEl = document.getElementById('s-bw');
       if (bwEl) bwEl.value = state.bodyweight || '';
       renderWeightLog();
@@ -5632,21 +5675,23 @@ function estimateSessionCompletion(session) {
 
 function calcWeekVolume(weekNum) {
   if (!state.mesoStartDate) return 0;
-  const start = parseISODateLocal(state.mesoStartDate);
-  if (!start) return 0;
-  const weekStart = new Date(start);
-  weekStart.setDate(start.getDate() + (weekNum - 1) * 7);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 7);
+  const cfg = getRollingBlockConfig();
+  const sessions = getCurrentBlockSessions();
 
-  return state.sessions
-    .filter(s => {
-      if (!isWorkloadSession(s)) return false;
-      if (!s.date) return false;
-      const d = parseISODateLocal(s.date);
-      return d >= weekStart && d < weekEnd;
-    })
-    .reduce((sum, s) => sum + calcSessionVolume(s), 0);
+  if (weekNum === 5) {
+    return sessions
+      .filter(isLegacyDeloadSession)
+      .reduce((sum, s) => sum + calcSessionVolume(s), 0);
+  }
+
+  let hardEquivBefore = 0;
+  return sessions
+    .filter(s => ['complete', 'partial'].includes(s.status) && !isLegacyDeloadSession(s))
+    .reduce((sum, s) => {
+      const bucket = Math.min(4, Math.floor(hardEquivBefore / cfg.sessionsPerPhase) + 1);
+      hardEquivBefore += estimateSessionCompletion(s);
+      return bucket === weekNum ? sum + calcSessionVolume(s) : sum;
+    }, 0);
 }
 
 /* ═══════════════════════════════════════════
@@ -5671,7 +5716,7 @@ function getNextSession() {
 
   // ── Sequence-aware: find what comes after the last completed PPL session ──
   const completed = state.sessions
-    .filter(s => s.status === 'complete')
+    .filter(s => s.status === 'complete' || s.status === 'deload')
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   let nextId = pplSessions[0].id; // default: first PPL
@@ -5899,13 +5944,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
   const volColor = volChange === null ? 'var(--text-dim)'
     : volChange >= 0 ? 'var(--green)' : 'var(--legs-b)';
 
-  const mesoSessions = state.sessions.filter(s => {
-    if (!s.date || !isWorkloadSession(s)) return false;
-    if (!state.mesoStartDate) return false;
-    const sessionDate = parseISODateLocal(s.date);
-    const mesoStart = parseISODateLocal(state.mesoStartDate);
-    return sessionDate && mesoStart && sessionDate >= mesoStart;
-  });
+  const mesoSessions = getCurrentBlockSessions();
   const sessionCount = mesoSessions.length;
 
   const sortedDates = [...new Set(
@@ -5935,7 +5974,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
       '<div class="dash-volume-bar-track">' +
         '<div class="dash-volume-bar ' + barCls + '" style="--bar-height:' + pct + '%" title="' + volFmt(wk.vol) + '"></div>' +
       '</div>' +
-      '<div class="dash-volume-bar-label">' + (wk.deload ? 'DL' : 'W'+wk.w) + '</div>' +
+      '<div class="dash-volume-bar-label">' + (wk.deload ? 'DL' : 'P'+wk.w) + '</div>' +
       '</div>';
   }).join('');
 
@@ -5982,10 +6021,10 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
 
   const bwNote = state.bodyweight ? 'BW ' + state.bodyweight + ' kg' : 'add bodyweight in settings';
   const volChangeHtml = volChange !== null
-    ? '<span class="dash-volume-change" style="--change-color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs W' + (week-1) + '</span>'
-    : '<span class="dash-volume-change muted">week 1 baseline</span>';
+    ? '<span class="dash-volume-change" style="--change-color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs P' + (viewWeek-1) + '</span>'
+    : '<span class="dash-volume-change muted">phase 1 baseline</span>';
 
-  const weekLabel = viewWeek === week ? 'This Week' : 'Week ' + viewWeek;
+  const weekLabel = viewWeek === week ? 'Current Phase' : 'Phase ' + viewWeek;
   return '<div class="dash-section volume-section dashboard-col-right">' +
     '<div class="dash-section-label">' + weekLabel + '</div>' +
     '<div class="dash-volume-head">' +
@@ -6026,8 +6065,8 @@ function renderDashboard() {
 
   const week       = getCurrentMesoWeek();
   const isDeload   = isDeloadWeek();
+  const blockPhase = getRollingBlockPhase();
   const mesoComplete = isMesoCycleComplete();
-  const elapsedDays = getMesoElapsedDays();
   const profile    = state.programme;
   const today      = new Date();
   const dateStr    = today.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
@@ -6062,26 +6101,26 @@ function renderDashboard() {
     <!-- Greeting -->
     <div class="dash-section dashboard-col-left">
       <div class="dash-greeting">${greeting}, ${profile.name}</div>
-      <div class="dash-greeting-sub">${dateStr} · ${mesoComplete ? 'Mesocycle complete' : `Week ${week} of 5${isDeload ? ' · Deload' : ''}`}</div>
+      <div class="dash-greeting-sub">${dateStr} · ${mesoComplete ? 'Rolling block complete' : `Block phase ${week} of 5${isDeload ? ' · Deload' : ''}`}</div>
     </div>
 
     ${mesoComplete ? `
       <div class="dash-section dashboard-col-left dash-meso-reset">
-        <div class="dash-meso-reset-kicker">New Mesocycle Due</div>
-        <div class="dash-meso-reset-title">Deload phase is complete</div>
+        <div class="dash-meso-reset-kicker">New Rolling Block Due</div>
+        <div class="dash-meso-reset-title">Deload exposure target is complete</div>
         <div class="dash-meso-reset-copy">
-          This block is ${elapsedDays} days old. Start a new mesocycle before using week targets, volume comparisons, or progression cues for the next block.
+          This block has ${Math.round(blockPhase.hardEquiv * 10) / 10}/${blockPhase.hardTarget} hard session equivalents and ${Math.round(blockPhase.deloadEquiv * 10) / 10}/${blockPhase.deloadTarget} deload equivalents. Start a new block before using phase targets, volume comparisons, or progression cues for the next block.
         </div>
         <div class="dash-meso-reset-actions">
-          <button class="dash-meso-reset-btn" onclick="startNewMesocycle()">Start New Mesocycle</button>
+          <button class="dash-meso-reset-btn" onclick="startNewMesocycle()">Start New Block</button>
           <button class="dash-meso-reset-secondary" onclick="switchTab('programme')">Set Date Manually</button>
         </div>
       </div>
     ` : ''}
 
-    <!-- Mesocycle timeline -->
+    <!-- Rolling block timeline -->
     <div class="dash-section dashboard-col-left">
-      <div class="dash-section-label">Mesocycle</div>
+      <div class="dash-section-label">Rolling Block</div>
       <div class="dash-meso-blocks">
         ${MESO_WEEKS.map(wk => {
           const isSelected = (state._selectedMesoWeek || week) === wk.w;
@@ -6089,15 +6128,15 @@ function renderDashboard() {
           const deloadCls = wk.deload ? ' deload' : '';
           return `<div class="dash-meso-block ${cls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
             ontouchend="event.preventDefault();selectMesoWeek(${wk.w})"
-            role="button" tabindex="0" aria-pressed="${isSelected ? 'true' : 'false'}" aria-label="View week ${wk.w} data" title="View week ${wk.w} data">
-            <div class="dash-meso-block-week">W${wk.w}</div>
+            role="button" tabindex="0" aria-pressed="${isSelected ? 'true' : 'false'}" aria-label="View phase ${wk.w} data" title="View phase ${wk.w} data">
+            <div class="dash-meso-block-week">P${wk.w}</div>
             <div class="dash-meso-block-sets">${wk.sets}</div>
             <div class="dash-meso-block-rir">${wk.rir}</div>
           </div>`;
         }).join('')}
       </div>
       <div class="dash-compare-hint">
-        ${state._selectedMesoWeek && state._selectedMesoWeek !== week ? `Viewing W${state._selectedMesoWeek} · ` : ''}Tap a week to compare
+        ${state._selectedMesoWeek && state._selectedMesoWeek !== week ? `Viewing P${state._selectedMesoWeek} · ` : ''}${Math.round(blockPhase.hardEquiv * 10) / 10}/${blockPhase.hardTarget} hard equivalents · tap a phase
       </div>
     </div>
 
@@ -6621,18 +6660,9 @@ function updateTemplateToggleVisibility(sessionId) {
    DELOAD REVIEW (end of week 5)
 ═══════════════════════════════════════════ */
 function buildMesoReviewStats() {
-  // Gather stats for the current mesocycle (weeks 1–5)
+  // Gather stats for the current rolling block.
   if (!state.mesoStartDate) return null;
-  const start = parseISODateLocal(state.mesoStartDate);
-  if (!start) return null;
-  const mesoEnd = new Date(start);
-  mesoEnd.setDate(start.getDate() + 35); // 5 weeks
-
-  const mesoSessions = state.sessions.filter(s => {
-    if (!s.date) return false;
-    const d = parseISODateLocal(s.date);
-    return d >= start && d <= mesoEnd && isWorkloadSession(s);
-  });
+  const mesoSessions = getCurrentBlockSessions();
 
   if (!mesoSessions.length) return null;
 
@@ -6680,7 +6710,7 @@ function showDeloadReview() {
 
   const html = `
     <p class="review-copy">
-      Mesocycle complete. Recover well — new block starts next week.
+      Rolling block complete. Recover well, then start the next block.
     </p>
     ${statsHtml}
     <div class="review-feel-label">How did this block feel?</div>
@@ -6690,7 +6720,7 @@ function showDeloadReview() {
       <div class="review-feel-pill" onclick="selectReviewFeel(this,'Tough')">Tough</div>
     </div>`;
 
-  showModal('Mesocycle Complete 🎯', html, [
+  showModal('Rolling Block Complete', html, [
     { label: 'Done', cls: 'save', action: () => {
       const feel = document.querySelector('.review-feel-pill.selected')?.textContent;
       if (feel) {
@@ -7597,7 +7627,7 @@ function assessProgressionReadiness(completeSessions, exerciseName, week) {
       avgRIR: roundedAvg,
       targetLow,
       targetHigh,
-      message: `Rep ceiling was hit, but average RIR was ${roundedAvg}. Week ${week} target is ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Hold the current load or variant until it is cleaner.`
+      message: `Rep ceiling was hit, but average RIR was ${roundedAvg}. Phase ${week} target is ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Hold the current load or variant until it is cleaner.`
     };
   }
 
@@ -7607,7 +7637,7 @@ function assessProgressionReadiness(completeSessions, exerciseName, week) {
       avgRIR: roundedAvg,
       targetLow,
       targetHigh,
-      message: `Average RIR was ${roundedAvg}, above the Week ${week} target of ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Progression is strongly justified.`
+      message: `Average RIR was ${roundedAvg}, above the Phase ${week} target of ${targetLow}${targetLow === targetHigh ? '' : '-' + targetHigh}. Progression is strongly justified.`
     };
   }
 
@@ -7642,7 +7672,7 @@ function getAutoregulationHint(sessionId, exerciseName, week) {
     return {
       status: 'reduce',
       label: 'Ease off',
-      message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. Keep the movement cleaner: reduce load, band tension, variant difficulty, or reps.`
+      message: `Last avg RIR ${roundedAvg}. Phase ${week} target is ${targetText}. Keep the movement cleaner: reduce load, band tension, variant difficulty, or reps.`
     };
   }
 
@@ -7657,14 +7687,14 @@ function getAutoregulationHint(sessionId, exerciseName, week) {
     return {
       status: 'push',
       label: 'Room to push',
-      message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. You likely have room to increase ${action} if form stays sharp.`
+      message: `Last avg RIR ${roundedAvg}. Phase ${week} target is ${targetText}. You likely have room to increase ${action} if form stays sharp.`
     };
   }
 
   return {
     status: 'hold',
     label: 'On target',
-    message: `Last avg RIR ${roundedAvg}. Week ${week} target is ${targetText}. Keep the current setup and execute cleanly.`
+    message: `Last avg RIR ${roundedAvg}. Phase ${week} target is ${targetText}. Keep the current setup and execute cleanly.`
   };
 }
 
@@ -7819,7 +7849,7 @@ function analyseFatigueWatch(week) {
     status: 'normal',
     label: 'Stable',
     title: 'Fatigue is controlled',
-    message: 'Recent workload and effort look compatible with the current mesocycle week.',
+    message: 'Recent workload and effort look compatible with the current rolling block phase.',
     metrics
   };
 }
@@ -7865,7 +7895,7 @@ function analyseCurrentBlock(week) {
       status: 'neutral',
       label: 'Unset',
       title: 'No block start date',
-      message: 'Set a mesocycle start date to review block quality.',
+      message: 'Set a rolling block start date to review block quality.',
       metrics: []
     };
   }
@@ -7876,26 +7906,20 @@ function analyseCurrentBlock(week) {
       status: 'neutral',
       label: 'Unset',
       title: 'No block start date',
-      message: 'Set a valid mesocycle start date to review block quality.',
+      message: 'Set a valid rolling block start date to review block quality.',
       metrics: []
     };
   }
   const now = new Date();
-  const mesoSessions = state.sessions.filter(s => {
-    if (!s.date || !isWorkloadSession(s)) return false;
-    const d = parseISODateLocal(s.date);
-    return d >= start && d <= now;
-  });
+  const mesoSessions = getCurrentBlockSessions();
+  const phase = getRollingBlockPhase();
 
   const completedTypes = new Set(mesoSessions.map(s => s.sessionId)).size;
   const totalVolume = mesoSessions.reduce((sum, s) => sum + calcSessionVolume(s), 0);
   const peakVol = calcWeekVolume(4);
   const currentVol = calcWeekVolume(week);
-  const elapsedDays = Math.max(1, Math.floor((now - start) / 86400000) + 1);
-  const expectedSessions = state.profile === 'alex'
-    ? Math.min(20, Math.ceil((elapsedDays / 7) * 5))
-    : Math.min(12, Math.ceil((elapsedDays / 7) * 3));
-  const sessionEquiv = mesoSessions.reduce((sum, s) => sum + estimateSessionCompletion(s), 0);
+  const expectedSessions = phase.hardComplete ? phase.deloadTarget : phase.hardTarget;
+  const sessionEquiv = phase.hardComplete ? phase.deloadEquiv : phase.hardEquiv;
   const completion = expectedSessions ? Math.min(100, Math.round((sessionEquiv / expectedSessions) * 100)) : 0;
   const missedPartial = state.sessions.filter(s => {
     if (!s.date || s.status !== 'partial') return false;
@@ -7910,13 +7934,15 @@ function analyseCurrentBlock(week) {
   let status = 'building';
   let label = 'Building';
   let title = 'Block is building';
-  let message = 'Volume and completion are accumulating. Keep following the week targets.';
+  let message = 'Volume and completion are accumulating. Keep following the phase targets.';
 
   if (week >= 5) {
-    status = 'deload';
-    label = 'Review';
-    title = 'Deload review due';
-    message = 'Use this week to recover and review what should carry into the next block.';
+    status = phase.complete ? 'solid' : 'deload';
+    label = phase.complete ? 'Done' : 'Deload';
+    title = phase.complete ? 'Rolling block complete' : 'Deload exposure phase';
+    message = phase.complete
+      ? 'Start the next rolling block before using new progression targets.'
+      : 'Hard exposure target is complete. Use deload sessions to recover before starting the next block.';
   } else if (completion < 55 || missedPartial >= 2) {
     status = 'patchy';
     label = 'Patchy';
@@ -7942,13 +7968,14 @@ function analyseCurrentBlock(week) {
   const fmt = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${Math.round(v)}kg`;
   const metrics = [
     `${completion}% covered`,
-    `${Math.round(sessionEquiv * 10) / 10}/${expectedSessions} session equiv`,
+    `${Math.round(phase.hardEquiv * 10) / 10}/${phase.hardTarget} hard equiv`,
+    `${Math.round(phase.deloadEquiv * 10) / 10}/${phase.deloadTarget} deload equiv`,
     `${mesoSessions.length} logged`,
     `${completedTypes} session types`,
     `${fmt(totalVolume)} total`,
-    `W${week} ${fmt(currentVol)}`,
+    `P${week} ${fmt(currentVol)}`,
   ];
-  if (peakVol) metrics.push(`W4 ${fmt(peakVol)}`);
+  if (peakVol) metrics.push(`P4 ${fmt(peakVol)}`);
   if (avgRIR !== null) metrics.push(`avg RIR ${Math.round(avgRIR * 10) / 10}`);
 
   return { status, label, title, message, metrics };
@@ -9004,7 +9031,7 @@ function openSettings() {
   document.getElementById('s-name').value = profile.name;
   document.getElementById('s-bw').value = state.bodyweight || '';
   document.getElementById('s-meso-date').value = state.mesoStartDate || '';
-  document.getElementById('s-meso-week').value = state.mesoStartDate ? '' : (state.mesoWeekOverride || '');
+  document.getElementById('s-meso-week').value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
 
   // Sync drive status
   const dot  = document.getElementById('settings-drive-dot');
@@ -9128,7 +9155,6 @@ function saveProfileSettings() {
   const name = document.getElementById('s-name').value.trim();
   const bw   = parseFloat(document.getElementById('s-bw').value) || null;
   const date = document.getElementById('s-meso-date').value;
-  const week = parseMesoWeekOverride(document.getElementById('s-meso-week').value);
 
   if (name) state.programme.name = name;
 
@@ -9144,28 +9170,13 @@ function saveProfileSettings() {
     patch.bodyweight = bw;
   }
 
-  // If a week is entered, recalibrate the start date and keep week tracking automatic.
-  if (week) {
-    const today = startOfLocalDay(new Date());
-    today.setDate(today.getDate() - ((week - 1) * 7));
-    const backCalcDate = localDateStr(today);
-    patch.mesoStartDate    = backCalcDate;
-    patch.mesoWeekOverride = null;
-    // Update all date inputs to stay in sync
-    const dateEl    = document.getElementById('s-meso-date');
-    const mainDateEl = document.getElementById('meso-start-date');
-    if (dateEl)      dateEl.value     = backCalcDate;
-    if (mainDateEl)  mainDateEl.value = backCalcDate;
-    document.getElementById('s-meso-week').value         = '';
-    document.getElementById('meso-week-override').value  = '';
-  } else if (date) {
+  if (date) {
     patch.mesoStartDate    = date || null;
-    patch.mesoWeekOverride = week || null;
+    patch.mesoWeekOverride = null;
     document.getElementById('meso-start-date').value = date;
-    if (week) document.getElementById('meso-week-override').value = week;
   } else {
     patch.mesoStartDate    = date || null;
-    patch.mesoWeekOverride = week || null;
+    patch.mesoWeekOverride = null;
   }
 
   // Save band config (not in state — stored in BAND_KG constant)
@@ -9177,6 +9188,7 @@ function saveProfileSettings() {
   // setState fires saveSettings + updateMesoDisplay automatically
   if (Object.keys(patch).length) setState(patch);
   else saveSettings(); // band config changed only — still need a save
+  syncMesoInputs();
 
   renderProgramme();
   renderTracker();
