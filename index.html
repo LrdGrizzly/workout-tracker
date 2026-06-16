@@ -119,7 +119,7 @@
         <label for="meso-start-date">Start Date</label>
         <input type="date" id="meso-start-date" onchange="saveMesoSettings()">
         <label for="meso-week-override">Phase</label>
-        <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" placeholder="Auto" disabled title="Rolling block phase is calculated from logged core sessions">
+        <input type="number" id="meso-week-override" class="meso-week-input-compact" min="1" max="5" title="Set the current rolling block phase">
         <button class="meso-save-btn" onclick="saveMesoSettings()">Save</button>
       </div>
 
@@ -307,7 +307,7 @@
           </div>
           <div class="settings-field">
             <label for="s-meso-week">Current Phase</label>
-            <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto" disabled title="Rolling block phase is calculated from logged core sessions">
+            <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" title="Set the current rolling block phase">
           </div>
           <div class="section-label section-label-spaced">Band Resistance Config</div>
           <div id="band-config-list"></div>
@@ -611,12 +611,13 @@ const StorageManager = (() => {
 
         // Strip sessions from the localStorage blob — keep only settings
         const slim = {
-          mesoStartDate:    data.mesoStartDate    || null,
-          mesoWeekOverride: data.mesoWeekOverride || null,
-          restPeriods:      data.restPeriods      || {},
-          jeLadderKeyMap:   data.jeLadderKeyMap   || {},
-          weightLog:        data.weightLog        || [],
-          bodyweight:       data.bodyweight       || null,
+          mesoStartDate:          data.mesoStartDate          || null,
+          mesoWeekOverride:       data.mesoWeekOverride       || null,
+          rollingBlockPhaseOffset:data.rollingBlockPhaseOffset|| 0,
+          restPeriods:            data.restPeriods            || {},
+          jeLadderKeyMap:         data.jeLadderKeyMap         || {},
+          weightLog:              data.weightLog              || [],
+          bodyweight:             data.bodyweight             || null,
         };
         localStorage.setItem(lsKey, JSON.stringify(slim));
       }
@@ -921,6 +922,9 @@ const Validator = (() => {
     if (data.mesoWeekOverride && !clean.mesoWeekOverride) {
       console.warn(`[Validator] Invalid mesoWeekOverride "${data.mesoWeekOverride}" — cleared`);
     }
+
+    // rollingBlockPhaseOffset: completed hard-session equivalents used to calibrate the current phase
+    clean.rollingBlockPhaseOffset = coerceNumber(data.rollingBlockPhaseOffset, 0, 100) || 0;
 
     // restPeriods: object of sessionId → number
     clean.restPeriods = {};
@@ -1591,6 +1595,7 @@ const INITIAL_STATE = {
   // Mesocycle
   mesoStartDate:        null,   // ISO date string 'YYYY-MM-DD'
   mesoWeekOverride:     null,   // integer 1–5, or null for auto
+  rollingBlockPhaseOffset: 0,   // hard-session equivalents used to calibrate manual phase changes
 
   // Body
   bodyweight:           null,   // kg (float), most recent entry
@@ -1634,8 +1639,9 @@ const INITIAL_STATE = {
 // Side-effect map: which state keys trigger which functions when changed via setState().
 // Functions are resolved by name at call time to avoid circular dependencies.
 const STATE_EFFECTS = {
-  mesoStartDate:    ['saveSettings', 'updateMesoDisplay'],
-  mesoWeekOverride: ['saveSettings', 'updateMesoDisplay'],
+  mesoStartDate:          ['saveSettings', 'updateMesoDisplay'],
+  mesoWeekOverride:       ['saveSettings', 'updateMesoDisplay'],
+  rollingBlockPhaseOffset:['saveSettings', 'updateMesoDisplay'],
   bodyweight:       ['saveSettings'],
   weightLog:        ['saveSettings'],
   jeLadderKeyMap:   ['saveSettings'],
@@ -1785,12 +1791,13 @@ async function loadLocalState() {
   const bodyweight = weightLog.length ? weightLog[weightLog.length - 1].kg : null;
 
   // Apply all settings fields directly (no side effects during init)
-  state.mesoStartDate    = data.mesoStartDate    || null;
-  state.mesoWeekOverride = state.mesoStartDate ? null : (data.mesoWeekOverride || null);
-  state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
-  state.weightLog        = weightLog;
-  state.bodyweight       = bodyweight;
-  state.dashboardPanels   = { ...INITIAL_STATE.dashboardPanels, ...(data.dashboardPanels || {}) };
+  state.mesoStartDate          = data.mesoStartDate    || null;
+  state.mesoWeekOverride       = state.mesoStartDate ? null : (data.mesoWeekOverride || null);
+  state.rollingBlockPhaseOffset= Number.isFinite(Number(data.rollingBlockPhaseOffset)) ? Number(data.rollingBlockPhaseOffset) : 0;
+  state.jeLadderKeyMap         = data.jeLadderKeyMap   || {};
+  state.weightLog              = weightLog;
+  state.bodyweight             = bodyweight;
+  state.dashboardPanels        = { ...INITIAL_STATE.dashboardPanels, ...(data.dashboardPanels || {}) };
   state.dashboardPanelOpen = data.dashboardPanelOpen || {};
 
   // Restore rest periods into programme sessions
@@ -1805,7 +1812,7 @@ async function loadLocalState() {
     document.getElementById('meso-start-date').value = state.mesoStartDate;
   }
   if (state.mesoWeekOverride) {
-    document.getElementById('meso-week-override').value = state.mesoStartDate ? getCurrentMesoWeek() : state.mesoWeekOverride;
+    document.getElementById('meso-week-override').value = getCurrentMesoWeek();
   }
 
   // ── 2. Sessions from IndexedDB (runs migration if needed) ───
@@ -1823,13 +1830,14 @@ function saveSettings() {
   const restPeriods = {};
   state.programme.sessions.forEach(s => { restPeriods[s.id] = s.rest; });
   StorageManager.saveSettings(state.profile, {
-    mesoStartDate:    state.mesoStartDate,
-    mesoWeekOverride: state.mesoWeekOverride,
+    mesoStartDate:          state.mesoStartDate,
+    mesoWeekOverride:       state.mesoWeekOverride,
+    rollingBlockPhaseOffset:state.rollingBlockPhaseOffset || 0,
     restPeriods,
-    jeLadderKeyMap:   state.jeLadderKeyMap   || {},
-    weightLog:        state.weightLog        || [],
-    bodyweight:       state.bodyweight       || null,
-    dashboardPanels:  state.dashboardPanels  || INITIAL_STATE.dashboardPanels,
+    jeLadderKeyMap:         state.jeLadderKeyMap   || {},
+    weightLog:              state.weightLog        || [],
+    bodyweight:             state.bodyweight       || null,
+    dashboardPanels:        state.dashboardPanels  || INITIAL_STATE.dashboardPanels,
     dashboardPanelOpen: state.dashboardPanelOpen || {},
   });
 }
@@ -1882,6 +1890,20 @@ function getRollingBlockConfig() {
   };
 }
 
+function getRollingBlockPhaseOffset() {
+  const cfg = getRollingBlockConfig();
+  const offset = Number(state.rollingBlockPhaseOffset);
+  if (!Number.isFinite(offset)) return 0;
+  return Math.max(0, Math.min(cfg.hardTarget, offset));
+}
+
+function getPhaseOffsetForPhase(phase) {
+  const cfg = getRollingBlockConfig();
+  const parsed = parseMesoWeekOverride(phase) || 1;
+  if (parsed >= 5) return cfg.hardTarget;
+  return Math.max(0, (parsed - 1) * cfg.sessionsPerPhase);
+}
+
 function isBlockCountedSession(session) {
   if (!session?.sessionId) return false;
   if (state.profile === 'je') return session.sessionId.startsWith('session-');
@@ -1916,7 +1938,9 @@ function getDeloadBlockSessionEquivalents() {
 
 function getRollingBlockPhase() {
   const cfg = getRollingBlockConfig();
-  const hardEquiv = getHardBlockSessionEquivalents();
+  const rawHardEquiv = getHardBlockSessionEquivalents();
+  const phaseOffset = getRollingBlockPhaseOffset();
+  const hardEquiv = rawHardEquiv + phaseOffset;
   const deloadEquiv = getDeloadBlockSessionEquivalents();
   const hardComplete = hardEquiv >= cfg.hardTarget;
   const complete = hardComplete && deloadEquiv >= cfg.deloadTarget;
@@ -1924,7 +1948,7 @@ function getRollingBlockPhase() {
     ? 5
     : Math.min(4, Math.floor(hardEquiv / cfg.sessionsPerPhase) + 1);
 
-  return { ...cfg, week, hardEquiv, deloadEquiv, hardComplete, complete };
+  return { ...cfg, week, hardEquiv, rawHardEquiv, phaseOffset, deloadEquiv, hardComplete, complete };
 }
 
 function getCurrentMesoWeek() {
@@ -1952,9 +1976,29 @@ function getMesoSetTarget(week) {
   return targets[week] || 3;
 }
 
+function buildRollingBlockSettingsPatch(dateVal, phaseVal) {
+  const currentDate = state.mesoStartDate || '';
+  const nextPhase = parseMesoWeekOverride(phaseVal) || getCurrentMesoWeek() || 1;
+  const dateChanged = (dateVal || '') !== currentDate;
+  const phaseChanged = nextPhase !== getCurrentMesoWeek();
+  const nextStartDate = phaseChanged && !dateChanged
+    ? localDateStr(new Date())
+    : (dateVal || null);
+  const nextOffset = phaseChanged
+    ? getPhaseOffsetForPhase(nextPhase)
+    : dateChanged ? 0 : getRollingBlockPhaseOffset();
+
+  return {
+    mesoStartDate: nextStartDate,
+    mesoWeekOverride: null,
+    rollingBlockPhaseOffset: nextOffset,
+  };
+}
+
 function saveMesoSettings() {
   const dateVal = document.getElementById('meso-start-date').value;
-  setState({ mesoStartDate: dateVal || null, mesoWeekOverride: null });
+  const phaseVal = document.getElementById('meso-week-override').value;
+  setState(buildRollingBlockSettingsPatch(dateVal, phaseVal));
   syncMesoInputs();
 
   renderProgramme();
@@ -1982,20 +2026,20 @@ function updateMesoDisplay() {
 
 function syncMesoInputs() {
   const dateValue = state.mesoStartDate || '';
-  const phaseValue = state.mesoStartDate ? getCurrentMesoWeek() : '';
+  const phaseValue = getCurrentMesoWeek();
   const dateEl = document.getElementById('meso-start-date');
   const weekEl = document.getElementById('meso-week-override');
   const sDateEl = document.getElementById('s-meso-date');
   const sWeekEl = document.getElementById('s-meso-week');
   if (dateEl) dateEl.value = dateValue;
-  if (weekEl) weekEl.value = phaseValue;
+  if (weekEl && document.activeElement !== weekEl) weekEl.value = phaseValue;
   if (sDateEl) sDateEl.value = dateValue;
-  if (sWeekEl) sWeekEl.value = phaseValue;
+  if (sWeekEl && document.activeElement !== sWeekEl) sWeekEl.value = phaseValue;
 }
 
 function startNewMesocycle() {
   const today = localDateStr(new Date());
-  setState({ mesoStartDate: today, mesoWeekOverride: null });
+  setState({ mesoStartDate: today, mesoWeekOverride: null, rollingBlockPhaseOffset: 0 });
   syncMesoInputs();
 
   state._selectedMesoWeek = null;
@@ -4983,6 +5027,7 @@ async function saveProgrammeToDrive() {
       profile: state.profile,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
+      rollingBlockPhaseOffset: state.rollingBlockPhaseOffset || 0,
       bodyweight: state.bodyweight,
       weightLog: state.weightLog || [],
       dashboardPanels: state.dashboardPanels || INITIAL_STATE.dashboardPanels,
@@ -5039,6 +5084,7 @@ async function loadProgrammeFromDrive() {
     const settingsPatch = {};
     if ('mesoStartDate' in config) settingsPatch.mesoStartDate = config.mesoStartDate || null;
     if ('mesoWeekOverride' in config) settingsPatch.mesoWeekOverride = settingsPatch.mesoStartDate ? null : (config.mesoWeekOverride || null);
+    if ('rollingBlockPhaseOffset' in config) settingsPatch.rollingBlockPhaseOffset = Number.isFinite(Number(config.rollingBlockPhaseOffset)) ? Number(config.rollingBlockPhaseOffset) : 0;
     if (Array.isArray(config.weightLog)) {
       settingsPatch.weightLog = config.weightLog;
       settingsPatch.bodyweight = config.weightLog.length
@@ -5056,9 +5102,9 @@ async function loadProgrammeFromDrive() {
       const sEl = document.getElementById('s-meso-date');
       if (sEl) sEl.value = state.mesoStartDate || '';
       const weekEl = document.getElementById('meso-week-override');
-      if (weekEl) weekEl.value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
+      if (weekEl) weekEl.value = getCurrentMesoWeek();
       const sWeekEl = document.getElementById('s-meso-week');
-      if (sWeekEl) sWeekEl.value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
+      if (sWeekEl) sWeekEl.value = getCurrentMesoWeek();
       const bwEl = document.getElementById('s-bw');
       if (bwEl) bwEl.value = state.bodyweight || '';
       renderWeightLog();
@@ -5770,7 +5816,7 @@ function calcWeekVolume(weekNum) {
       .reduce((sum, s) => sum + calcSessionVolume(s), 0);
   }
 
-  let hardEquivBefore = 0;
+  let hardEquivBefore = getRollingBlockPhaseOffset();
   return sessions
     .filter(s => ['complete', 'partial'].includes(s.status) && !isLegacyDeloadSession(s))
     .reduce((sum, s) => {
@@ -9164,7 +9210,7 @@ function openSettings() {
   document.getElementById('s-name').value = profile.name;
   document.getElementById('s-bw').value = state.bodyweight || '';
   document.getElementById('s-meso-date').value = state.mesoStartDate || '';
-  document.getElementById('s-meso-week').value = state.mesoStartDate ? getCurrentMesoWeek() : (state.mesoWeekOverride || '');
+  document.getElementById('s-meso-week').value = getCurrentMesoWeek();
 
   // Sync drive status
   const dot  = document.getElementById('settings-drive-dot');
@@ -9288,6 +9334,7 @@ function saveProfileSettings() {
   const name = document.getElementById('s-name').value.trim();
   const bw   = parseFloat(document.getElementById('s-bw').value) || null;
   const date = document.getElementById('s-meso-date').value;
+  const phase = document.getElementById('s-meso-week').value;
 
   if (name) state.programme.name = name;
 
@@ -9303,14 +9350,8 @@ function saveProfileSettings() {
     patch.bodyweight = bw;
   }
 
-  if (date) {
-    patch.mesoStartDate    = date || null;
-    patch.mesoWeekOverride = null;
-    document.getElementById('meso-start-date').value = date;
-  } else {
-    patch.mesoStartDate    = date || null;
-    patch.mesoWeekOverride = null;
-  }
+  Object.assign(patch, buildRollingBlockSettingsPatch(date, phase));
+  document.getElementById('meso-start-date').value = patch.mesoStartDate || '';
 
   // Save band config (not in state — stored in BAND_KG constant)
   ['yellow','green','red','blue','black'].forEach(b => {
