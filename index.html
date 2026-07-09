@@ -429,7 +429,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.4.0';
+const APP_VERSION = '4.6.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1002,11 +1002,13 @@ const PROGRAMMES = {
           desc: 'Start in a wide push-up position. As you lower, shift your weight to one side while the other arm extends straight. The working arm handles near-full bodyweight at an extended range of motion. Alternate sides each rep.' },
           { num: '04', name: 'Banded Chest Fly', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Blue band', prog: 'Blue → Black band', notes: 'Deep pec stretch. 2s controlled return.',
           desc: 'Band anchored behind you at chest height, one end in each hand. Arms slightly bent, bring hands together in a wide arc. Emphasis on pec stretch at the extended position. Squeeze at the top.' },
-          { num: '05', name: 'Overhead Tricep Extension', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '10–12', repRange: [10,12], load: '8+12 = 20 kg (two KBs)', prog: '8+16 = 24 kg', notes: 'Long head fully stretched. Elbows narrow.',
+          { num: '05', name: 'KB Gorilla Row', tags: ['compound', 'unilateral', 'superset'], type: 'compound', sets: '3', maxSets: 3, reps: '8–10', repRange: [8,10], load: '16 kg / arm', prog: '20 kg / arm', notes: 'Superset with Banded Chest Fly — row during its rest. Push:pull balance. Fixed 3 sets to protect session time.',
+          desc: 'Two KBs on the floor between your feet, hinge position like a deadlift hold. Row one KB to your hip while the other hand rests on the second KB for support. Alternate arms. Heavy horizontal pull that balances the pressing volume of this session.' },
+          { num: '06', name: 'Overhead Tricep Extension', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '10–12', repRange: [10,12], load: '8+12 = 20 kg (two KBs)', prog: '8+16 = 24 kg', notes: 'Long head fully stretched. Elbows narrow.',
           desc: 'Hold two KBs or one heavy KB overhead with both hands. Lower behind your head by bending the elbows, keeping upper arms vertical. Targets the long head of the tricep in its fully stretched position.' },
-          { num: '06', name: 'Dead Bug', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '10', repRange: [10,10], load: 'BW', prog: 'Add KB hold overhead', notes: 'Optional core. Lower back stays flat. Exhale on extension.',
+          { num: '07', name: 'Dead Bug', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '10', repRange: [10,10], load: 'BW', prog: 'Add KB hold overhead', notes: 'Optional core. Lower back stays flat. Exhale on extension.',
           desc: 'Lie on back, arms vertical, hips and knees at 90°. Lower one arm and the opposite leg simultaneously while keeping the lower back flat on the floor. The lower back must not arch. Exhale as you extend. Core stability, not a crunch.' },
-          { num: '07', name: 'Hollow Body Hold', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '30s', repRange: [1,1], load: 'BW', prog: 'Extend hold time', notes: 'Optional core. Arms and legs extended, lower back imprinted.',
+          { num: '08', name: 'Hollow Body Hold', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '30s', repRange: [1,1], load: 'BW', prog: 'Extend hold time', notes: 'Optional core. Arms and legs extended, lower back imprinted.',
           desc: 'Lie on back, arms overhead, legs extended. Press lower back into the floor and lift shoulders and legs slightly. The body forms a slight hollow shape. Hold. If too hard, bend the knees or bring arms to sides. Core anti-extension.' },
         ]
       },
@@ -1072,14 +1074,16 @@ const PROGRAMMES = {
           desc: 'Band anchored under your foot, pressing overhead. The low anchor means the shoulder starts in a lengthened, loaded position — unlike a rack-start press. Targets the anterior delt through a longer range than standard overhead pressing.' },
           { num: '03', name: 'Banded Lateral Raise', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
           desc: 'Band anchored low or under foot, one end in each hand. Raise arms to shoulder height leading with the elbows, not the hands. Stop at parallel. Primary medial delt isolation. The band provides ascending resistance — hardest at the top.' },
-          { num: '04', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12', repRange: [12,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
+          { num: '04', name: 'Banded Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3', maxSets: 3, reps: '12–15', repRange: [12,15], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'Superset with Banded Lateral Raise — pull during its rest. Lat volume without a pull-up bar. Fixed 3 sets to protect session time.',
+          desc: 'Band on high door anchor. Arms straight, hinge slightly forward, pull the band down to your hips in a wide arc using the lats only. Full stretch overhead at the top, squeeze at the bottom. Balances the pressing volume of this session.' },
+          { num: '05', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12', repRange: [12,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
           desc: 'Band under feet, both hands. Pull to chin with elbows leading wide and high. Hits medial delt and upper traps. Stop if you feel any shoulder impingement — reduce range of motion before reducing weight.' },
-          { num: '05', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
+          { num: '06', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
           desc: 'Lie on back, upper arm vertical. Lower KB to temple by bending the elbow only. Upper arm stays completely still. Targets the lateral head of the tricep. Moved to Push B so triceps receive direct isolation twice weekly.' },
-          { num: '06', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
+          { num: '07', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
           desc: 'Band at waist height, elbow pinned to side at 90°. Rotate forearm outward only — no movement at the shoulder or elbow. Prehab. Never skip, never increase load aggressively. Keeps the shoulder healthy for all pressing.' },
-          { num: '07', name: 'Plank', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '45s', repRange: [1,1], load: 'BW', prog: 'Extend hold → add plate on back', notes: 'Optional core. Full body tension. Hips level.' },
-          { num: '08', name: 'Ab Wheel Rollout', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Extend ROM gradually', notes: 'Optional core. Full extension if lower back allows.' },
+          { num: '08', name: 'Plank', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '45s', repRange: [1,1], load: 'BW', prog: 'Extend hold → add plate on back', notes: 'Optional core. Full body tension. Hips level.' },
+          { num: '09', name: 'Ab Wheel Rollout', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Extend ROM gradually', notes: 'Optional core. Full extension if lower back allows.' },
         ]
       },
       {
@@ -2936,11 +2940,13 @@ function endSession() {
 
 function saveSession(exerciseData, status) {
   closeModal();
+  // Detect rep PRs against history BEFORE this session joins it
+  const newPRs = status === 'complete' ? detectNewPRs(exerciseData) : [];
   const session = {
     id: Date.now().toString(),
     sessionId: state.activeSessionId,
     sessionName: state.programme.sessions.find(s => s.id === state.activeSessionId)?.name,
-    date: new Date().toISOString().split('T')[0],
+    date: localDateStr(new Date()),
     startTime: state.startTime?.toISOString(),
     endTime: state.endTime?.toISOString(),
     duration: state.startTime && state.endTime ? getDuration(state.startTime, state.endTime) : null,
@@ -2958,6 +2964,12 @@ function saveSession(exerciseData, status) {
   // ── Post-save hooks ──────────────────────────
   // 1. Je milestone check (before cancelSession clears state)
   if (status === 'complete') checkJeMilestones(exerciseData);
+
+  // 1b. New rep PR toast
+  if (newPRs.length) {
+    const msg = newPRs.map(p => `${p.exercise}: ${p.load} kg × ${p.reps}`).join(' · ');
+    setTimeout(() => toast(`🏆 New rep PR — ${msg}`, 'success'), 600);
+  }
 
   // 2. Deload review prompt (week 5, complete session, Alex only)
   if (status === 'complete' && isDeloadWeek() && state.profile === 'alex') {
@@ -3143,9 +3155,237 @@ function getRepRange(exName) {
   return [8,12];
 }
 
+/* ═══════════════════════════════════════════
+   LOGIC — STRENGTH METRICS
+   e1RM estimates, rep PRs, weekly hard sets
+   per muscle group.
+   Future home: /js/logic/strength.js
+═══════════════════════════════════════════ */
+
+// RIR-adjusted Epley estimate. Only valid for numeric (KB) loads
+// and rep counts where the formula stays reliable (≤15 reps).
+function calcSetE1RM(load, reps, rir) {
+  const kg = parseFloat(load);
+  const r  = parseInt(reps);
+  if (isNaN(kg) || kg <= 0 || isNaN(r) || r <= 0 || r > 15) return null;
+  const buffer = isNaN(parseFloat(rir)) ? 0 : Math.min(parseFloat(rir), 5);
+  return +(kg * (1 + (r + buffer) / 30)).toFixed(1);
+}
+
+// Best e1RM across an exercise's sets in one logged session
+function getSessionBestE1RM(ex) {
+  if (!ex || !ex.sets) return null;
+  let best = null;
+  ex.sets.forEach(s => {
+    const v = calcSetE1RM(s.load, s.reps, s.rir);
+    if (v !== null && (best === null || v > best)) best = v;
+  });
+  return best;
+}
+
+// Rep PR: heaviest load ever used, and the most reps at that load.
+// KB (numeric-load) exercises only. Returns { load, reps, date } or null.
+function getRepPR(exName, sessions) {
+  let best = null;
+  (sessions || state.sessions)
+    .filter(s => s.status === 'complete')
+    .forEach(sess => {
+      const ex = (sess.exercises || []).find(e => e.name === exName);
+      if (!ex) return;
+      (ex.sets || []).forEach(set => {
+        const kg = parseFloat(set.load);
+        const r  = parseInt(set.reps);
+        if (isNaN(kg) || kg <= 0 || isNaN(r) || r <= 0) return;
+        if (!best || kg > best.load || (kg === best.load && r > best.reps)) {
+          best = { load: kg, reps: r, date: sess.date };
+        }
+      });
+    });
+  return best;
+}
+
+// Compare a just-finished session's sets against prior history.
+// Call BEFORE the session is pushed into state.sessions.
+// Returns [{ exercise, load, reps }] of new rep PRs.
+function detectNewPRs(exerciseData) {
+  const prs = [];
+  (exerciseData || []).forEach(ex => {
+    let bestNew = null;
+    (ex.sets || []).forEach(set => {
+      const kg = parseFloat(set.load);
+      const r  = parseInt(set.reps);
+      if (isNaN(kg) || kg <= 0 || isNaN(r) || r <= 0) return;
+      if (!bestNew || kg > bestNew.load || (kg === bestNew.load && r > bestNew.reps)) {
+        bestNew = { load: kg, reps: r };
+      }
+    });
+    if (!bestNew) return;
+    const prev = getRepPR(ex.name);
+    if (!prev || bestNew.load > prev.load || (bestNew.load === prev.load && bestNew.reps > prev.reps)) {
+      prs.push({ exercise: ex.name, load: bestNew.load, reps: bestNew.reps });
+    }
+  });
+  return prs;
+}
+
+// Best e1RM per key (compound) lift: last `days` vs the previous
+// equal window. Only lifts with a computable e1RM appear.
+function getE1RMComparison(days = 28) {
+  const mid = new Date(); mid.setDate(mid.getDate() - days);
+  const old = new Date(); old.setDate(old.getDate() - days * 2);
+  const seen = new Set();
+  const results = [];
+  state.programme.sessions.forEach(sc => {
+    sc.exercises.forEach(ec => {
+      if (ec.type !== 'compound' || seen.has(ec.name)) return;
+      seen.add(ec.name);
+      let cur = null, prev = null;
+      state.sessions.forEach(sess => {
+        if (sess.status !== 'complete' || !sess.date) return;
+        const ex = (sess.exercises || []).find(e => e.name === ec.name);
+        const v = getSessionBestE1RM(ex);
+        if (v === null) return;
+        const d = new Date(sess.date);
+        if (d >= mid)      cur  = Math.max(cur  === null ? 0 : cur,  v);
+        else if (d >= old) prev = Math.max(prev === null ? 0 : prev, v);
+      });
+      if (cur !== null) results.push({ exercise: ec.name, cur, prev });
+    });
+  });
+  return results.sort((a, b) => b.cur - a.cur);
+}
+
+// Ordered keyword → muscle-group rules; first match wins, so
+// specific patterns must come before generic ones (e.g. 'upright
+// row' before 'row', 'hamstring' before 'curl').
+const MUSCLE_RULES = [
+  ['hamstring',     ['hamstrings']],
+  ['quad nordic',   ['quads']],
+  ['reverse nordic',['quads']],
+  ['nordic',        ['hamstrings']],
+  ['upright row',   ['shoulders']],
+  ['face pull',     ['shoulders']],
+  ['rear delt',     ['shoulders']],
+  ['lateral raise', ['shoulders']],
+  ['pull-apart',    ['back']],
+  ['pulldown',      ['back']],
+  ['pull-up',       ['back']],
+  ['chin-up',       ['back']],
+  ['overhead pull', ['back']],
+  ['row',           ['back']],
+  ['tricep',        ['triceps']],
+  ['skullcrusher',  ['triceps']],
+  ['pushdown',      ['triceps']],
+  ['curl',          ['biceps']],
+  ['chest fly',     ['chest']],
+  ['floor press',   ['chest']],
+  ['incline press', ['chest']],
+  ['bench',         ['chest']],
+  ['push-up',       ['chest']],
+  ['pushup',        ['chest']],
+  ['dip',           ['chest']],
+  ['press',         ['shoulders']],
+  ['deadlift',      ['hamstrings','glutes']],
+  ['rdl',           ['hamstrings','glutes']],
+  ['good morning',  ['hamstrings']],
+  ['swing',         ['glutes','hamstrings']],
+  ['hip thrust',    ['glutes']],
+  ['glute bridge',  ['glutes']],
+  ['band walk',     ['glutes']],
+  ['bound',         ['glutes']],
+  ['sissy',         ['quads']],
+  ['squat',         ['quads','glutes']],
+  ['lunge',         ['quads','glutes']],
+  ['step-up',       ['quads','glutes']],
+  ['tuck jump',     ['quads']],
+  ['calf',          ['calves']],
+  ['pogo',          ['calves']],
+  ['tibialis',      ['calves']],
+  ['clean',         ['glutes']],
+  ['snatch',        ['glutes']],
+  ['windmill',      ['core']],
+  ['get-up',        ['core']],
+  ['dead bug',      ['core']],
+  ['plank',         ['core']],
+  ['hollow',        ['core']],
+  ['ab wheel',      ['core']],
+];
+
+function getMuscleGroups(exName) {
+  const n = (exName || '').toLowerCase();
+  for (const [kw, muscles] of MUSCLE_RULES) {
+    if (n.includes(kw)) return muscles;
+  }
+  return null;
+}
+
+// Hard sets per muscle group in a rolling window. A hard set =
+// reps logged, on a non-optional/non-prehab exercise, at RIR ≤ 4
+// (sets without RIR logged count — assume working set).
+function getWeeklyHardSets(days = 7, offsetDays = 0) {
+  const end = new Date();
+  end.setDate(end.getDate() - offsetDays);
+  const cutoff = new Date(end);
+  cutoff.setDate(end.getDate() - days);
+  const counts = {};
+  const allConfigs = state.programme.sessions.flatMap(s => s.exercises);
+  state.sessions.forEach(sess => {
+    if (sess.status !== 'complete' || !sess.date) return;
+    const d = new Date(sess.date);
+    if (d < cutoff || d >= end) return;
+    (sess.exercises || []).forEach(ex => {
+      const cfg = allConfigs.find(e => e.name === ex.name);
+      if (cfg?.tags?.includes('optional') || cfg?.tags?.includes('prehab')) return;
+      const muscles = getMuscleGroups(ex.name);
+      if (!muscles) return;
+      (ex.sets || []).forEach(set => {
+        if (!(parseInt(set.reps) > 0)) return;
+        const rir = parseFloat(set.rir);
+        if (!isNaN(rir) && rir > 4) return;
+        muscles.forEach(m => { counts[m] = (counts[m] || 0) + 1; });
+      });
+    });
+  });
+  return counts;
+}
+
+// Per-session best e1RM points for one exercise, chronological,
+// within the last `days` days. Feeds the dashboard sparklines.
+function getE1RMSeriesForExercise(exName, days = 84) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const pts = [];
+  state.sessions.forEach(sess => {
+    if (sess.status !== 'complete' || !sess.date) return;
+    if (new Date(sess.date) < cutoff) return;
+    const ex = (sess.exercises || []).find(e => e.name === exName);
+    const v = getSessionBestE1RM(ex);
+    if (v !== null) pts.push({ date: sess.date, v });
+  });
+  return pts.sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+// Tiny inline-SVG line for stat tiles. Single series — no legend,
+// no axes; the tile's label and value carry the identity.
+function buildSparklineSVG(pts, color, w = 140, h = 34) {
+  if (!pts || pts.length < 2) return '';
+  const vals = pts.map(p => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || 1;
+  const px = i => +(4 + i / (pts.length - 1) * (w - 8)).toFixed(1);
+  const py = v => +(h - 5 - (v - min) / span * (h - 10)).toFixed(1);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + px(i) + ' ' + py(p.v)).join(' ');
+  const li = pts.length - 1;
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:' + h + 'px;display:block" role="img">' +
+    '<title>' + pts[0].v + ' → ' + pts[li].v + ' kg over ' + pts.length + ' sessions</title>' +
+    '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="' + px(li) + '" cy="' + py(pts[li].v) + '" r="3" fill="' + color + '"/>' +
+    '</svg>';
+}
+
 function getSessionAccentColor(sessionId) {
   const sess = state.programme.sessions.find(s => s.id === sessionId);
-  return resolveCSSColor(sess?.color || 'var(--push-a)');
+  return polarisSeriesColor(sess?.color || 'var(--push-a)');
 }
 
 // Chart.js can't parse 'var(--x)' — resolve to the computed value
@@ -3153,6 +3393,59 @@ function resolveCSSColor(color) {
   if (!color || !color.startsWith('var(')) return color;
   const name = color.slice(4, -1).trim();
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#546B41';
+}
+
+/* ── Polaris Viz palette (design instructions) ──────────────────
+   Chart-only colour system. Deliberately decoupled from the app's
+   warm cream/forest theme (--push-a, --pull, etc.) — those still
+   drive the rest of the UI (pips, dots). Only chart series, points,
+   and bars read from this table, per the "revisit graph colours"
+   brief.
+
+   6 categorical series colours + a blue-gray neutral scale for
+   muted/comparison series (deload, transition) — mirrors Polaris
+   Viz's own `isComparison` convention of gray bars for de-emphasised
+   series. Session→colour mapping is a best-effort remap onto the
+   fixed 6-hue palette (there is no 8+ series equivalent documented),
+   so a couple of session types intentionally share a hue; that's a
+   real limitation of only having 6 categorical values, not an
+   oversight. ──────────────────────────────────────────────────── */
+const POLARIS_CATEGORICAL = {
+  skyBlue: '#05C7F2',
+  green:   '#0FCA7A',
+  orange:  '#F7A23B',
+  coral:   '#F75D5F',
+  yellow:  '#FBC62F',
+  purple:  '#695CFB',
+};
+const POLARIS_BLUEGRAY = {
+  5: '#829AB1',
+  7: '#486581',
+};
+const POLARIS_SESSION_MAP = {
+  '--push-a':       POLARIS_CATEGORICAL.orange,   // chest/triceps
+  '--pull':         POLARIS_CATEGORICAL.skyBlue,  // back/biceps
+  '--legs-a':       POLARIS_CATEGORICAL.yellow,   // quad focus
+  '--push-b':       POLARIS_CATEGORICAL.purple,   // shoulders
+  '--legs-b':       POLARIS_CATEGORICAL.coral,    // hinge/glutes
+  '--kb-flow':      POLARIS_CATEGORICAL.green,    // full body
+  '--deload':       POLARIS_BLUEGRAY[5],          // recovery — muted, not categorical
+  '--transition-c': POLARIS_BLUEGRAY[7],          // transition — muted, not categorical
+  '--session-a':    POLARIS_CATEGORICAL.skyBlue,
+  '--session-b':    POLARIS_CATEGORICAL.yellow,
+  '--accent':       POLARIS_CATEGORICAL.green,
+  '--text-dim':     POLARIS_BLUEGRAY[5],
+};
+const POLARIS_GOLD = '#FBC62F'; // single "strength/e1RM" token, replaces old amber gold
+
+function polarisSeriesColor(cssVarString) {
+  if (!cssVarString) return POLARIS_CATEGORICAL.skyBlue;
+  const match = cssVarString.match(/--[\w-]+/);
+  const key = match ? match[0] : null;
+  if (key && POLARIS_SESSION_MAP[key]) return POLARIS_SESSION_MAP[key];
+  // Already a resolved hex/rgb (not a var() reference) — pass through.
+  if (!cssVarString.startsWith('var(')) return cssVarString;
+  return resolveCSSColor(cssVarString);
 }
 
 function get2MesoCycleSessions(sessionId) {
@@ -3189,6 +3482,7 @@ function buildHistoryCard(s) {
   const partialCls  = s.status === 'partial' ? 'partial' : '';
   const session     = state.programme.sessions.find(p => p.id === s.sessionId);
   const color       = session?.color || 'var(--text-dim)';
+  const chartColor  = polarisSeriesColor(color); // graph-only recolour; `color` still drives the pip below
   const totalSets   = s.exercises.reduce((acc, ex) => acc + ex.sets.filter(set => set.reps).length, 0);
 
   const exDetail = s.exercises.map(ex => {
@@ -3210,8 +3504,8 @@ function buildHistoryCard(s) {
   const firstEx   = chartExes[0]?.name || '';
 
   const exPills = chartExes.map((ex, i) =>
-    `<button class="chart-ex-pill${i===0?' active':''}" 
-      style="${i===0?'background:'+color+';border-color:'+color+';':''}"
+    `<button class="chart-ex-pill${i===0?' active':''}"
+      style="${i===0?'background:'+chartColor+';border-color:'+chartColor+';':''}"
       onclick="switchChartExercise('${s.id}','${ex.name}',this)">${ex.name}</button>`
   ).join('');
 
@@ -3239,7 +3533,7 @@ function buildHistoryCard(s) {
       ${s.notes ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:12px">📝 ${s.notes}</div>` : ''}
       <div style="margin-bottom:10px">${exDetail || '<span style="color:var(--text-muted);font-size:11px">No exercise data logged.</span>'}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <button class="show-graph-btn" id="graph-btn-${s.id}" onclick="toggleGraph('${s.id}','${firstEx}','${color}')">📈 Show Graph</button>
+        <button class="show-graph-btn" id="graph-btn-${s.id}" onclick="toggleGraph('${s.id}','${firstEx}','${chartColor}')">📈 Show Graph</button>
         <button class="history-delete-btn" onclick="editSession('${s.id}')" style="margin-right:6px">✏ Edit</button>
         <button class="history-delete-btn" onclick="deleteSession('${s.id}')">Delete Session</button>
       </div>
@@ -3247,6 +3541,9 @@ function buildHistoryCard(s) {
         <div class="chart-ex-pills" id="chart-pills-${s.id}">${exPills}</div>
         <div class="chart-canvas-wrap">
           <canvas id="chart-${s.id}"></canvas>
+        </div>
+        <div class="chart-canvas-wrap chart-canvas-sub">
+          <canvas id="chart-sub-${s.id}"></canvas>
         </div>
         <div class="chart-axis-label" id="chart-axis-label-${s.id}"></div>
         <div class="chart-variant-note hidden" id="chart-variant-note-${s.id}"></div>
@@ -3269,9 +3566,11 @@ function toggleHistoryCard(id) {
     card.classList.remove('open');
     body.style.display = 'none';
     chev.style.transform = '';
-    // Destroy chart if open
-    const canvas = document.getElementById(`chart-${id}`);
-    if (canvas && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+    // Destroy charts if open
+    [`chart-${id}`, `chart-sub-${id}`].forEach(cid => {
+      const c = document.getElementById(cid);
+      if (c && Chart.getChart(c)) Chart.getChart(c).destroy();
+    });
     const wrap = document.getElementById(`chart-wrap-${id}`);
     if (wrap) wrap.classList.add('hidden');
     const btn = document.getElementById(`graph-btn-${id}`);
@@ -3289,7 +3588,9 @@ function toggleGraph(sessionId, exName, accentColor) {
     wrap.classList.add('hidden');
     btn.classList.remove('active');
     btn.textContent = '📈 Show Graph';
-    if (canvas && Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+    [canvas, document.getElementById(`chart-sub-${sessionId}`)].forEach(c => {
+      if (c && Chart.getChart(c)) Chart.getChart(c).destroy();
+    });
     return;
   }
 
@@ -3309,7 +3610,7 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   // Update pill active states
   const pillsContainer = document.getElementById(`chart-pills-${sessionId}`);
   if (pillsContainer) {
-    const accent = _chartState[sessionId]?.accentColor || 'rgba(0,212,160,0.9)';
+    const accent = _chartState[sessionId]?.accentColor || POLARIS_CATEGORICAL.skyBlue;
     pillsContainer.querySelectorAll('.chart-ex-pill').forEach(p => {
       p.classList.remove('active');
       p.style.background = '';
@@ -3323,16 +3624,17 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   }
 
   if (_chartState[sessionId]) _chartState[sessionId].activeEx = exName;
-  const accent = _chartState[sessionId]?.accentColor || 'rgba(0,212,160,0.9)';
+  const accent = _chartState[sessionId]?.accentColor || POLARIS_CATEGORICAL.skyBlue;
   renderExerciseChart(sessionId, exName, accent);
 }
 
 function renderExerciseChart(sessionId, exName, accentColor) {
-  accentColor = resolveCSSColor(accentColor);
+  accentColor = polarisSeriesColor(accentColor);
   const s = state.sessions.find(s => s.id === sessionId);
   if (!s) return;
 
-  const canvas = document.getElementById(`chart-${sessionId}`);
+  const canvas    = document.getElementById(`chart-${sessionId}`);
+  const subCanvas = document.getElementById(`chart-sub-${sessionId}`);
   if (!canvas) return;
 
   // Get 2 mesocycles of complete sessions for this session type
@@ -3343,201 +3645,232 @@ function renderExerciseChart(sessionId, exName, accentColor) {
     return;
   }
 
-  // Determine chart mode for this exercise across all sessions
   const mode = getExerciseMode(exName, related);
   const repRange = getRepRange(exName);
 
-  // Build data arrays
-  const labels     = [];
-  const volData    = [];
-  const ceilData   = [];
-  const variantChanges = [];
-  let lastVariant  = null;
-  let axisLabel    = 'Volume (kg × reps)';
-  let hasBWAndBand = false;
-  const bwRepsData = [];
-  const rirData    = [];
-
-  related.forEach((sess, i) => {
-    const ex = sess.exercises.find(e => e.name === exName);
-    if (!ex || !ex.sets.filter(s => s.reps).length) return;
-
-    // Detect variant change (exercise name change in same slot)
-    const currentVariant = ex.name;
-    if (lastVariant && currentVariant !== lastVariant) {
-      variantChanges.push({ date: sess.date, from: lastVariant, to: currentVariant });
-    }
-    lastVariant = currentVariant;
-
-    // Transition sessions: label by session number, not date
-    const sessConfig = state.programme.sessions.find(s => s.id === related[0]?.sessionId);
-    const isTransition = sessConfig && sessConfig.sessionType === 'transition';
-    labels.push(isTransition ? `S${labels.length + 1}` : formatDateITShort(sess.date));
-
-    const vol = calcVolume(ex, mode);
-    volData.push(vol ? Math.round(vol.volume) : 0);
-    if (vol) axisLabel = vol.label;
-
-    const ceil = calcCeilingPct(ex, repRange);
-    ceilData.push(ceil !== null ? ceil : 0);
-
-    // For BW+band dual axis: also collect pure reps
-    if (mode === 'bw+band' || mode === 'bw') {
-      const totalReps = ex.sets.filter(s=>s.reps).reduce((a,s)=>a+parseInt(s.reps),0);
-      bwRepsData.push(totalReps);
-    }
-
-    // Average RIR for this session (null if no RIR logged)
-    const rirs = ex.sets.map(s => parseFloat(s.rir)).filter(v => !isNaN(v));
-    rirData.push(rirs.length ? +(rirs.reduce((a,b)=>a+b,0) / rirs.length).toFixed(1) : null);
-  });
-
-  // Detect if mode switched from BW to BW+band mid-data
-  if (mode === 'bw+band' && bwRepsData.some(v=>v>0) && volData.some(v=>v>0)) {
-    hasBWAndBand = true;
+  // KB lifts: pre-compute which sessions set a new all-time rep PR,
+  // walking the FULL history so PRs before the chart window count.
+  const prSessionIds = new Set();
+  if (mode === 'kb') {
+    let best = null;
+    [...state.sessions]
+      .filter(x => x.status === 'complete')
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .forEach(sess => {
+        const ex = (sess.exercises || []).find(e => e.name === exName);
+        if (!ex) return;
+        (ex.sets || []).forEach(set => {
+          const kg = parseFloat(set.load);
+          const r  = parseInt(set.reps);
+          if (isNaN(kg) || kg <= 0 || isNaN(r) || r <= 0) return;
+          if (!best || kg > best.kg || (kg === best.kg && r > best.r)) {
+            best = { kg, r };
+            prSessionIds.add(sess.id);
+          }
+        });
+      });
   }
 
-  // Destroy existing chart
-  if (Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+  // Build per-session series. ONE primary measure on the top chart
+  // (e1RM for KB lifts, volume/reps otherwise), work-done bars in a
+  // companion chart below, everything else in the tooltip. No dual axes.
+  const labels = [], primaryData = [], barData = [], meta = [], variantChanges = [];
+  let lastVariant = null;
+  let barLabel = 'Volume (kg × reps)';
+
+  const sessConfig   = state.programme.sessions.find(x => x.id === related[0]?.sessionId);
+  const isTransition = sessConfig && sessConfig.sessionType === 'transition';
+
+  related.forEach(sess => {
+    const ex = sess.exercises.find(e => e.name === exName);
+    if (!ex || !ex.sets.filter(st => st.reps).length) return;
+
+    if (lastVariant && ex.name !== lastVariant) {
+      variantChanges.push({ date: sess.date, from: lastVariant, to: ex.name });
+    }
+    lastVariant = ex.name;
+
+    labels.push(isTransition ? `S${labels.length + 1}` : formatDateITShort(sess.date));
+
+    const sets = ex.sets.filter(st => st.reps);
+    const totalReps = sets.reduce((a, st) => a + (parseInt(st.reps) || 0), 0);
+    const vol = calcVolume(ex, mode);
+
+    // Primary measure (top chart)
+    if (mode === 'kb') primaryData.push(getSessionBestE1RM(ex));
+    else primaryData.push(vol ? Math.round(vol.volume) : null);
+
+    // Companion bars (bottom chart) — mode-appropriate work measure
+    if (mode === 'kb') {
+      barData.push(vol ? Math.round(vol.volume) : 0);
+      barLabel = 'Volume (kg × reps)';
+    } else if (mode === 'band' || mode === 'bw+band') {
+      barData.push(totalReps);
+      barLabel = 'Total reps';
+    } else {
+      barData.push(sets.length);
+      barLabel = 'Sets';
+    }
+
+    const ceilingHit = sets.length > 0 && sets.every(st => parseInt(st.reps) >= repRange[1]);
+    const rirs  = sets.map(st => parseFloat(st.rir)).filter(v => !isNaN(v));
+    const loads = [...new Set(sets.map(st => (st.load || 'BW').toString()))];
+    const setsStr = loads.length === 1
+      ? `${loads[0]} × ${sets.map(st => st.reps).join('/')}`
+      : sets.map(st => `${st.load || 'BW'}×${st.reps}`).join(' · ');
+    meta.push({
+      sets: setsStr,
+      rir: rirs.length ? +(rirs.reduce((a, b) => a + b, 0) / rirs.length).toFixed(1) : null,
+      ceiling: ceilingHit,
+      deload: sess.mesoWeek === 5,
+      pr: prSessionIds.has(sess.id),
+    });
+  });
+
+  // Destroy both existing charts before re-rendering
+  [canvas, subCanvas].forEach(c => { if (c && Chart.getChart(c)) Chart.getChart(c).destroy(); });
 
   const isDark    = document.documentElement.getAttribute('data-theme') === 'dark';
   const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(84,107,65,0.08)';
   const tickColor = isDark ? '#3a4533' : '#8A8070';
+  const surface   = isDark ? '#252B1F' : '#FFF8EC';
   const tooltipBg = isDark ? 'rgba(26,31,22,0.96)' : 'rgba(255,248,236,0.96)';
   const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(84,107,65,0.15)';
   const monoFont  = { family: 'DM Mono', size: 9 };
+  const tooltipStyle = {
+    backgroundColor: tooltipBg, borderColor: tooltipBorder, borderWidth: 1,
+    titleFont: monoFont, bodyFont: monoFont,
+    titleColor: isDark ? '#e8e9ea' : '#2C2C2C',
+    bodyColor: isDark ? '#6b6d72' : '#5A5A5A',
+    padding: 10,
+  };
 
-  const datasets = [];
+  const primaryColor = mode === 'kb' ? POLARIS_GOLD : accentColor;
+  const primaryLabel = mode === 'kb' ? 'Est. 1RM (kg)'
+                     : (mode === 'bw' ? 'Total Reps' : 'Band Volume (kg·reps)');
 
-  // Primary: volume line
-  datasets.push({
-    label: mode === 'bw' ? 'Total Reps' : 'Volume',
-    data: volData,
-    borderColor: accentColor,
-    backgroundColor: accentColor + '18',
-    tension: 0.35,
-    pointRadius: 3,
-    pointBackgroundColor: accentColor,
-    borderWidth: 2,
-    yAxisID: 'yVol',
-    fill: true,
-  });
+  // Point encoding: ★ = new all-time rep PR, filled dot = every set hit
+  // the rep ceiling, hollow dot = normal session. Shape, not colour.
+  const pointStyles = meta.map(m => m.pr ? 'star' : 'circle');
+  const pointRadii  = meta.map(m => m.pr ? 7 : (m.ceiling ? 4 : 3));
+  const pointFills  = meta.map(m => (m.pr || m.ceiling) ? primaryColor : surface);
 
-  // Secondary: % at rep ceiling
-  datasets.push({
-    label: '% Sets at Ceiling',
-    data: ceilData,
-    borderColor: 'rgba(180,180,180,0.4)',
-    backgroundColor: 'transparent',
-    tension: 0.35,
-    pointRadius: 2,
-    borderWidth: 1,
-    borderDash: [4,3],
-    yAxisID: 'yCeil',
-    pointBackgroundColor: 'rgba(180,180,180,0.4)',
-  });
-
-  // Dual axis for BW+Band transition
-  if (hasBWAndBand) {
-    datasets.push({
-      label: 'Reps (pre-band)',
-      data: bwRepsData,
-      borderColor: 'rgba(255,194,51,0.5)',
-      backgroundColor: 'transparent',
-      tension: 0.35,
-      pointRadius: 2,
-      borderWidth: 1,
-      borderDash: [2,4],
-      yAxisID: 'yVol',
-    });
-  }
-
-  // RIR trend — only when RIR was logged at least twice
-  const rirPurple = isDark ? '#C090F8' : '#6B4AA0';
-  const hasRIR = rirData.filter(v => v !== null).length >= 2;
-  if (hasRIR) {
-    datasets.push({
-      label: 'Avg RIR',
-      data: rirData,
-      borderColor: rirPurple,
-      backgroundColor: 'transparent',
-      tension: 0.35,
-      pointRadius: 2,
-      borderWidth: 1.5,
-      borderDash: [6,3],
-      yAxisID: 'yRir',
-      pointBackgroundColor: rirPurple,
-      spanGaps: true,
-    });
-  }
-
-  const chart = new Chart(canvas, {
+  const topChart = new Chart(canvas, {
     type: 'line',
-    data: { labels, datasets },
+    data: {
+      labels,
+      datasets: [{
+        label: primaryLabel,
+        data: primaryData,
+        borderColor: primaryColor,
+        backgroundColor: primaryColor + '14',
+        tension: 0.35,
+        borderWidth: 2,
+        pointStyle: pointStyles,
+        pointRadius: pointRadii,
+        pointHoverRadius: 8,
+        pointBackgroundColor: pointFills,
+        pointBorderColor: primaryColor,
+        pointBorderWidth: 1.5,
+        fill: true,
+        spanGaps: true,
+      }],
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: {
-          labels: {
-            color: tickColor,
-            font: monoFont,
-            boxWidth: 8,
-            padding: 8,
-            usePointStyle: true,
-            pointStyle: 'line',
-            pointStyleWidth: 16,
-          }
-        },
+        legend: { display: false },
         tooltip: {
-          backgroundColor: tooltipBg,
-          borderColor: tooltipBorder,
-          borderWidth: 1,
-          titleFont: monoFont,
-          bodyFont: monoFont,
-          titleColor: isDark ? '#e8e9ea' : '#2C2C2C',
-          bodyColor: isDark ? '#6b6d72' : '#5A5A5A',
-          padding: 10,
-        }
+          ...tooltipStyle,
+          callbacks: {
+            label: ctx => `${primaryLabel}: ${ctx.parsed.y}${mode === 'kb' ? ' kg' : ''}`,
+            afterBody: items => {
+              const m = meta[items[0].dataIndex];
+              if (!m) return [];
+              const lines = [m.sets];
+              if (m.rir !== null) lines.push(`Avg RIR ${m.rir}`);
+              const flags = [];
+              if (m.pr) flags.push('🏆 Rep PR');
+              if (m.ceiling) flags.push('rep ceiling hit');
+              if (m.deload) flags.push('deload week');
+              if (flags.length) lines.push(flags.join(' · '));
+              return lines;
+            },
+          },
+        },
       },
       scales: {
-        x: {
-          ticks: { color: tickColor, font: monoFont, maxRotation: 45 },
-          grid:  { color: gridColor }
-        },
-        yVol: {
-          type: 'linear',
-          position: 'left',
+        x: { ticks: { display: false }, grid: { color: gridColor } },
+        y: {
           ticks: { color: tickColor, font: monoFont },
           grid:  { color: gridColor },
-          title: { display: true, text: axisLabel, color: tickColor, font: { size: 8 } }
+          title: { display: true, text: mode === 'kb' ? 'e1RM kg' : primaryLabel, color: tickColor, font: { size: 8 } },
         },
-        yCeil: {
-          type: 'linear',
-          position: 'right',
-          min: 0, max: 100,
-          ticks: { color: 'rgba(180,180,180,0.35)', font: monoFont, callback: v => v + '%' },
-          grid:  { drawOnChartArea: false },
-          title: { display: true, text: '% ceiling', color: 'rgba(180,180,180,0.35)', font: { size: 8 } }
-        },
-        ...(hasRIR ? { yRir: {
-          type: 'linear',
-          position: 'right',
-          min: 0, max: 5,
-          ticks: { color: rirPurple, font: monoFont },
-          grid:  { drawOnChartArea: false },
-          title: { display: true, text: 'RIR', color: rirPurple, font: { size: 8 } }
-        }} : {})
-      }
-    }
+      },
+    },
   });
 
-  _chartInstances[sessionId] = chart;
+  // Companion bars: work done per session. Separate chart = separate
+  // scale — never a second axis on the top chart. Deload bars muted.
+  let subChart = null;
+  if (subCanvas) {
+    // Deload = de-emphasised/comparison series → blue-gray neutral,
+    // not a categorical hue (mirrors Polaris Viz's isComparison: gray
+    // bars convention).
+    const barColors = meta.map(m => m.deload
+      ? (isDark ? POLARIS_BLUEGRAY[5] : '#BCCCDC')
+      : accentColor + 'B3');
+    subChart = new Chart(subCanvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: barLabel,
+          data: barData,
+          backgroundColor: barColors,
+          borderRadius: 6,
+          borderSkipped: 'bottom',
+          barPercentage: 0.55,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle,
+            callbacks: {
+              label: ctx => `${barLabel}: ${ctx.parsed.y}${meta[ctx.dataIndex]?.deload ? ' · deload' : ''}`,
+            },
+          },
+        },
+        scales: {
+          x: { ticks: { color: tickColor, font: monoFont, maxRotation: 45 }, grid: { display: false } },
+          y: {
+            ticks: { color: tickColor, font: monoFont, maxTicksLimit: 3 },
+            grid:  { color: gridColor },
+            title: { display: true, text: barLabel, color: tickColor, font: { size: 8 } },
+          },
+        },
+      },
+    });
+  }
 
-  // Update axis label below chart
+  _chartInstances[sessionId] = [topChart, subChart].filter(Boolean);
+
+  // Caption below charts — spell out the encoding + all-time PR
   const axisEl = document.getElementById(`chart-axis-label-${sessionId}`);
-  if (axisEl) axisEl.textContent = `${mode.toUpperCase()} · ${axisLabel} (left) · % Sets at Rep Ceiling (right, dashed)`;
+  if (axisEl) {
+    let labelText = `${mode.toUpperCase()} · top: ${primaryLabel} (★ rep PR · filled dot = ceiling hit) · bars: ${barLabel}`;
+    if (mode === 'kb') {
+      const pr = getRepPR(exName);
+      if (pr) labelText += ` · 🏆 PR ${pr.load} kg × ${pr.reps}`;
+    }
+    axisEl.textContent = labelText;
+  }
 
   // Variant change notes
   const noteEl = document.getElementById(`chart-variant-note-${sessionId}`);
@@ -4183,7 +4516,11 @@ async function loadProgrammeFromDrive() {
         if (local) {
           if (remote.rest) local.rest = remote.rest;
           remote.exercises?.forEach(rex => {
-            const lex = local.exercises.find(e => e.num === rex.num);
+            // Match by name (stable identity — renames propagate), fall
+            // back to num for old configs. Num alone breaks when the
+            // built-in programme inserts/reorders exercises.
+            const lex = (rex.name && local.exercises.find(e => e.name === rex.name))
+                     || (!rex.name && local.exercises.find(e => e.num === rex.num));
             if (lex) { lex.sets = rex.sets; lex.reps = rex.reps; lex.load = rex.load; }
           });
         }
@@ -4199,143 +4536,6 @@ async function loadProgrammeFromDrive() {
 // Stores the last sync error for display in Settings
 let _driveLastError = null;
 
-// showToast: true only for manual user-initiated syncs
-// All background syncs pass false — completely silent
-async function syncSessionsFromDrive(showToast) {
-  if (!state.driveToken) return;
-
-  try {
-    if (showToast) toast('Syncing with Google Drive…', 'info');
-
-    const driveFiles = await listDriveSessionFiles();
-    if (!driveFiles.length) {
-      // Drive is empty — push everything local up
-      if (state.sessions.length > 0) {
-        const BATCH = 5;
-        for (let i = 0; i < state.sessions.length; i += BATCH) {
-          const batch = state.sessions.slice(i, i + BATCH);
-          await Promise.allSettled(batch.map(s => saveToDrive(s, true)));
-        }
-        await saveProgrammeToDrive().catch(() => {});
-      }
-      updateLastSynced();
-      _driveLastError = null;
-      updateDriveStatusDot('connected');
-      if (showToast) toast('Drive is empty — pushed all local sessions', 'info');
-      return;
-    }
-
-    // Build maps for conflict detection
-    const localById  = new Map(state.sessions.map(s => [s.id, s]));
-    const driveIdMap = new Map();
-    driveFiles.forEach(f => {
-      const m = f.name.match(/_([^_]+)\.json$/);
-      if (m) driveIdMap.set(m[1], f);
-    });
-
-    // ── STEP 1: Fetch Drive sessions not present locally ──────────
-    let newCount = 0;
-    const toFetch = driveFiles.filter(f => {
-      const m = f.name.match(/_([^_]+)\.json$/);
-      return m && !localById.has(m[1]);
-    });
-
-    const fetched = await Promise.allSettled(toFetch.map(f => fetchDriveSessionFile(f.id)));
-
-    fetched.forEach((result) => {
-      if (result.status !== 'fulfilled' || !result.value?.id) return;
-      const remote = result.value;
-      if (localById.has(remote.id)) return;
-
-      const duplicate = state.sessions.find(s =>
-        s.id !== remote.id &&
-        s.date === remote.date &&
-        s.sessionId === remote.sessionId
-      );
-
-      if (duplicate) {
-        duplicate._conflict = true;
-        remote._conflict    = true;
-        state.sessions.push(remote);
-        newCount++;
-      } else {
-        state.sessions.push(remote);
-        newCount++;
-      }
-      localById.set(remote.id, remote);
-    });
-
-    // ── STEP 2: Update local sessions where Drive is newer ────────
-    const sharedIds = [...driveIdMap.keys()].filter(id => localById.has(id));
-    const contentChecks = await Promise.allSettled(
-      sharedIds
-        .filter(id => {
-          const driveFile = driveIdMap.get(id);
-          const localSess = localById.get(id);
-          const driveTime = new Date(driveFile.modifiedTime).getTime();
-          const localTime = localSess.endTime ? new Date(localSess.endTime).getTime() : 0;
-          return driveTime > localTime + 5000;
-        })
-        .map(id => fetchDriveSessionFile(driveIdMap.get(id).id).then(data => ({ id, data })))
-    );
-
-    contentChecks.forEach(result => {
-      if (result.status !== 'fulfilled') return;
-      const { id, data } = result.value;
-      const local = localById.get(id);
-      if (!local || !data) return;
-      const idx = state.sessions.findIndex(s => s.id === id);
-      if (idx !== -1) { state.sessions[idx] = data; localById.set(id, data); }
-    });
-
-    // ── STEP 3: Push local sessions not on Drive ──────────────────
-    let uploadCount = 0;
-    const toUpload = state.sessions.filter(s => !driveIdMap.has(s.id));
-    const BATCH_SIZE = 5;
-    for (let i = 0; i < toUpload.length; i += BATCH_SIZE) {
-      const batch = toUpload.slice(i, i + BATCH_SIZE);
-      const results = await Promise.allSettled(batch.map(s => saveToDrive(s, true)));
-      uploadCount += results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-      if (failed > 0) console.warn(`[Drive] ${failed} session(s) failed to upload in batch`);
-    }
-    if (uploadCount > 0) {
-      await saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme save failed:', e));
-    }
-
-    // ── STEP 4: Sort, persist, render ────────────────────────────
-    if (newCount > 0 || uploadCount > 0 || contentChecks.some(r => r.status === 'fulfilled')) {
-      state.sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
-      StorageManager.saveSessions(state.sessions).catch(e => console.warn('[sync] IndexedDB bulk save failed:', e));
-      renderHistory();
-      renderDashboard();
-      updateMesoDisplay();
-    }
-
-    updateLastSynced();
-    _driveLastError = null;
-    updateDriveStatusDot('connected');
-
-    // ── STEP 5: Surface conflicts ─────────────────────────────────
-    const conflicts = state.sessions.filter(s => s._conflict);
-    if (conflicts.length > 0) showConflictBanner(conflicts);
-
-    if (showToast) {
-      const parts = [];
-      if (newCount > 0)    parts.push(`${newCount} pulled`);
-      if (uploadCount > 0) parts.push(`${uploadCount} pushed`);
-      if (conflicts.length > 0) parts.push(`${conflicts.length / 2 | 0} conflict${conflicts.length > 2 ? 's' : ''} need review`);
-      toast(parts.length ? parts.join(' · ') : 'Already up to date', 'success');
-    }
-
-  } catch(e) {
-    const msg = e?.message || String(e);
-    console.error('[Drive] Sync failed:', msg);
-    _driveLastError = msg;
-    updateDriveStatusDot('error', msg);
-    if (showToast) toast(`Sync failed — ${msg}`, 'error');
-  }
-}
 
 // ── LIST ALL SESSION FILES ON DRIVE ────────
 async function listDriveSessionFiles() {
@@ -4733,7 +4933,7 @@ function renderWeightLog() {
     const canvas = document.getElementById('bw-trend-chart');
     if (!canvas || typeof Chart === 'undefined') return;
     if (Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
-    const accent = resolveCSSColor('var(--accent)');
+    const accent = POLARIS_CATEGORICAL.green; // bodyweight trend — distinct from per-session/e1RM series
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const tick   = isDark ? '#3a4533' : '#8A8070';
     const data   = fullLog.slice(-20); // last 20 entries
@@ -4879,11 +5079,6 @@ function getNextSession() {
   return { session: sess, label, allSessions };
 }
 
-function setNextSessionOverride(sessionId) {
-  state._nextSessionOverride = sessionId;
-  renderDashboard();
-}
-
 function localDateStr(d) {
   // Returns YYYY-MM-DD in local time (not UTC) to avoid timezone shift
   const y = d.getFullYear();
@@ -5018,7 +5213,7 @@ function calcSessionQuality(session) {
       if (Array.isArray(ex.repRange) && ex.repRange.length === 2) {
         rangeChecked++;
         const reps = parseInt(set.reps);
-        if (reps >= ex.repRange[0]) inRange++;
+        if (reps >= ex.repRange[0] && reps <= ex.repRange[1] + 3) inRange++;
       }
     });
   });
@@ -5220,38 +5415,48 @@ function getRollingStats(days, offsetDays = 0) {
   return { volume: Math.round(volume), sessions: sessions.length, avgRIR, avgQuality };
 }
 
-// Volume per rolling 7-day bucket, going back `weeks` from today
-function getRollingWeekVolumes(weeks = 6) {
-  const out = [];
-  for (let i = weeks - 1; i >= 0; i--) {
-    const stats = getRollingStats(7, i * 7);
-    out.push({ offset: i, vol: stats.volume });
-  }
-  return out;
-}
-
 function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending) {
-  // ── Rolling 7-day headline (anchored to today, meso-independent) ──
+  // ── Rolling 7-day headline — hard sets (honest unit, no kg soup) ──
   const thisWeek  = getRollingStats(7);
-  const lastWeek  = getRollingStats(7, 7);
-  const volChange = lastWeek.volume > 0
-    ? Math.round(((thisWeek.volume - lastWeek.volume) / lastWeek.volume) * 100)
-    : null;
+  const hsNow  = Object.values(getWeeklyHardSets(7)).reduce((a, b) => a + b, 0);
+  const hsPrev = Object.values(getWeeklyHardSets(7, 7)).reduce((a, b) => a + b, 0);
+  const volChange = hsPrev > 0 ? Math.round(((hsNow - hsPrev) / hsPrev) * 100) : null;
   const volArrow = volChange === null ? '' : volChange >= 0 ? '↑' : '↓';
   const volColor = volChange === null ? 'var(--text-dim)'
     : volChange >= 0 ? 'var(--green)' : 'var(--legs-b)';
 
-  // ── Rolling weekly bars (last 6 × 7-day windows) ──
-  const rolling = getRollingWeekVolumes(6);
-  const rMax = Math.max(...rolling.map(r => r.vol), 1);
-  const barsHtml = rolling.map(r => {
-    const pct = Math.max((r.vol / rMax) * 100, r.vol > 0 ? 4 : 0);
-    const isCurrent = r.offset === 0;
-    return '<div class="dash-volume-bar-wrap ' + (isCurrent ? 'current-wrap' : '') + '">' +
-      '<div class="dash-volume-bar ' + (isCurrent ? 'current' : '') + '" style="height:' + pct + '%" title="' + volFmt(r.vol) + '"></div>' +
-      '<div class="dash-volume-bar-label">' + (isCurrent ? 'now' : '-' + r.offset + 'w') + '</div>' +
-      '</div>';
-  }).join('');
+  // ── Muscle × week heatmap: hard sets, last 8 rolling weeks.
+  //    Sequential single-hue ramp (sage→forest), value in each cell. ──
+  const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+  const HEAT_STEPS = isDarkTheme
+    ? [[1,'#2F3829'],[5,'#3D5030'],[10,'#546B41'],[15,'#7A9159'],[21,'#99AD7A']]
+    : [[1,'#DCE5CE'],[5,'#B8C99E'],[10,'#99AD7A'],[15,'#708A55'],[21,'#3D5030']];
+  const heatCell = n => {
+    if (n <= 0) return { bg: 'rgba(128,128,128,0.08)', ink: 'var(--text-muted)' };
+    let bg = HEAT_STEPS[0][1];
+    HEAT_STEPS.forEach(s => { if (n >= s[0]) bg = s[1]; });
+    const ink = n >= 15 ? (isDarkTheme ? '#1A1F16' : '#FFF8EC') : 'var(--text-dim)';
+    return { bg, ink };
+  };
+  const HEAT_MUSCLES = ['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes'];
+  const weeklyCounts = [];
+  for (let w = 7; w >= 0; w--) weeklyCounts.push(getWeeklyHardSets(7, w * 7));
+  const heatHtml =
+    '<div style="display:grid;grid-template-columns:64px repeat(8,1fr);gap:2px;margin-top:10px" role="table" aria-label="Hard sets per muscle per week">' +
+    '<div></div>' + weeklyCounts.map((_, i) => {
+      const off = 7 - i;
+      return '<div style="font-family:\'DM Mono\',monospace;font-size:7px;color:var(--text-muted);text-align:center">' + (off === 0 ? 'now' : '-' + off + 'w') + '</div>';
+    }).join('') +
+    HEAT_MUSCLES.map(m =>
+      '<div style="font-size:9px;color:var(--text-dim);text-transform:capitalize;align-self:center">' + m + '</div>' +
+      weeklyCounts.map((wk, i) => {
+        const n = wk[m] || 0;
+        const c = heatCell(n);
+        const off = 7 - i;
+        return '<div title="' + m + ' — ' + n + ' hard sets, ' + (off === 0 ? 'this week' : off + ' weeks ago') + '" style="height:18px;border-radius:3px;background:' + c.bg + ';display:flex;align-items:center;justify-content:center;font-family:\'DM Mono\',monospace;font-size:8px;color:' + c.ink + '">' + (n || '') + '</div>';
+      }).join('')
+    ).join('') +
+    '</div>';
 
   // ── 28-day vs previous 28-day comparison ──
   const m28  = getRollingStats(28);
@@ -5273,10 +5478,12 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
       '</div>';
   };
   const fmtRaw = v => v;
+  const hs28  = Object.values(getWeeklyHardSets(28)).reduce((a, b) => a + b, 0);
+  const hs28p = Object.values(getWeeklyHardSets(28, 28)).reduce((a, b) => a + b, 0);
   const comp28Html =
     '<div class="dash-section-label" style="margin-top:16px">Last 28 Days vs Previous</div>' +
     '<div class="dash-stat-grid cols-4">' +
-      compRow('Volume',   m28.volume,     p28.volume,     volFmt) +
+      compRow('Hard Sets', hs28,          hs28p,          fmtRaw) +
       compRow('Sessions', m28.sessions,   p28.sessions,   fmtRaw) +
       compRow('Avg RIR',  m28.avgRIR,     p28.avgRIR,     v => (+v).toFixed(1)) +
       compRow('Quality',  m28.avgQuality, p28.avgQuality, fmtRaw) +
@@ -5287,11 +5494,10 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     state.sessions.filter(s => s.status === 'complete').map(s => s.date)
   )].sort().reverse();
   let streak = 0;
-  const todayStr = new Date().toISOString().split('T')[0];
   for (let i = 0; i < sortedDates.length; i++) {
-    const exp = new Date(todayStr);
+    const exp = new Date();
     exp.setDate(exp.getDate() - i);
-    if (sortedDates[i] === exp.toISOString().split('T')[0]) streak++;
+    if (sortedDates[i] === localDateStr(exp)) streak++;
     else break;
   }
 
@@ -5350,6 +5556,53 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
       }).join('')
     : '';
 
+  // ── Strength: e1RM sparkline tiles per key lift (last 12 weeks),
+  //    delta vs previous 28 days. Single gold series per tile. ──
+  const e1rmComp = getE1RMComparison(28);
+  const goldSpark = POLARIS_GOLD; // same token as the exercise-chart e1RM line
+  const strengthHtml = e1rmComp.length > 0
+    ? '<div class="dash-section-label" style="margin-top:16px">Strength &middot; Est. 1RM &middot; 12w</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      e1rmComp.slice(0, 6).map(r => {
+        const spark = buildSparklineSVG(getE1RMSeriesForExercise(r.exercise, 84), goldSpark);
+        let deltaHtml = '<span style="font-size:9px;color:var(--text-muted)">baseline</span>';
+        if (r.prev !== null && r.prev > 0) {
+          const pct   = Math.round((r.cur - r.prev) / r.prev * 100);
+          const col   = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text-muted)';
+          const arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '·';
+          deltaHtml = '<span style="font-size:9px;color:' + col + '">' + arrow + ' ' + Math.abs(pct) + '%</span>';
+        }
+        return '<div style="padding:7px 9px;border:1px solid var(--border);border-radius:8px">' +
+          '<div style="font-size:9px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + r.exercise + '">' + r.exercise + '</div>' +
+          (spark || '<div style="height:34px"></div>') +
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px">' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text)">' + r.cur + ' kg</span>' + deltaHtml +
+          '</div></div>';
+      }).join('') + '</div>'
+    : '';
+
+  // ── Weekly hard sets per muscle group vs 10–20 target band ──
+  const MUSCLE_ORDER = ['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes','core','calves'];
+  const hardSets = getWeeklyHardSets(7);
+  const musclesToShow = MUSCLE_ORDER.filter(m =>
+    (hardSets[m] || 0) > 0 || !['core','calves'].includes(m));
+  const hasAnyHardSets = MUSCLE_ORDER.some(m => hardSets[m] > 0);
+  const hardSetsHtml = hasAnyHardSets
+    ? '<div class="dash-section-label" style="margin-top:16px">Hard Sets / Muscle &middot; 7d &middot; target 10&ndash;20</div>' +
+      musclesToShow.map(m => {
+        const n   = hardSets[m] || 0;
+        const col = n < 10 ? 'var(--amber)' : n <= 20 ? 'var(--green)' : 'var(--red)';
+        const pct = Math.min(n / 20 * 100, 100);
+        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">' +
+          '<div style="width:76px;font-size:9px;color:var(--text-dim);text-transform:capitalize">' + m + '</div>' +
+          '<div style="flex:1;height:5px;border-radius:3px;background:rgba(128,128,128,0.14);overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;border-radius:3px;background:' + col + '"></div>' +
+          '</div>' +
+          '<div style="width:20px;font-size:9px;text-align:right;color:' + col + '">' + n + '</div>' +
+          '</div>';
+      }).join('')
+    : '';
+
   const bwNote = state.bodyweight ? 'BW ' + state.bodyweight + ' kg' : 'add bodyweight in settings';
   const volChangeHtml = volChange !== null
     ? '<span style="font-size:11px;color:' + volColor + '">' + volArrow + ' ' + Math.abs(volChange) + '% vs prev 7d</span>'
@@ -5358,15 +5611,17 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
   return '<div class="dash-section volume-section dashboard-col-right" style="height:100%">' +
     '<div class="dash-section-label">Last 7 Days</div>' +
     '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">' +
-      '<div class="dash-volume-total">' + volFmt(thisWeek.volume) + '</div>' + volChangeHtml +
+      '<div class="dash-volume-total">' + hsNow + '</div>' + volChangeHtml +
     '</div>' +
-    '<div class="dash-volume-sub">Volume &middot; ' + thisWeek.sessions + ' session' + (thisWeek.sessions !== 1 ? 's' : '') + ' &middot; ' + bwNote + '</div>' +
-    '<div class="dash-volume-bars">' + barsHtml + '</div>' +
+    '<div class="dash-volume-sub">Hard sets &middot; ' + thisWeek.sessions + ' session' + (thisWeek.sessions !== 1 ? 's' : '') + ' &middot; ' + bwNote + '</div>' +
+    heatHtml +
     comp28Html +
     '<div class="dash-stat-grid" style="margin-top:10px">' +
       '<div class="dash-stat-box"><div class="dash-stat-val" style="font-size:20px">' + streak + '</div><div class="dash-stat-lbl">Day Streak</div></div>' +
       '<div class="dash-stat-box"><div class="dash-stat-val" style="font-size:20px">' + (avgDur ? avgDur + '<span style="font-size:12px">m</span>' : '—') + '</div><div class="dash-stat-lbl">Avg Duration 28d</div></div>' +
     '</div>' +
+    strengthHtml +
+    hardSetsHtml +
     progHtml +
     alertsHtml +
     compHtml +
@@ -6789,7 +7044,10 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
   const lastSess    = completeSessions[completeSessions.length - 1];
   const lastEx      = lastSess.exercises.find(e => e.name === exerciseName);
   const currentSets = lastEx ? lastEx.sets.length : 0;
-  const targetSets  = getMesoSetTarget(week);
+  // Respect per-exercise set caps (time-boxed superset additions)
+  const exCfg = state.programme.sessions.find(s => s.id === sessionId)
+    ?.exercises.find(e => e.name === exerciseName);
+  const targetSets = Math.min(getMesoSetTarget(week), exCfg?.maxSets || Infinity);
 
   // Step 3a — below set ceiling
   if (currentSets < targetSets) {
@@ -6989,10 +7247,20 @@ function applyTheme(theme) {
   const btn = document.getElementById('theme-toggle-btn');
   if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
 
-  // Redraw any visible charts so they pick up the new token colours
-  Object.values(_chartInstances).forEach(chart => {
-    if (chart && typeof chart.update === 'function') chart.update();
+  // Redraw any visible charts so they pick up the new token colours.
+  // Entries are arrays now (main chart + companion bars) — but they
+  // bake theme-resolved hex colours in, so rebuild instead of update.
+  Object.keys(_chartState || {}).forEach(sid => {
+    const st = _chartState[sid];
+    const wrap = document.getElementById(`chart-wrap-${sid}`);
+    if (st?.activeEx && wrap && !wrap.classList.contains('hidden')) {
+      renderExerciseChart(sid, st.activeEx, st.accentColor);
+    }
   });
+
+  // Dashboard panels also bake theme-resolved colours into inline
+  // styles (sparklines, heatmap) — rebuild so they match
+  if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 function initTheme() {
