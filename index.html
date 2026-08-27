@@ -5089,7 +5089,10 @@ function renderDashboardWeightSection() {
           filter: item => item.datasetIndex === 0,
           titleFont: { family: 'DM Mono', size: 9 },
           bodyFont: { family: 'DM Mono', size: 9 },
-          callbacks: { label: ctx => `${ctx.parsed.y} kg` },
+          callbacks: {
+            title: items => formatDateIT(fullLog[items[0].dataIndex]?.date),
+            label: ctx => `${ctx.parsed.y} kg`,
+          },
         },
       },
       scales: {
