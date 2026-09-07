@@ -866,6 +866,37 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 .ex-sets-range { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
 .ex-load { font-family: var(--font-mono); font-size: 11px; color: var(--text); line-height: 1.6; }
 .ex-load-prog { font-family: var(--font-mono); font-size: 9px; color: var(--accent); opacity: 0.6; margin-top: 2px; }
+
+/* Inline programme edit mode — sets / reps / RIR / load */
+.ex-cell-edit { display: flex; flex-direction: column; gap: 4px; }
+.ex-edit-field { display: flex; align-items: center; gap: 5px; }
+.ex-edit-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 0 0 26px;
+}
+.ex-edit-input {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--bg-surface3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 6px;
+  width: 100%;
+  min-width: 0;
+}
+.ex-edit-input:focus { outline: none; border-color: var(--accent); }
+/* Give the editable columns room while a card is in edit mode */
+.session-card.editing .ex-sets { min-width: 96px; white-space: normal; }
+.session-card.editing .ex-load { min-width: 132px; }
+.session-card.editing .ex-notes,
+.session-card.editing .ex-table th:last-child,
+.session-card.editing .ex-tags { display: none; }
+.session-card.editing .ex-name { font-size: 11px; }
 .ex-notes { font-size: 11px; color: var(--text-dim); line-height: 1.65; max-width: 280px; }
 
 /* Edit mode */
@@ -3014,6 +3045,9 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   .modal-title { font-size: 16px; }
   .modal-body { margin-bottom: 14px; }
   .modal-actions .modal-btn { flex: 1 1 auto; }
+
+  .ex-edit-input { font-size: 12px; padding: 8px 6px; }
+  .ex-edit-lbl { flex: 0 0 24px; }
 
   .edit-set-x { display: none; }
   .edit-set-input { font-size: 11px; padding: 7px 5px; }

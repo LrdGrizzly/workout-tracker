@@ -592,6 +592,7 @@ const StorageManager = (() => {
           mesoStartDate:    data.mesoStartDate    || null,
           mesoWeekOverride: data.mesoWeekOverride || null,
           restPeriods:      data.restPeriods      || {},
+          exOverrides:      data.exOverrides      || {},
           jeLadderKeyMap:   data.jeLadderKeyMap   || {},
           weightLog:        data.weightLog        || [],
           bodyweight:       data.bodyweight       || null,
@@ -904,6 +905,28 @@ const Validator = (() => {
       Object.entries(data.restPeriods).forEach(([k, v]) => {
         const n = coerceNumber(v, 10, 600);
         if (n !== null) clean.restPeriods[k] = n;
+      });
+    }
+
+    // exOverrides: sessionId → exNum → { sets, reps, rir, load, repRange }
+    clean.exOverrides = {};
+    if (data.exOverrides && typeof data.exOverrides === 'object') {
+      Object.entries(data.exOverrides).forEach(([sid, exMap]) => {
+        if (typeof sid !== 'string' || !exMap || typeof exMap !== 'object') return;
+        const cleanEx = {};
+        Object.entries(exMap).forEach(([exNum, ov]) => {
+          if (typeof exNum !== 'string' || !ov || typeof ov !== 'object') return;
+          const o = {};
+          ['sets', 'reps', 'rir', 'load'].forEach(f => {
+            if (typeof ov[f] === 'string') o[f] = ov[f];
+          });
+          if (Array.isArray(ov.repRange) && ov.repRange.length === 2
+              && ov.repRange.every(n => typeof n === 'number' && isFinite(n))) {
+            o.repRange = ov.repRange;
+          }
+          if (Object.keys(o).length) cleanEx[exNum] = o;
+        });
+        if (Object.keys(cleanEx).length) clean.exOverrides[sid] = cleanEx;
       });
     }
 
@@ -1518,6 +1541,9 @@ const INITIAL_STATE = {
   mesoStartDate:        null,   // ISO date string 'YYYY-MM-DD'
   mesoWeekOverride:     null,   // integer 1–5, or null for auto
 
+  // Programme edits: sessionId → exNum → { sets, reps, rir, load, repRange }
+  exOverrides:          {},
+
   // Body
   bodyweight:           null,   // kg (float), most recent entry
   weightLog:            [],     // [{ date: 'YYYY-MM-DD', kg: float }]
@@ -1713,6 +1739,10 @@ async function loadLocalState() {
     });
   }
 
+  // Restore per-exercise programme edits (sets / reps / RIR / load)
+  state.exOverrides = data.exOverrides || {};
+  applyExOverrides();
+
   // Update date inputs
   if (state.mesoStartDate) {
     document.getElementById('meso-start-date').value = state.mesoStartDate;
@@ -1731,6 +1761,20 @@ async function loadLocalState() {
   }
 }
 
+// Re-apply stored programme exercise edits onto the default programme definition
+function applyExOverrides() {
+  const ov = state.exOverrides;
+  if (!ov) return;
+  state.programme.sessions.forEach(sess => {
+    const exMap = ov[sess.id];
+    if (!exMap) return;
+    sess.exercises.forEach(ex => {
+      const o = exMap[ex.num];
+      if (o) Object.assign(ex, o);
+    });
+  });
+}
+
 function saveSettings() {
   // Saves only settings-layer data to localStorage — never sessions
   const restPeriods = {};
@@ -1739,6 +1783,7 @@ function saveSettings() {
     mesoStartDate:    state.mesoStartDate,
     mesoWeekOverride: state.mesoWeekOverride,
     restPeriods,
+    exOverrides:      state.exOverrides       || {},
     jeLadderKeyMap:   state.jeLadderKeyMap   || {},
     weightLog:        state.weightLog        || [],
     bodyweight:       state.bodyweight       || null,
@@ -1898,16 +1943,28 @@ function buildSessionCard(session) {
         </div>
       </td>
       <td class="ex-sets">
-        <span style="font-family:'DM Mono',monospace;font-size:13px;color:${ex.type==='optional'?'var(--text-muted)':'var(--text)'}">
-          ${getCurrentMesoWeek() === 5 ? '2' : getMesoSetTarget(getCurrentMesoWeek())}
-        </span>
-        <span class="edit-val" data-session="${session.id}" data-ex="${ex.num}" data-field="sets" style="display:none">${ex.sets}</span>
-        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">${ex.sets} meso</div>
-        <div class="ex-sets-range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.7;margin-top:1px">${ex.reps} reps</div>
+        <div class="ex-cell-view">
+          <span style="font-family:'DM Mono',monospace;font-size:13px;color:${ex.type==='optional'?'var(--text-muted)':'var(--text)'}">
+            ${getCurrentMesoWeek() === 5 ? '2' : getMesoSetTarget(getCurrentMesoWeek())}
+          </span>
+          <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">${ex.sets} meso</div>
+          <div class="ex-sets-range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.7;margin-top:1px">${ex.reps} reps</div>
+          ${ex.rir ? `<div class="ex-rir-view" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:1px">RIR ${ex.rir}</div>` : ''}
+        </div>
+        <div class="ex-cell-edit" style="display:none">
+          ${buildExEditField(session.id, ex.num, 'sets', 'Sets', ex.sets)}
+          ${buildExEditField(session.id, ex.num, 'reps', 'Reps', ex.reps)}
+          ${buildExEditField(session.id, ex.num, 'rir', 'RIR', ex.rir || '')}
+        </div>
       </td>
       <td class="ex-load">
-        <span class="edit-val" data-session="${session.id}" data-ex="${ex.num}" data-field="load">${ex.load}</span>
-        <div class="ex-load-prog">${computeNextProgression(ex)}</div>
+        <div class="ex-cell-view">
+          <span>${ex.load}</span>
+          <div class="ex-load-prog">${computeNextProgression(ex)}</div>
+        </div>
+        <div class="ex-cell-edit" style="display:none">
+          ${buildExEditField(session.id, ex.num, 'load', 'Load', ex.load)}
+        </div>
       </td>
       <td class="ex-notes">${ex.notes}</td>
     </tr>`;
@@ -1951,6 +2008,25 @@ function toggleSession(id) {
   card.classList.toggle('open');
 }
 
+// One labelled input inside an exercise row's edit mode
+function buildExEditField(sessionId, exNum, field, label, value) {
+  const v = String(value == null ? '' : value).replace(/"/g, '&quot;');
+  return `<label class="ex-edit-field">
+    <span class="ex-edit-lbl">${label}</span>
+    <input type="text" class="ex-edit-input" data-session="${sessionId}" data-ex="${exNum}"
+      data-field="${field}" value="${v}" onclick="event.stopPropagation()">
+  </label>`;
+}
+
+// "3–5", "8-10", "12" → [lo, hi]. Returns null when unparseable.
+function parseRepRange(str) {
+  const nums = String(str || '').match(/\d+/g);
+  if (!nums || !nums.length) return null;
+  const lo = parseInt(nums[0], 10);
+  const hi = nums.length > 1 ? parseInt(nums[1], 10) : lo;
+  return [Math.min(lo, hi), Math.max(lo, hi)];
+}
+
 function toggleEditMode(e, sessionId) {
   e.stopPropagation();
   const btn = document.getElementById(`edit-btn-${sessionId}`);
@@ -1958,33 +2034,40 @@ function toggleEditMode(e, sessionId) {
   const isActive = btn.classList.contains('active');
 
   if (isActive) {
-    // Save edits
-    card.querySelectorAll('.edit-val').forEach(el => {
-      const sid = el.dataset.session;
-      const exNum = el.dataset.ex;
+    // Save edits: sets / reps / RIR / load
+    card.querySelectorAll('.ex-edit-input').forEach(el => {
+      const session = state.programme.sessions.find(s => s.id === el.dataset.session);
+      if (!session) return;
+      const ex = session.exercises.find(x => x.num === el.dataset.ex);
+      if (!ex) return;
       const field = el.dataset.field;
-      const session = state.programme.sessions.find(s => s.id === sid);
-      if (session) {
-        const ex = session.exercises.find(e => e.num === exNum);
-        if (ex) ex[field] = el.textContent.trim();
+      const val = el.value.trim();
+      ex[field] = val;
+      // Persist as an override so the edit survives a reload
+      state.exOverrides = state.exOverrides || {};
+      const exMap = state.exOverrides[session.id] = state.exOverrides[session.id] || {};
+      const o = exMap[ex.num] = exMap[ex.num] || {};
+      o[field] = val;
+      // Rep range drives the tracker's rep pills and progression logic
+      if (field === 'reps') {
+        const range = parseRepRange(val);
+        if (range) { ex.repRange = range; o.repRange = range; }
       }
-      el.contentEditable = false;
-      el.style.background = '';
-      el.style.borderRadius = '';
-      el.style.padding = '';
     });
     saveLocalState();
     btn.classList.remove('active');
+    card.classList.remove('editing');
     btn.textContent = '✎ Edit';
+    // Re-render so derived values (progression, meso target) refresh
+    const openIds = [...document.querySelectorAll('.session-card.open')].map(c => c.id);
+    renderSessions();
+    openIds.forEach(id => document.getElementById(id)?.classList.add('open'));
     toast('Session saved', 'success');
   } else {
     if (!card.classList.contains('open')) card.classList.add('open');
-    card.querySelectorAll('.edit-val').forEach(el => {
-      el.contentEditable = true;
-      el.style.background = 'var(--bg-surface3)';
-      el.style.borderRadius = '3px';
-      el.style.padding = '2px 5px';
-    });
+    card.querySelectorAll('.ex-cell-view').forEach(el => el.style.display = 'none');
+    card.querySelectorAll('.ex-cell-edit').forEach(el => el.style.display = '');
+    card.classList.add('editing');
     btn.classList.add('active');
     btn.textContent = '✓ Save';
   }
