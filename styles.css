@@ -3476,6 +3476,101 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   line-height: 1.6;
 }
 
+/* ═══════════════════════════════════════════
+   EXERCISE PROGRESS — History tab sub-section
+   Collapsible panel above the session list. Same chart furniture as the
+   per-card graphs, but scoped to one lift across every session type.
+═══════════════════════════════════════════ */
+.progress-section {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.progress-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.progress-section-head:hover { background: var(--bg-surface2); }
+
+.progress-section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.progress-section-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-chevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.18s;
+  flex-shrink: 0;
+}
+
+.progress-section-head.open .progress-chevron { transform: rotate(90deg); }
+
+.progress-section-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.progress-picker-row { margin: 12px 0 10px; }
+
+.progress-select {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.progress-select:focus { outline: none; border-color: var(--accent); }
+
+/* Pills duplicate the select for fast switching on wide screens; on narrow
+   screens the select alone is enough, so they drop out. */
+.progress-pills { display: none; }
+
+@media (min-width: 640px) {
+  .progress-picker-row { display: none; }
+  .progress-pills { display: flex; margin: 12px 0 10px; }
+}
+
+.progress-empty {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 14px 0;
+  line-height: 1.6;
+}
+
 .show-graph-btn {
   font-family: var(--font-mono);
   font-size: 9px;

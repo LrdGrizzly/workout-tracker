@@ -224,6 +224,17 @@
 
     <!-- ══════════ TAB 3: HISTORY ══════════ -->
     <div class="tab-panel" id="panel-history">
+
+      <!-- Exercise Progress: pick any lift, see its last 12 sessions -->
+      <div class="progress-section" id="progress-section">
+        <button class="progress-section-head" onclick="toggleProgressSection()" id="progress-head">
+          <span class="progress-section-title">📈 Exercise Progress</span>
+          <span class="progress-section-sub" id="progress-sub">Last 12 sessions per exercise</span>
+          <span class="session-chevron progress-chevron">›</span>
+        </button>
+        <div class="progress-section-body hidden" id="progress-body"></div>
+      </div>
+
       <div class="history-toolbar">
         <button class="history-filter active" onclick="filterHistory('all', this)">All</button>
         <div id="history-session-filters"></div>
@@ -429,7 +440,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.7.1';
+const APP_VERSION = '4.8.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -3127,11 +3138,32 @@ function renderHistory() {
       <div class="empty-state-sub">Completed sessions will appear here.<br>Track your first session in the Track tab.</div>
     </div>`;
     _renderHistoryFilters();
+    _restoreProgressSection();
     return;
   }
 
   container.innerHTML = sessions.map(s => buildHistoryCard(s)).join('');
   _renderHistoryFilters();
+  _restoreProgressSection();
+}
+
+// Exercise Progress stays open/closed across renders and app restarts.
+function _restoreProgressSection() {
+  const section = document.getElementById('progress-section');
+  const body    = document.getElementById('progress-body');
+  const head    = document.getElementById('progress-head');
+  if (!section || !body) return;
+
+  // Nothing to chart yet — hide the whole section rather than tease it
+  const hasData = getChartableExercises().length > 0;
+  section.classList.toggle('hidden', !hasData);
+  if (!hasData) return;
+
+  let open = false;
+  try { open = localStorage.getItem('wt_progress_open') === '1'; } catch (e) {}
+  body.classList.toggle('hidden', !open);
+  if (head) head.classList.toggle('open', open);
+  if (open) renderProgressSection();
 }
 
 // Rebuild only the filter button strip — called by renderHistory and partial renders
@@ -3498,6 +3530,51 @@ function buildSparklineSVG(pts, color, w = 140, h = 34) {
     '</svg>';
 }
 
+// Does this session log `exName` with at least one set that has reps?
+function sessionLogsExercise(sess, exName) {
+  const ex = (sess.exercises || []).find(e => e.name === exName);
+  return !!ex && ex.sets.filter(st => st.reps).length > 0;
+}
+
+// History-card scope: 2 mesocycles of one session type, narrowed to the
+// sessions that actually log the exercise, last CHART_WINDOW kept.
+function getSessionTypeSessionsForExercise(sessionId, exName) {
+  return get2MesoCycleSessions(sessionId)
+    .filter(sess => sessionLogsExercise(sess, exName))
+    .slice(-CHART_WINDOW);
+}
+
+// Exercise Progress scope: the last CHART_WINDOW sessions that logged this
+// exercise, across every session type and with no date cutoff. A lift that
+// appears in both Push A and Push B charts as one continuous progression.
+function getSessionsForExercise(exName) {
+  return state.sessions
+    .filter(sess => sess.status === 'complete' && sessionLogsExercise(sess, exName))
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(-CHART_WINDOW);
+}
+
+// Every exercise with enough history to plot, most recently trained first.
+// Optional and prehab work is included here — unlike the history-card pills,
+// this section is the one place to see any lift's trend.
+function getChartableExercises() {
+  const lastSeen = new Map();
+  state.sessions.forEach(sess => {
+    if (sess.status !== 'complete') return;
+    (sess.exercises || []).forEach(ex => {
+      if (!ex.sets || !ex.sets.filter(st => st.reps).length) return;
+      const prev = lastSeen.get(ex.name);
+      const t    = new Date(sess.date).getTime();
+      if (!prev) lastSeen.set(ex.name, { date: t, count: 1 });
+      else { prev.count++; if (t > prev.date) prev.date = t; }
+    });
+  });
+  return [...lastSeen.entries()]
+    .filter(([, v]) => v.count >= 2)
+    .sort((a, b) => b[1].date - a[1].date)
+    .map(([name]) => name);
+}
+
 function getSessionAccentColor(sessionId) {
   const sess = state.programme.sessions.find(s => s.id === sessionId);
   return polarisSeriesColor(sess?.color || 'var(--push-a)');
@@ -3755,6 +3832,8 @@ function toggleGraph(sessionId, exName, accentColor) {
   if (!_chartState[sessionId]) _chartState[sessionId] = {};
   _chartState[sessionId].activeEx = exName;
   _chartState[sessionId].accentColor = accentColor;
+  const logged = state.sessions.find(x => x.id === sessionId);
+  _chartState[sessionId].scope = { type: 'session', sessionId: logged?.sessionId };
 
   renderExerciseChart(sessionId, exName, accentColor);
 }
@@ -3781,27 +3860,28 @@ function switchChartExercise(sessionId, exName, pillBtn) {
   renderExerciseChart(sessionId, exName, accent);
 }
 
-function renderExerciseChart(sessionId, exName, accentColor) {
+/* Renders the progression chart pair into `chart-<key>` / `chart-sub-<key>`.
+   `scope` picks which sessions feed it:
+     { type: 'session', sessionId }  — history card: 2 mesocycles of that
+                                       session type (the original behaviour)
+     { type: 'exercise' }            — Exercise Progress sub-section: every
+                                       session that logged the lift, any type
+   Either way the series is capped to the last CHART_WINDOW points. */
+function renderExerciseChart(key, exName, accentColor, scope) {
   accentColor = polarisSeriesColor(accentColor);
-  const s = state.sessions.find(s => s.id === sessionId);
-  if (!s) return;
+  scope = scope
+       || _chartState[key]?.scope
+       || { type: 'session', sessionId: state.sessions.find(x => x.id === key)?.sessionId };
 
-  const canvas    = document.getElementById(`chart-${sessionId}`);
-  const subCanvas = document.getElementById(`chart-sub-${sessionId}`);
+  const canvas    = document.getElementById(`chart-${key}`);
+  const subCanvas = document.getElementById(`chart-sub-${key}`);
   if (!canvas) return;
 
-  // Get 2 mesocycles of complete sessions for this session type, then
-  // narrow to the sessions that actually log this exercise and keep
-  // only the most recent CHART_WINDOW of them — the chart always shows
-  // the last 12 data points, never a squashed 70-day run.
-  const related = get2MesoCycleSessions(s.sessionId)
-    .filter(sess => {
-      const ex = (sess.exercises || []).find(e => e.name === exName);
-      return ex && ex.sets.filter(st => st.reps).length;
-    })
-    .slice(-CHART_WINDOW);
+  const related = scope.type === 'exercise'
+    ? getSessionsForExercise(exName)
+    : getSessionTypeSessionsForExercise(scope.sessionId, exName);
   if (related.length < 2) {
-    const wrap = document.getElementById(`chart-wrap-${sessionId}`);
+    const wrap = document.getElementById(`chart-wrap-${key}`);
     if (wrap) wrap.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);padding:16px;text-align:center">Not enough data yet — complete more sessions to see your progression.</div>';
     return;
   }
@@ -3839,8 +3919,12 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   let lastVariant = null;
   let barLabel = 'Volume (kg × reps)';
 
-  const sessConfig   = state.programme.sessions.find(x => x.id === related[0]?.sessionId);
-  const isTransition = sessConfig && sessConfig.sessionType === 'transition';
+  // Transition sessions are numbered, not dated — but only when the chart
+  // is scoped to one session type. Cross-type charts always use dates.
+  const sessConfig   = scope.type === 'session'
+    ? state.programme.sessions.find(x => x.id === related[0]?.sessionId)
+    : null;
+  const isTransition = !!sessConfig && sessConfig.sessionType === 'transition';
 
   related.forEach(sess => {
     const ex = sess.exercises.find(e => e.name === exName);
@@ -4027,10 +4111,10 @@ function renderExerciseChart(sessionId, exName, accentColor) {
     });
   }
 
-  _chartInstances[sessionId] = [topChart, subChart].filter(Boolean);
+  _chartInstances[key] = [topChart, subChart].filter(Boolean);
 
   // Caption below charts — spell out the encoding + all-time PR
-  const axisEl = document.getElementById(`chart-axis-label-${sessionId}`);
+  const axisEl = document.getElementById(`chart-axis-label-${key}`);
   if (axisEl) {
     let labelText = `${mode.toUpperCase()} · top: ${primaryLabel} (★ rep PR · filled dot = ceiling hit) · bars: ${barLabel}`;
     if (mode === 'kb') {
@@ -4041,7 +4125,7 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   }
 
   // Variant change notes
-  const noteEl = document.getElementById(`chart-variant-note-${sessionId}`);
+  const noteEl = document.getElementById(`chart-variant-note-${key}`);
   if (noteEl && variantChanges.length > 0) {
     noteEl.classList.remove('hidden');
     noteEl.innerHTML = variantChanges.map(v =>
@@ -4050,6 +4134,123 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   } else if (noteEl) {
     noteEl.classList.add('hidden');
   }
+}
+
+/* ═══════════════════════════════════════════
+   RENDER — EXERCISE PROGRESS (History sub-section)
+   Collapsible panel at the top of the History tab. One picker over every
+   lift with at least 2 logged sessions; the chart below shows that lift's
+   last CHART_WINDOW sessions across all session types.
+═══════════════════════════════════════════ */
+const PROGRESS_KEY = 'progress';
+
+function toggleProgressSection() {
+  const body = document.getElementById('progress-body');
+  const head = document.getElementById('progress-head');
+  if (!body) return;
+  const opening = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !opening);
+  if (head) head.classList.toggle('open', opening);
+  if (opening) {
+    renderProgressSection();
+  } else {
+    [`chart-${PROGRESS_KEY}`, `chart-sub-${PROGRESS_KEY}`].forEach(cid => {
+      const c = document.getElementById(cid);
+      if (c && Chart.getChart(c)) Chart.getChart(c).destroy();
+    });
+    delete _chartState[PROGRESS_KEY];
+  }
+  try { localStorage.setItem('wt_progress_open', opening ? '1' : '0'); } catch (e) {}
+}
+
+function renderProgressSection() {
+  const body = document.getElementById('progress-body');
+  if (!body) return;
+
+  const exercises = getChartableExercises();
+  const wasOpen   = !document.getElementById('progress-body').classList.contains('hidden');
+  if (!wasOpen) return;
+
+  if (!exercises.length) {
+    body.innerHTML = '<div class="progress-empty">No exercise has 2+ logged sessions yet — train a lift twice and its trend shows up here.</div>';
+    return;
+  }
+
+  // Keep the previous pick if it still has data, else the most recent lift
+  const prev   = _chartState[PROGRESS_KEY]?.activeEx;
+  const active = exercises.includes(prev) ? prev : exercises[0];
+
+  body.innerHTML = `
+    <div class="progress-picker-row">
+      <select class="progress-select" id="progress-select" onchange="selectProgressExercise(this.value)">
+        ${exercises.map(name =>
+          `<option value="${name.replace(/"/g, '&quot;')}"${name === active ? ' selected' : ''}>${name}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="chart-ex-pills progress-pills" id="progress-pills">
+      ${exercises.map(name =>
+        `<button class="chart-ex-pill${name === active ? ' active' : ''}"
+          onclick="selectProgressExercise('${name.replace(/'/g, "\'")}')">${name}</button>`
+      ).join('')}
+    </div>
+    <div id="chart-wrap-${PROGRESS_KEY}">
+      <div class="chart-canvas-wrap">
+        <canvas id="chart-${PROGRESS_KEY}"></canvas>
+      </div>
+      <div class="chart-canvas-wrap chart-canvas-sub">
+        <canvas id="chart-sub-${PROGRESS_KEY}"></canvas>
+      </div>
+      <div class="chart-axis-label" id="chart-axis-label-${PROGRESS_KEY}"></div>
+      <div class="chart-variant-note hidden" id="chart-variant-note-${PROGRESS_KEY}"></div>
+    </div>
+  `;
+
+  drawProgressChart(active);
+}
+
+function selectProgressExercise(exName) {
+  const sel = document.getElementById('progress-select');
+  if (sel && sel.value !== exName) sel.value = exName;
+
+  const pills = document.getElementById('progress-pills');
+  if (pills) {
+    pills.querySelectorAll('.chart-ex-pill').forEach(p => {
+      const on = p.textContent === exName;
+      p.classList.toggle('active', on);
+      p.style.background  = '';
+      p.style.borderColor = '';
+      p.style.color       = '';
+    });
+  }
+  drawProgressChart(exName);
+}
+
+function drawProgressChart(exName) {
+  // Colour the series by the session type the lift was most recently
+  // trained in, so it still reads as "that" session's lift.
+  const last   = getSessionsForExercise(exName).slice(-1)[0];
+  const accent = last ? getSessionAccentColor(last.sessionId) : POLARIS_CATEGORICAL.skyBlue;
+
+  _chartState[PROGRESS_KEY] = {
+    activeEx: exName,
+    accentColor: accent,
+    scope: { type: 'exercise' },
+  };
+
+  const pills = document.getElementById('progress-pills');
+  if (pills) {
+    const on = [...pills.querySelectorAll('.chart-ex-pill')].find(p => p.classList.contains('active'));
+    if (on) { on.style.background = accent; on.style.borderColor = accent; on.style.color = '#080909'; }
+  }
+
+  const sub = document.getElementById('progress-sub');
+  if (sub) {
+    const n = getSessionsForExercise(exName).length;
+    sub.textContent = `${exName} · last ${n} session${n === 1 ? '' : 's'}`;
+  }
+
+  renderExerciseChart(PROGRESS_KEY, exName, accent, { type: 'exercise' });
 }
 
 function filterHistory(filter, btn) {
