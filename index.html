@@ -429,7 +429,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.7.0';
+const APP_VERSION = '4.7.1';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -3458,8 +3458,14 @@ function getWeeklyHardSets(days = 7, offsetDays = 0) {
   return counts;
 }
 
+/* Every trend graph in the app plots at most the most recent
+   CHART_WINDOW data points, so all charts read at the same density
+   regardless of how much history sits behind them. */
+const CHART_WINDOW = 12;
+
 // Per-session best e1RM points for one exercise, chronological,
-// within the last `days` days. Feeds the dashboard sparklines.
+// within the last `days` days, capped to the last CHART_WINDOW
+// points. Feeds the dashboard sparklines.
 function getE1RMSeriesForExercise(exName, days = 84) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
@@ -3471,7 +3477,7 @@ function getE1RMSeriesForExercise(exName, days = 84) {
     const v = getSessionBestE1RM(ex);
     if (v !== null) pts.push({ date: sess.date, v });
   });
-  return pts.sort((a, b) => new Date(a.date) - new Date(b.date));
+  return pts.sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-CHART_WINDOW);
 }
 
 // Tiny inline-SVG line for stat tiles. Single series — no legend,
@@ -3784,8 +3790,16 @@ function renderExerciseChart(sessionId, exName, accentColor) {
   const subCanvas = document.getElementById(`chart-sub-${sessionId}`);
   if (!canvas) return;
 
-  // Get 2 mesocycles of complete sessions for this session type
-  const related = get2MesoCycleSessions(s.sessionId);
+  // Get 2 mesocycles of complete sessions for this session type, then
+  // narrow to the sessions that actually log this exercise and keep
+  // only the most recent CHART_WINDOW of them — the chart always shows
+  // the last 12 data points, never a squashed 70-day run.
+  const related = get2MesoCycleSessions(s.sessionId)
+    .filter(sess => {
+      const ex = (sess.exercises || []).find(e => e.name === exName);
+      return ex && ex.sets.filter(st => st.reps).length;
+    })
+    .slice(-CHART_WINDOW);
   if (related.length < 2) {
     const wrap = document.getElementById(`chart-wrap-${sessionId}`);
     if (wrap) wrap.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-muted);padding:16px;text-align:center">Not enough data yet — complete more sessions to see your progression.</div>';
@@ -5162,13 +5176,15 @@ function renderDashboardWeightSection() {
   const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
   const tick    = isDark ? '#3a4533' : '#8A8070';
   const grid    = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(84,107,65,0.08)';
-  const data    = fullLog.map(e => e.kg);
+  // Stats above stay all-time; the graph itself shows the last 12 points.
+  const chartLog = fullLog.slice(-CHART_WINDOW);
+  const data    = chartLog.map(e => e.kg);
   const showTrend = data.length >= 4;
 
   new Chart(canvas, {
     type: 'line',
     data: {
-      labels: fullLog.map(e => formatDateITShort(e.date)),
+      labels: chartLog.map(e => formatDateITShort(e.date)),
       datasets: [
         {
           label: 'Weight (kg)',
@@ -5199,7 +5215,7 @@ function renderDashboardWeightSection() {
           titleFont: { family: 'DM Mono', size: 9 },
           bodyFont: { family: 'DM Mono', size: 9 },
           callbacks: {
-            title: items => formatDateIT(fullLog[items[0].dataIndex]?.date),
+            title: items => formatDateIT(chartLog[items[0].dataIndex]?.date),
             label: ctx => `${ctx.parsed.y} kg`,
           },
         },
