@@ -2218,6 +2218,14 @@ function buildTrackerExercises(session) {
       </div><!-- end tracker-ex-body -->
     </div>`;
   }).join('');
+
+  // Rows pre-filled by template mode are tagged so toggling the template
+  // back off knows exactly which loads it owns and may clear.
+  if (state._useTemplate) {
+    container.querySelectorAll('.set-row').forEach(r => {
+      if ((r.querySelector('.set-load-val')?.value || '') !== '') r.dataset.fromTemplate = '1';
+    });
+  }
 }
 
 function isBWExercise(ex) {
@@ -2290,6 +2298,7 @@ function selectBandPill(btn, band) {
   const container = btn.closest('.band-pills');
   const isBWCtx   = container.dataset.ctx === 'bw';
   const row       = btn.closest('.set-row');
+  if (row) delete row.dataset.fromTemplate;
 
   if (isBWCtx) {
     // BW context: single-select (same as before)
@@ -2299,6 +2308,7 @@ function selectBandPill(btn, band) {
     if (loadStore) {
       loadStore.value = band === 'none' ? 'BW' : `BW+${band.charAt(0).toUpperCase()+band.slice(1)}`;
     }
+    if (row) checkSetCompletion(row);
     return;
   }
 
@@ -2341,6 +2351,7 @@ function selectBandPill(btn, band) {
     }
     loadInput.dispatchEvent(new Event('change'));
   }
+  if (row) checkSetCompletion(row);
 }
 
 
@@ -2463,6 +2474,7 @@ function selectLoadPill(btn, load, exIdx, setIdx) {
   }
   const row = btn.closest('.set-row');
   if (row) {
+    delete row.dataset.fromTemplate;
     const repsEl = row.querySelector('.set-reps-val');
     const currentLoad = hiddenEl ? hiddenEl.value : '';
     evaluateSetByValues(row, parseInt(repsEl?.value), currentLoad);
@@ -2485,10 +2497,18 @@ function customLoadChanged(input, exIdx, setIdx, repRange) {
   const val = input.value.trim();
   const hiddenEl = document.getElementById(`load-val-${exIdx}-${setIdx}`);
   if (hiddenEl) hiddenEl.value = val;
+  // A hand-typed load wins over any pill that was selected (e.g. by the template)
+  const group = input.closest('.pill-group') || input.closest('.set-row')?.querySelector('.load-pills');
+  if (group && val !== '') group.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+  // Never hold a load in a field the user can't see
+  if (val !== '') input.classList.add('visible');
+
   const row = input.closest('.set-row');
   if (row) {
+    delete row.dataset.fromTemplate;
     const repsEl = row.querySelector('.set-reps-val');
     if (repsEl) evaluateSetByValues(row, parseInt(repsEl.value), val);
+    checkSetCompletion(row);
   }
 }
 
@@ -2523,7 +2543,9 @@ function selectRIRPill(btn, rir, exIdx, setIdx) {
     btn.classList.add('selected');
     if (hiddenEl) hiddenEl.value = rir;
   }
-  // RIR alone doesn't trigger set completion — RIR is optional
+  // RIR is part of the completion rule: weight + reps + RIR must all be set
+  const row = btn.closest('.set-row');
+  if (row) checkSetCompletion(row);
 }
 
 // Evaluate set row glow from values directly (no DOM input event needed)
@@ -2585,11 +2607,13 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
   const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR || '');
 
   return `<div class="set-row">
-    <div class="set-row-main">
+    <div class="set-row-main" onclick="toggleSetRow(this, event)">
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
       ${ghostHint}
-      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set" style="margin-left:auto">✕</button>
+      <span class="set-collapsed-summary"></span>
+      <button class="set-collapse-btn" title="Collapse / expand set" aria-label="Collapse or expand set">▾</button>
+      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set">✕</button>
     </div>
     <div class="set-row-pills">
       <div class="pill-labeled-group">
@@ -6033,50 +6057,78 @@ function hideNextPrompt(sessionId, exIdx) {
   if (el) el.classList.remove('visible');
 }
 
-// Called after a rep pill or load pill is selected — check if set is complete
-function checkSetCompletion(row) {
-  const loadEl = row.querySelector('.set-load-val');
-  const repsEl = row.querySelector('.set-reps-val');
-  const load   = loadEl ? loadEl.value.trim() : '';
-  const reps   = repsEl ? repsEl.value.trim() : '';
+// Read the three data points of a set row
+function readSetValues(row) {
+  const load = row.querySelector('.set-load-val')?.value.trim() || '';
+  const reps = row.querySelector('.set-reps-val')?.value.trim() || '';
+  const rir  = row.querySelector('.set-rir')?.value.trim()      || '';
+  return { load, reps, rir };
+}
 
-  // Set is complete when both load and reps have values
-  const isComplete = load !== '' && reps !== '' && !isNaN(parseInt(reps));
-  if (!isComplete) return;
+// A set counts as complete only when ALL THREE data points are filled:
+// load (weight / BW / band), reps and RIR. Same rule for every programme.
+function isSetComplete(row) {
+  const { load, reps, rir } = readSetValues(row);
+  return load !== '' && reps !== '' && !isNaN(parseInt(reps)) && rir !== '';
+}
+
+// Write the one-line summary shown while a set row is collapsed
+function updateSetSummary(row) {
+  const { load, reps, rir } = readSetValues(row);
+  let summary = row.querySelector('.set-collapsed-summary');
+  if (!summary) {
+    summary = document.createElement('span');
+    summary.className = 'set-collapsed-summary';
+    const main = row.querySelector('.set-row-main');
+    const collapseBtn = main?.querySelector('.set-collapse-btn');
+    if (collapseBtn) main.insertBefore(summary, collapseBtn);
+    else main?.appendChild(summary);
+  }
+  summary.textContent = `${load || '—'} × ${reps || '—'}${rir !== '' ? ` @${rir}` : ''}`;
+  return summary;
+}
+
+// Manual collapse / expand of a single set row
+function toggleSetRow(el, event) {
+  const row = el.closest('.set-row');
+  if (!row) return;
+  if (event) {
+    const t = event.target;
+    // Never toggle from the delete button
+    if (t.closest('.delete-set-btn')) return;
+    // Inside the row body (pills, inputs) never toggles; only the chevron
+    // and the bare header area do.
+    const isCollapseBtn = !!t.closest('.set-collapse-btn');
+    if (!isCollapseBtn && t.closest('button, input, select, textarea, a')) return;
+    if (!isCollapseBtn && !t.closest('.set-row-main')) return;
+  }
+  if (row.classList.contains('set-collapsed')) {
+    row.classList.remove('set-collapsed');
+    hideNextPromptForCard(row);
+  } else {
+    updateSetSummary(row);
+    row.classList.add('set-collapsed');
+  }
+}
+
+// Called after a load / rep / RIR value changes — auto-collapse when complete
+function checkSetCompletion(row) {
+  if (!row || !isSetComplete(row)) return;
 
   const container = row.closest('.set-rows');
   if (!container) return;
 
   const allRows = Array.from(container.querySelectorAll('.set-row'));
-  const rowIndex = allRows.indexOf(row);
-  const isLast   = rowIndex === allRows.length - 1;
 
-  // Add summary to the set row before collapsing
-  let summary = row.querySelector('.set-collapsed-summary');
-  if (!summary) {
-    summary = document.createElement('span');
-    summary.className = 'set-collapsed-summary';
-    row.querySelector('.set-row-main')?.appendChild(summary);
-  }
-  // Format load display
-  const loadDisplay = load === 'BW' ? 'BW' : `${load}`;
-  summary.textContent = `${loadDisplay} × ${reps}`;
+  updateSetSummary(row);
 
   // Collapse this set regardless of position
   setTimeout(() => {
     row.classList.add('set-collapsed');
   }, 320);
 
-  // Check if ALL sets in the card are now complete
-  const allComplete = allRows.every(r => {
-    const rEl = r.querySelector('.set-reps-val');
-    const lEl = r.querySelector('.set-load-val');
-    const reps = rEl ? rEl.value.trim() : '';
-    const load = lEl ? lEl.value.trim() : '';
-    // BW exercises only need reps
-    const isBWRow = load === 'BW';
-    return reps !== '' && (isBWRow || load !== '');
-  });
+  // Check if ALL sets in the card are now complete (same three-point rule)
+  const allComplete = allRows.every(isSetComplete);
 
   if (allComplete) {
     const card = row.closest('.tracker-ex-card');
@@ -6089,11 +6141,13 @@ function checkSetCompletion(row) {
   }
 }
 
-// Re-expand a collapsed set when tapped
+// Fallback: re-expand a collapsed set when tapped anywhere on it.
+// (Rows built before the inline handler existed still work through this.)
 document.addEventListener('click', function(e) {
   const row = e.target.closest('.set-row.set-collapsed');
   if (!row) return;
-  // Don't re-expand if clicking the summary itself (that's just reading)
+  // The inline set-row-main handler already dealt with it
+  if (e.target.closest('.set-row-main')) return;
   row.classList.remove('set-collapsed');
   hideNextPromptForCard(row);
 });
@@ -6165,6 +6219,139 @@ function toggleSessionTemplate() {
   state._useTemplate = !state._useTemplate;
   const row = document.getElementById('template-toggle-row');
   if (row) row.classList.toggle('active', state._useTemplate);
+
+  const n = applySessionTemplate(state._useTemplate);
+  if (state._useTemplate) {
+    toast(n ? `Loads pre-filled from last session (${n} set${n === 1 ? '' : 's'})`
+            : 'No matching loads in your last session', n ? 'success' : 'info');
+  } else {
+    toast('Pre-filled loads cleared', 'info');
+  }
+}
+
+/* Apply (or undo) last session's loads on the set rows already on screen.
+   Only touches rows this toggle owns: an empty load when switching on, and a
+   load the toggle itself wrote when switching off. Hand-entered values stay.
+   Returns the number of rows changed. */
+function applySessionTemplate(on) {
+  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  if (!session) return 0;
+
+  const prevSess = state.sessions
+    .filter(s => s.sessionId === session.id && s.status === 'complete')
+    .slice(-1)[0];
+  if (!prevSess) return 0;
+
+  let changed = 0;
+
+  session.exercises.forEach((ex, idx) => {
+    if (ex.type === 'optional') return;
+    const card = document.getElementById(`tex-${session.id}-${idx}`);
+    if (!card) return;
+    const prevEx = prevSess.exercises?.find(e => e.name === ex.name);
+
+    card.querySelectorAll('.set-row').forEach((setRow, i) => {
+      const hidden = setRow.querySelector('.set-load-val');
+      if (!hidden) return;
+      const current = hidden.value.trim();
+
+      if (on) {
+        const prevSet = prevEx?.sets?.[i] || prevEx?.sets?.[0] || null;
+        const load = (prevSet?.load || '').toString().trim();
+        // Nothing to copy, or the user already entered something here
+        if (!load || (current !== '' && current !== 'BW')) return;
+        if (load === current) return;
+        setRowLoad(setRow, load);
+        setRow.dataset.fromTemplate = '1';
+        changed++;
+      } else {
+        if (setRow.dataset.fromTemplate !== '1') return;
+        setRowLoad(setRow, '');
+        delete setRow.dataset.fromTemplate;
+        changed++;
+      }
+    });
+  });
+
+  return changed;
+}
+
+/* Write a load onto one set row, whichever load UI that row uses:
+   numeric pills + custom kg input, BW with band add-on, or pure band pills.
+   Passing '' clears it. */
+function setRowLoad(setRow, load) {
+  const bandPills = setRow.querySelector('.band-pills');
+  if (bandPills) {
+    setRowBandLoad(bandPills, setRow, load);
+  } else {
+    const group  = setRow.querySelector('.load-pills');
+    const hidden = setRow.querySelector('.set-load-val');
+    const custom = setRow.querySelector('.pill-custom-input');
+    if (!group || !hidden) return;
+
+    group.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
+    hidden.value = load || '';
+
+    if (!load) {
+      if (custom) { custom.value = ''; custom.classList.remove('visible'); }
+    } else {
+      const match = [...group.querySelectorAll('.input-pill')]
+        .find(p => (p.dataset.load || '') === load);
+      if (match) {
+        match.classList.add('selected');
+        if (custom) { custom.value = ''; custom.classList.remove('visible'); }
+      } else if (custom) {
+        // Load isn't one of the recent-load pills — surface it in the custom field
+        custom.value = load;
+        custom.classList.add('visible');
+      }
+    }
+  }
+
+  // Keep target glow, collapsed summary and completion state in sync
+  const repsEl = setRow.querySelector('.set-reps-val');
+  evaluateSetByValues(setRow, parseInt(repsEl?.value), setRow.querySelector('.set-load-val')?.value || '');
+  if (setRow.classList.contains('set-collapsed')) updateSetSummary(setRow);
+  else checkSetCompletion(setRow);
+}
+
+function setRowBandLoad(container, setRow, load) {
+  const isBWCtx = container.dataset.ctx === 'bw';
+  const bands   = ['yellow','green','red','blue','black'];
+
+  const active = new Set();
+  (load || '').toString().toLowerCase().replace(/^bw\+?/, '')
+    .split('+').forEach(part => {
+      const t = part.trim();
+      if (bands.includes(t)) active.add(t);
+    });
+
+  container.querySelectorAll('.band-pill').forEach(b => { b.className = 'band-pill'; });
+  if (active.size === 0) {
+    container.querySelector('.band-pill')?.classList.add('active-none');
+  } else {
+    container.querySelectorAll('.band-pill').forEach(b => {
+      const name = b.textContent.trim().toLowerCase();
+      if (active.has(name)) b.classList.add(`active-${name}`);
+    });
+  }
+
+  const store = setRow.querySelector('.set-load-val');
+  if (!store) return;
+  const ordered = bands.filter(b => active.has(b));
+  const label   = ordered.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join('+');
+
+  if (isBWCtx) {
+    // BW rows always carry a load; the band is an optional add-on
+    store.value = ordered.length ? `BW+${label}` : 'BW';
+  } else {
+    store.value = label;
+  }
+  if (ordered.length) {
+    store.dataset.bandKg = ordered.reduce((sum, c) => sum + (BAND_KG[c] || 0), 0);
+  } else {
+    delete store.dataset.bandKg;
+  }
 }
 
 // Call this when building tracker exercises — applied in buildTrackerExercises
@@ -6474,40 +6661,23 @@ function editSession(sessionId) {
   </div>`;
 
   sess.exercises.forEach((ex, exIdx) => {
-    html += `<div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text)">${ex.name}</div>`;
+    html += `<div class="edit-ex-block" data-ex-idx="${exIdx}">
+      <div class="edit-ex-name">${ex.name}</div>
+      <div class="edit-set-list">`;
 
     ex.sets.forEach((set, setIdx) => {
-      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">
-        <span style="font-size:10px;color:var(--text-muted);min-width:14px">${setIdx+1}</span>
-        <input type="text" id="edit-load-${exIdx}-${setIdx}" value="${set.load || ''}"
-          placeholder="load" style="width:70px;background:var(--bg-surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <span style="color:var(--text-muted);font-size:10px">×</span>
-        <input type="number" id="edit-reps-${exIdx}-${setIdx}" value="${set.reps || ''}"
-          placeholder="reps" style="width:52px;background:var(--bg-surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <input type="text" id="edit-rir-${exIdx}-${setIdx}" value="${set.rir || ''}"
-          placeholder="RIR" style="width:42px;background:var(--bg-surface3);border:1px solid var(--border-h);
-          border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-        <button onclick="removeEditSet(${exIdx},${setIdx})" style="background:none;border:none;
-          color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
-      </div>`;
+      html += buildEditSetRow(exIdx, setIdx, set);
     });
 
-    html += `<button onclick="addEditSet(${exIdx})" style="font-family:'DM Mono',monospace;
-      font-size:9px;padding:3px 10px;border-radius:5px;border:1px solid var(--border-h);
-      background:none;color:var(--text-muted);cursor:pointer;margin-top:2px">+ set</button>
+    html += `</div>
+      <button class="edit-add-set" onclick="addEditSet(${exIdx})">+ set</button>
     </div>`;
   });
 
   // Notes
-  html += `<div style="margin-top:10px">
-    <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">Notes</div>
-    <textarea id="edit-session-notes" style="width:100%;background:var(--bg-surface3);
-      border:1px solid var(--border-h);border-radius:6px;padding:7px 9px;
-      font-family:'DM Mono',monospace;font-size:10px;color:var(--text);
-      resize:vertical;min-height:52px;box-sizing:border-box">${sess.notes || ''}</textarea>
+  html += `<div class="edit-notes-block">
+    <div class="edit-notes-label">Notes</div>
+    <textarea id="edit-session-notes" class="edit-notes-input">${sess.notes || ''}</textarea>
   </div>`;
 
   showModal(`Edit Session`, html, [
@@ -6519,49 +6689,55 @@ function editSession(sessionId) {
   window._editSessionId = sessionId;
 }
 
+// Single editable set row inside the Edit Session modal
+function buildEditSetRow(exIdx, setIdx, set) {
+  set = set || {};
+  return `<div class="edit-set-row" data-set-idx="${setIdx}">
+    <span class="edit-set-num">${setIdx + 1}</span>
+    <input type="text" inputmode="text" class="edit-set-input edit-set-load"
+      id="edit-load-${exIdx}-${setIdx}" value="${set.load || ''}" placeholder="load">
+    <span class="edit-set-x">×</span>
+    <input type="number" inputmode="numeric" class="edit-set-input edit-set-reps"
+      id="edit-reps-${exIdx}-${setIdx}" value="${set.reps || ''}" placeholder="reps">
+    <input type="text" class="edit-set-input edit-set-rir"
+      id="edit-rir-${exIdx}-${setIdx}" value="${set.rir || ''}" placeholder="RIR">
+    <button type="button" class="edit-set-del" title="Remove set"
+      onclick="removeEditSet(${exIdx},${setIdx})">✕</button>
+  </div>`;
+}
+
 function removeEditSet(exIdx, setIdx) {
   // Remove the set input row from the modal DOM
   const loadEl = document.getElementById(`edit-load-${exIdx}-${setIdx}`);
-  if (loadEl) {
-    const row = loadEl.closest('div[style*="display:flex"]');
-    if (row) row.remove();
-    // Re-index remaining inputs
-    reindexEditSets(exIdx);
-  }
+  if (!loadEl) return;
+  const row = loadEl.closest('.edit-set-row');
+  if (row) row.remove();
+  reindexEditSets(exIdx);
 }
 
+// Re-number and re-id remaining rows so saveEditedSession's 0..n scan stays contiguous
 function reindexEditSets(exIdx) {
-  // Not strictly needed since we read by querying all rows on save
+  const block = document.querySelector(`.edit-ex-block[data-ex-idx="${exIdx}"]`);
+  if (!block) return;
+  block.querySelectorAll('.edit-set-row').forEach((row, i) => {
+    row.dataset.setIdx = i;
+    const num = row.querySelector('.edit-set-num');
+    if (num) num.textContent = i + 1;
+    row.querySelector('.edit-set-load').id = `edit-load-${exIdx}-${i}`;
+    row.querySelector('.edit-set-reps').id = `edit-reps-${exIdx}-${i}`;
+    row.querySelector('.edit-set-rir').id  = `edit-rir-${exIdx}-${i}`;
+    const del = row.querySelector('.edit-set-del');
+    if (del) del.setAttribute('onclick', `removeEditSet(${exIdx},${i})`);
+  });
 }
 
 function addEditSet(exIdx) {
-  const sess = state.sessions.find(s => s.id === window._editSessionId);
-  if (!sess) return;
-  const ex = sess.exercises[exIdx];
-  if (!ex) return;
-  // Count existing set rows for this exercise in the modal
-  const container = document.getElementById(`edit-load-${exIdx}-0`)
-    ?.closest('div[style*="margin-bottom:14px"]');
-  if (!container) return;
-  const rows = container.querySelectorAll('div[style*="display:flex"]');
-  const newIdx = rows.length;
-  const row = document.createElement('div');
-  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:5px';
-  row.innerHTML = `
-    <span style="font-size:10px;color:var(--text-muted);min-width:14px">${newIdx+1}</span>
-    <input type="text" id="edit-load-${exIdx}-${newIdx}" placeholder="load"
-      style="width:70px;background:var(--bg-surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <span style="color:var(--text-muted);font-size:10px">×</span>
-    <input type="number" id="edit-reps-${exIdx}-${newIdx}" placeholder="reps"
-      style="width:52px;background:var(--bg-surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <input type="text" id="edit-rir-${exIdx}-${newIdx}" placeholder="RIR"
-      style="width:42px;background:var(--bg-surface3);border:1px solid var(--border-h);
-      border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">
-    <button onclick="removeEditSet(${exIdx},${newIdx})" style="background:none;border:none;
-      color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>`;
-  rows[rows.length - 1].after(row);
+  const block = document.querySelector(`.edit-ex-block[data-ex-idx="${exIdx}"]`);
+  if (!block) return;
+  const list = block.querySelector('.edit-set-list');
+  if (!list) return;
+  const newIdx = list.querySelectorAll('.edit-set-row').length;
+  list.insertAdjacentHTML('beforeend', buildEditSetRow(exIdx, newIdx, {}));
 }
 
 function saveEditedSession(sessionId) {

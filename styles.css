@@ -1451,11 +1451,11 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
               border-color var(--transition),
               box-shadow var(--transition),
               padding 0.2s ease;
-  max-height: 200px;
+  max-height: 1200px;
   overflow: hidden;
 }
 
-.set-row.set-collapsed { max-height: 36px; opacity: 0.7; overflow: hidden; }
+.set-row.set-collapsed { max-height: 40px; opacity: 0.8; overflow: hidden; }
 .set-row.set-collapsed .set-row-pills { display: none; }
 
 .set-collapsed-summary {
@@ -1466,10 +1466,41 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
   margin-left: auto;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .set-row.set-collapsed .set-collapsed-summary { display: flex; }
-.set-row.set-collapsed .set-row-main { opacity: 0.6; }
+.set-row.set-collapsed .set-row-main { opacity: 0.75; }
+.set-row.set-collapsed .set-ghost-hint { display: none; }
+
+/* The cancel (✕) control is only reachable while the set is expanded */
+.set-row.set-collapsed .delete-set-btn { display: none; }
+
+/* Per-set collapse / expand chevron */
+.set-row-main { cursor: pointer; }
+
+.set-collapse-btn {
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color var(--transition), background var(--transition);
+}
+
+.set-collapse-btn:hover { color: var(--text); background: var(--bg-surface3); }
+/* Collapsed: the summary absorbs the free space, so the chevron just trails it */
+.set-row.set-collapsed .set-collapse-btn { transform: rotate(-90deg); margin-left: 6px; }
 
 .next-ex-prompt {
   display: none;
@@ -2827,6 +2858,8 @@ html[data-theme="dark"] .guide-head:hover { background: rgba(255,255,255,0.02); 
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
@@ -2841,9 +2874,16 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   max-width: 420px;
   width: 100%;
   box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  min-height: 0;
 }
 
 .modal-title {
+  flex: 0 0 auto;
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
@@ -2858,9 +2898,129 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
   color: var(--text-dim);
   line-height: 1.65;
   margin-bottom: 20px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+/* ── EDIT SESSION MODAL — set rows ───────────────────────── */
+.edit-ex-block { margin-bottom: 14px; }
+
+.edit-ex-name {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.edit-set-list { display: flex; flex-direction: column; gap: 5px; }
+
+.edit-set-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.edit-set-num {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 14px;
+  flex: 0 0 auto;
+}
+
+.edit-set-input {
+  background: var(--bg-surface3);
+  border: 1px solid var(--border-h);
+  border-radius: 5px;
+  padding: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.edit-set-input:focus { outline: none; border-color: var(--accent); }
+
+.edit-set-load { flex: 1 1 70px; }
+.edit-set-reps { flex: 1 1 52px; max-width: 74px; }
+.edit-set-rir  { flex: 1 1 44px; max-width: 64px; }
+
+.edit-set-x { color: var(--text-muted); font-size: 10px; flex: 0 0 auto; }
+
+.edit-set-del {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  flex: 0 0 auto;
+  min-width: 22px;
+}
+
+.edit-set-del:hover { color: var(--red); }
+
+.edit-add-set {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-h);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.edit-notes-block { margin-top: 10px; }
+.edit-notes-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+
+.edit-notes-input {
+  width: 100%;
+  background: var(--bg-surface3);
+  border: 1px solid var(--border-h);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  resize: vertical;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .modal-overlay { padding: 10px; align-items: flex-start; }
+  .modal {
+    padding: 18px 14px;
+    border-radius: 12px;
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+  .modal-title { font-size: 16px; }
+  .modal-body { margin-bottom: 14px; }
+  .modal-actions .modal-btn { flex: 1 1 auto; }
+
+  .edit-set-x { display: none; }
+  .edit-set-input { font-size: 11px; padding: 7px 5px; }
+  .edit-set-load { flex: 1 1 56px; }
+  .edit-set-reps { flex: 1 1 44px; max-width: 62px; }
+  .edit-set-rir  { flex: 1 1 40px; max-width: 56px; }
+}
 
 .modal-btn {
   font-family: var(--font-mono);
@@ -3806,7 +3966,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-left: auto;
+  margin-left: 4px;
 }
 
 .delete-set-btn:hover {
