@@ -429,7 +429,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.6.0';
+const APP_VERSION = '4.7.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1977,12 +1977,14 @@ function buildSessionCard(session) {
       <span class="session-title">${session.subtitle}</span>
       <div class="session-head-actions">
         <span class="session-meta">${session.exercises.filter(e=>e.type!=='optional').length} ex</span>
-        <button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit</button>
+        <button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit plan</button>
       </div>
       <span class="session-chevron">›</span>
     </div>
     <div class="session-body">
       <div class="session-note"><strong>Order:</strong> ${session.note}</div>
+      <div class="edit-plan-hint">Editing here changes the <strong>plan targets</strong> (set/rep ranges).
+        To change the reps and RIR you actually performed, open the session in <strong>History</strong> and tap Edit.</div>
       <div class="rest-row">
         <span class="rest-label">Rest Period</span>
         <span class="rest-value" id="${restId}">${session.rest}s</span>
@@ -2057,7 +2059,7 @@ function toggleEditMode(e, sessionId) {
     saveLocalState();
     btn.classList.remove('active');
     card.classList.remove('editing');
-    btn.textContent = '✎ Edit';
+    btn.textContent = '✎ Edit plan';
     // Re-render so derived values (progression, meso target) refresh
     const openIds = [...document.querySelectorAll('.session-card.open')].map(c => c.id);
     renderSessions();
@@ -6746,6 +6748,14 @@ function editSession(sessionId) {
   sess.exercises.forEach((ex, exIdx) => {
     html += `<div class="edit-ex-block" data-ex-idx="${exIdx}">
       <div class="edit-ex-name">${ex.name}</div>
+      <div class="edit-set-head">
+        <span class="edit-set-num"></span>
+        <span class="edit-set-load">Load</span>
+        <span class="edit-set-x" style="visibility:hidden">×</span>
+        <span class="edit-set-reps">Reps</span>
+        <span class="edit-set-rir">RIR</span>
+        <span class="edit-set-del"></span>
+      </div>
       <div class="edit-set-list">`;
 
     ex.sets.forEach((set, setIdx) => {

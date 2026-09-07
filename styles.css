@@ -890,6 +890,19 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
   min-width: 0;
 }
 .ex-edit-input:focus { outline: none; border-color: var(--accent); }
+.edit-plan-hint {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  background: var(--bg-surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.session-card.editing .edit-plan-hint { display: block; }
 /* Give the editable columns room while a card is in edit mode */
 .session-card.editing .ex-sets { min-width: 96px; white-space: normal; }
 .session-card.editing .ex-load { min-width: 132px; }
@@ -2956,6 +2969,20 @@ html[data-theme="light"] .modal-overlay { background: rgba(44,44,44,0.45); }
 }
 
 .edit-set-list { display: flex; flex-direction: column; gap: 5px; }
+/* Column headers — placeholders disappear once a field has a value,
+   so the header is what keeps Reps and RIR distinguishable. */
+.edit-set-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.edit-set-head .edit-set-del { visibility: hidden; display: inline-block; }
 
 .edit-set-row {
   display: flex;
