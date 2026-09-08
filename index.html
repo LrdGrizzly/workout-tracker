@@ -440,7 +440,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.8.0';
+const APP_VERSION = '4.9.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -604,6 +604,7 @@ const StorageManager = (() => {
           mesoWeekOverride: data.mesoWeekOverride || null,
           restPeriods:      data.restPeriods      || {},
           exOverrides:      data.exOverrides      || {},
+          configVersion:    data.configVersion    || 0,
           jeLadderKeyMap:   data.jeLadderKeyMap   || {},
           weightLog:        data.weightLog        || [],
           bodyweight:       data.bodyweight       || null,
@@ -951,16 +952,24 @@ const Validator = (() => {
       });
     }
 
-    // weightLog: array of { date, kg }
+    // weightLog: array of { date, kg, ts }
+    // ts is the epoch ms the entry was written — the tiebreak when two
+    // devices log the same date. Older backups have no ts; 0 means "loses".
     clean.weightLog = [];
     if (Array.isArray(data.weightLog)) {
       data.weightLog.forEach(entry => {
         if (!isISODate(entry?.date)) return;
         const kg = coerceNumber(entry.kg, 20, 300);
         if (kg === null) return;
-        clean.weightLog.push({ date: entry.date, kg });
+        const ts = Number(entry.ts);
+        clean.weightLog.push({ date: entry.date, kg, ts: isFinite(ts) && ts > 0 ? ts : 0 });
       });
     }
+    clean.weightLog.sort((a, b) => a.date.localeCompare(b.date));
+
+    // configVersion: epoch ms — decides which device wins on settings
+    const cv = Number(data.configVersion);
+    clean.configVersion = isFinite(cv) && cv > 0 ? cv : 0;
 
     // bodyweight: float 20–300 or null (derived from weightLog on load anyway)
     clean.bodyweight = data.bodyweight
@@ -1554,6 +1563,7 @@ const INITIAL_STATE = {
 
   // Programme edits: sessionId → exNum → { sets, reps, rir, load, repRange }
   exOverrides:          {},
+  configVersion:        0,      // epoch ms of the last local settings change
 
   // Body
   bodyweight:           null,   // kg (float), most recent entry
@@ -1729,10 +1739,10 @@ async function loadLocalState() {
 
   // Use setState for settings fields so side effects fire correctly.
   // Suppress effects during initial load by applying all at once.
-  const weightLog = data.weightLog || [];
+  const weightLog = mergeWeightLogs(data.weightLog, []);
   // Backwards compat: seed weight log from old static bodyweight field
   if (data.bodyweight && !weightLog.length) {
-    weightLog.push({ date: localDateStr(), kg: data.bodyweight });
+    weightLog.push({ date: localDateStr(), kg: data.bodyweight, ts: 0 });
   }
   const bodyweight = weightLog.length ? weightLog[weightLog.length - 1].kg : null;
 
@@ -1751,6 +1761,7 @@ async function loadLocalState() {
   }
 
   // Restore per-exercise programme edits (sets / reps / RIR / load)
+  state.configVersion = data.configVersion || 0;
   state.exOverrides = data.exOverrides || {};
   applyExOverrides();
 
@@ -1786,7 +1797,10 @@ function applyExOverrides() {
   });
 }
 
-function saveSettings() {
+// bumpVersion=false is for writes that came FROM Drive — restamping those
+// would make this device look newer than the peer that actually made the edit.
+function saveSettings(bumpVersion = true) {
+  if (bumpVersion) state.configVersion = Date.now();
   // Saves only settings-layer data to localStorage — never sessions
   const restPeriods = {};
   state.programme.sessions.forEach(s => { restPeriods[s.id] = s.rest; });
@@ -1798,6 +1812,7 @@ function saveSettings() {
     jeLadderKeyMap:   state.jeLadderKeyMap   || {},
     weightLog:        state.weightLog        || [],
     bodyweight:       state.bodyweight       || null,
+    configVersion:    state.configVersion    || 0,
   });
 }
 
@@ -2068,6 +2083,7 @@ function toggleEditMode(e, sessionId) {
       }
     });
     saveLocalState();
+    saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme push failed:', e));
     btn.classList.remove('active');
     card.classList.remove('editing');
     btn.textContent = '✎ Edit plan';
@@ -2644,18 +2660,32 @@ function selectRIRPill(btn, rir, exIdx, setIdx) {
   if (row) checkSetCompletion(row);
 }
 
-// Evaluate set row glow from values directly (no DOM input event needed)
-function evaluateSetByValues(row, reps, load, repRange) {
-  if (!repRange) {
-    const card = row.closest('.tracker-ex-card');
-    if (!card) return;
-    const rangeEl = card.querySelector('.ex-rep-range');
-    if (rangeEl) {
-      const text = rangeEl.textContent.replace(/[^0-9–-]/g,'');
-      const parts = text.split(/[–-]/);
-      repRange = parts.length === 2 ? [parseInt(parts[0]), parseInt(parts[1])] : [8,12];
-    } else repRange = [8,12];
+// Read the rep range a set row was built with. The row stamps its own
+// range at build time, so a restored row evaluates exactly like a freshly
+// entered one. Falls back to the exercise card, then to a generic range.
+function readRowRepRange(row) {
+  const attr = row && row.dataset ? row.dataset.repRange : null;
+  if (attr) {
+    const parts = attr.split(',').map(n => parseInt(n, 10));
+    if (parts.length === 2 && parts.every(n => isFinite(n))) return parts;
   }
+  const card = row ? row.closest('.tracker-ex-card') : null;
+  const rangeEl = card ? card.querySelector('.ex-rep-range') : null;
+  if (rangeEl) {
+    const text = rangeEl.textContent.replace(/[^0-9–-]/g, '');
+    const parts = text.split(/[–-]/).map(n => parseInt(n, 10));
+    if (parts.length === 2 && parts.every(n => isFinite(n))) return parts;
+  }
+  return [8, 12];
+}
+
+// Evaluate set row glow from values directly (no DOM input event needed)
+// Callers that already know the range pass it; everyone else (load pills,
+// custom load field, value restore) reads it off the row. Guessing a
+// default here made the same exercise glow differently set to set
+// depending on which pill happened to be touched last.
+function evaluateSetByValues(row, reps, load, repRange) {
+  if (!repRange) repRange = readRowRepRange(row);
   const [lo, hi] = repRange;
   row.classList.remove('hit-target','miss-target');
   if (!reps || isNaN(reps)) return;
@@ -2702,7 +2732,9 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
   const repSection = buildRepPills(setIdx, exIdx, ex.repRange, prevReps || '');
   const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR || '');
 
-  return `<div class="set-row">
+  const rr = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
+
+  return `<div class="set-row" data-rep-range="${rr[0]},${rr[1]}">
     <div class="set-row-main" onclick="toggleSetRow(this, event)">
       <div class="set-indicator"></div>
       <span class="set-num">${setIdx + 1}</span>
@@ -4812,13 +4844,16 @@ async function saveProgrammeToDrive() {
   try {
     const filename = `${state.profile}_programme.json`;
     const config = {
-      version: Date.now(),
+      version: state.configVersion || Date.now(),
       profile: state.profile,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
+      weightLog: state.weightLog || [],
       sessions: state.programme.sessions.map(s => ({
         id: s.id, rest: s.rest,
-        exercises: s.exercises.map(e => ({ num: e.num, name: e.name, sets: e.sets, reps: e.reps, load: e.load }))
+        exercises: s.exercises.map(e => ({
+          num: e.num, name: e.name, sets: e.sets, reps: e.reps, load: e.load, repRange: e.repRange
+        }))
       }))
     };
     const body = JSON.stringify(config);
@@ -4847,39 +4882,57 @@ async function saveProgrammeToDrive() {
 }
 
 // ── LOAD PROGRAMME CONFIG FROM DRIVE ───────
+// Returns true when the local weight log holds entries the Drive copy is
+// missing — the caller then pushes the merged log back up.
 async function loadProgrammeFromDrive() {
-  if (!state.driveToken) return;
+  if (!state.driveToken) return false;
   try {
     const filename = `${state.profile}_programme.json`;
     const q   = `name='${filename}' and 'appDataFolder' in parents and trashed=false`;
     const res = await driveRequest(
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&spaces=appDataFolder`
     );
-    if (!res.files?.length) return;
+    // No config on Drive yet — our log is the only copy, so push it.
+    if (!res.files?.length) return (state.weightLog || []).length > 0;
     const fileRes = await fetch(
       `https://www.googleapis.com/drive/v3/files/${res.files[0].id}?alt=media&spaces=appDataFolder`, {
       headers: { 'Authorization': `Bearer ${state.driveToken}` }
     });
     const config = await fileRes.json();
 
-    // ── Restore settings from Drive config ──────────────────────
-    // Only apply if the remote value is set and local is not —
-    // local always wins if already configured (avoid overwrite loop)
-    if (config.mesoStartDate && !state.mesoStartDate) {
+    // ── Weight log: two-way merge, newest write per date wins ───
+    // Unlike the settings below, this never lets one device win outright —
+    // both sides keep every entry the other recorded.
+    const remoteLog = mergeWeightLogs(config.weightLog, []);
+    const mergedLog = mergeWeightLogs(state.weightLog, remoteLog);
+    const needsPush = JSON.stringify(mergedLog) !== JSON.stringify(remoteLog);
+    applyWeightLog(mergedLog);
+
+    // ── Settings: whichever device edited last wins ─────────────
+    // Without this the periodic sync would keep reverting edits made on
+    // the other device back to whatever the stale Drive copy held.
+    const remoteVersion = Number(config.version) || 0;
+    const localVersion  = Number(state.configVersion) || 0;
+    const remoteNewer   = remoteVersion > localVersion;
+
+    if (config.mesoStartDate && (remoteNewer || !state.mesoStartDate)) {
       state.mesoStartDate = config.mesoStartDate;
       const el = document.getElementById('meso-start-date');
       if (el) el.value = config.mesoStartDate;
       const sEl = document.getElementById('s-meso-date');
       if (sEl) sEl.value = config.mesoStartDate;
     }
-    if (config.mesoWeekOverride && !state.mesoWeekOverride) {
+    if (config.mesoWeekOverride && (remoteNewer || !state.mesoWeekOverride)) {
       state.mesoWeekOverride = config.mesoWeekOverride;
       const el = document.getElementById('meso-week-override');
       if (el) el.value = config.mesoWeekOverride;
     }
 
     // ── Restore rest periods and exercise customisations ────────
-    if (config.sessions) {
+    // Skipped outright while a workout is live: rewriting the programme
+    // under an in-progress session would throw away unsaved sets.
+    const sessionLive = state.activeSessionId !== null;
+    if (config.sessions && remoteNewer && !sessionLive) {
       config.sessions.forEach(remote => {
         const local = state.programme.sessions.find(s => s.id === remote.id);
         if (local) {
@@ -4890,12 +4943,32 @@ async function loadProgrammeFromDrive() {
             // built-in programme inserts/reorders exercises.
             const lex = (rex.name && local.exercises.find(e => e.name === rex.name))
                      || (!rex.name && local.exercises.find(e => e.num === rex.num));
-            if (lex) { lex.sets = rex.sets; lex.reps = rex.reps; lex.load = rex.load; }
+            if (!lex) return;
+            lex.sets = rex.sets; lex.reps = rex.reps; lex.load = rex.load;
+            if (Array.isArray(rex.repRange) && rex.repRange.length === 2) lex.repRange = rex.repRange;
+            // Mirror into exOverrides so a pulled edit survives a reload here
+            state.exOverrides = state.exOverrides || {};
+            const exMap = state.exOverrides[local.id] = state.exOverrides[local.id] || {};
+            exMap[lex.num] = Object.assign({}, exMap[lex.num], {
+              sets: lex.sets, reps: lex.reps, load: lex.load, repRange: lex.repRange
+            });
           });
         }
       });
     }
+
+    if (remoteNewer && !sessionLive) {
+      state.configVersion = remoteVersion;
+      saveSettings(false);
+      renderProgramme();
+      renderTracker();
+    }
+
+    // Deferring the programme half above leaves us still behind, so keep
+    // the local version stale and pick the edits up on a later sync.
+    return needsPush || localVersion > remoteVersion;
   } catch(e) { console.warn('[Drive] Programme config load failed:', e); }
+  return false;
 }
 
 /* ═══════════════════════════════════════════
@@ -4958,9 +5031,20 @@ async function syncSessionsFromDrive(showToast) {
   try {
     if (showToast) toast('Syncing with Google Drive…', 'info');
 
+    // Config (weight log, meso dates, exercise edits) rides its own file and
+    // must round-trip on every sync — not only at connect time, or a weight
+    // logged on one device never reaches the other.
+    let configPushed = false;
+    try {
+      if (await loadProgrammeFromDrive()) {
+        await saveProgrammeToDrive();
+        configPushed = true;
+      }
+    } catch(e) { console.warn('[Drive] Config sync failed:', e); }
+
     const driveFiles = await listDriveSessionFiles();
     if (!driveFiles.length && showToast) {
-      toast('Drive is empty — nothing to sync', 'info');
+      toast(configPushed ? 'Settings synced' : 'Drive is empty — nothing to sync', 'info');
       updateLastSynced();
       return;
     }
@@ -5058,7 +5142,7 @@ async function syncSessionsFromDrive(showToast) {
     }
 
     // Save programme config once after all uploads
-    if (uploadCount > 0) {
+    if (uploadCount > 0 && !configPushed) {
       await saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme save failed:', e));
     }
 
@@ -5266,21 +5350,51 @@ function renderLastSynced(date) {
    Settings quick-add or the permanent Dashboard tracker — both funnel
    through logBodyweight() so the two views never diverge.
 ═══════════════════════════════════════════ */
+// Merge two weight logs into one chronological list.
+// One entry per date; when both sides hold the same date the newer write
+// (higher ts) wins. Entries without a ts are legacy and lose to any write
+// that carries one, which is what makes a phone entry beat a stale web copy.
+function mergeWeightLogs(a, b) {
+  const byDate = new Map();
+  [...(a || []), ...(b || [])].forEach(e => {
+    if (!e || !e.date) return;
+    const kg = parseFloat(e.kg);
+    if (!isFinite(kg) || kg < 20 || kg > 300) return;
+    const ts = Number(e.ts) > 0 ? Number(e.ts) : 0;
+    const cur = byDate.get(e.date);
+    if (!cur || ts >= cur.ts) byDate.set(e.date, { date: e.date, kg, ts });
+  });
+  return [...byDate.values()].sort((x, y) => x.date.localeCompare(y.date));
+}
+
+// Apply a merged log to state + storage + both views. Returns true if
+// anything actually changed.
+function applyWeightLog(log) {
+  const before = JSON.stringify(state.weightLog || []);
+  if (JSON.stringify(log) === before) return false;
+  state.weightLog  = log;
+  state.bodyweight = log.length ? log[log.length - 1].kg : null;
+  // The log merges entry by entry, so it never needs the version tiebreak
+  saveSettings(false);
+  renderWeightLog();
+  renderDashboardWeightSection();
+  return true;
+}
+
 function logBodyweight(inputId) {
   inputId = inputId || 's-bw';
   const input = document.getElementById(inputId);
   if (!input) return;
   const val = parseFloat(input.value);
   if (!val || val < 20 || val > 300) { toast('Enter a valid weight (20–300 kg)', 'error'); return; }
-  const log = [...(state.weightLog || [])];
   const today = localDateStr();
-  const idx = log.findIndex(e => e.date === today);
-  if (idx !== -1) log[idx] = { date: today, kg: val };
-  else log.push({ date: today, kg: val });
-  setState({ weightLog: log, bodyweight: val });
+  const log = mergeWeightLogs(state.weightLog, [{ date: today, kg: val, ts: Date.now() }]);
+  setState({ weightLog: log, bodyweight: log[log.length - 1].kg });
   input.value = '';
   renderWeightLog();
   renderDashboardWeightSection();
+  // Push straight to Drive so the other device sees it on its next sync
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Weight log push failed:', e));
   toast(`Weight logged: ${val} kg`, 'success');
 }
 
@@ -7809,6 +7923,14 @@ selectTrackerSession = function(sessionId) {
       const rows = document.querySelector(`#sets-${sessionId}-${idx}`);
       if (!rows) return;
       rows.addEventListener('input', () => updateExerciseSetGlow(sessionId, idx));
+      // Glow every restored row from its own values so the whole card is
+      // consistent — not just the rows the user happened to re-touch.
+      rows.querySelectorAll('.set-row').forEach(row => {
+        const repsEl = row.querySelector('.set-reps-val');
+        const loadEl = row.querySelector('.set-load-val');
+        evaluateSetByValues(row, parseInt(repsEl ? repsEl.value : ''), loadEl ? loadEl.value : '', ex.repRange);
+      });
+      updateExerciseSetGlow(sessionId, idx);
     });
   }, 50);
 };
@@ -8594,13 +8716,10 @@ function saveProfileSettings() {
   // Build updated weight log
   const patch = {};
   if (bw) {
-    const log = [...(state.weightLog || [])];
-    const today = new Date().toISOString().split('T')[0];
-    const idx = log.findIndex(e => e.date === today);
-    if (idx !== -1) log[idx] = { date: today, kg: bw };
-    else log.push({ date: today, kg: bw });
-    patch.weightLog = log;
-    patch.bodyweight = bw;
+    const log = mergeWeightLogs(state.weightLog,
+                                [{ date: localDateStr(), kg: bw, ts: Date.now() }]);
+    patch.weightLog  = log;
+    patch.bodyweight = log[log.length - 1].kg;
   }
 
   // If week override changed, back-calculate a consistent start date
@@ -8637,6 +8756,7 @@ function saveProfileSettings() {
   if (Object.keys(patch).length) setState(patch);
   else saveSettings(); // band config changed only — still need a save
 
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Settings push failed:', e));
   renderProgramme();
   renderTracker();
   toast('Profile settings saved', 'success');
