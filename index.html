@@ -123,6 +123,15 @@
         <label>Current Week</label>
         <input type="number" id="meso-week-override" min="1" max="5" style="width:60px" placeholder="Auto">
         <button class="meso-save-btn" onclick="saveMesoSettings()">Save</button>
+        <span class="meso-settings-gap"></span>
+        <label>Goal</label>
+        <div class="goal-toggle" id="goal-toggle">
+          <button class="goal-btn" data-goal="build" onclick="setTrainingGoal('build')">Build</button>
+          <button class="goal-btn" data-goal="maintain" onclick="setTrainingGoal('maintain')">Maintain</button>
+        </div>
+      </div>
+      <div class="goal-note hidden" id="goal-note">
+        <strong>Maintenance block.</strong> Every exercise opens at 2 sets on your working load, RIR 2–3, reps at the bottom-to-middle of the range. No sets, load or variants are added; a missed rep floor still steps the load down. Switch back to <em>Build</em> to resume the mesocycle climb.
       </div>
 
       <!-- Meso weeks strip -->
@@ -305,6 +314,13 @@
           <div class="settings-field">
             <label>Current Week Override (leave blank for auto)</label>
             <input class="settings-input" id="s-meso-week" type="number" min="1" max="5" placeholder="Auto">
+          </div>
+          <div class="settings-field">
+            <label>Training Goal</label>
+            <div class="goal-toggle" id="s-goal-toggle">
+              <button class="goal-btn" data-goal="build" onclick="setTrainingGoal('build')">Build — progress every block</button>
+              <button class="goal-btn" data-goal="maintain" onclick="setTrainingGoal('maintain')">Maintain — hold strength, minimum volume</button>
+            </div>
           </div>
           <div class="section-label" style="margin:16px 0 10px">Band Resistance Config</div>
           <div id="band-config-list"></div>
@@ -955,6 +971,9 @@ const Validator = (() => {
       console.warn(`[Validator] Invalid mesoWeekOverride "${data.mesoWeekOverride}" — cleared`);
     }
 
+    // trainingGoal: 'build' (default) | 'maintain'
+    clean.trainingGoal = data.trainingGoal === 'maintain' ? 'maintain' : 'build';
+
     // restPeriods: object of sessionId → number
     clean.restPeriods = {};
     if (data.restPeriods && typeof data.restPeriods === 'object') {
@@ -1465,6 +1484,9 @@ const GUIDE_SECTIONS = [
       <h4>Muscle-Aware Volume</h4>
       <p>Each exercise is tagged with the muscles it targets. The app counts <strong>hard sets per muscle per week</strong> (secondary muscles count half). When a Double exercise is due an extra set but its primary muscle is already past its weekly maximum (MRV — 20 sets for large muscles, less for calves, core and small hip muscles), the set is not added: the load moves instead, or the card says <em>Volume cap</em> and holds. The Programme Editor shows the planned sets per muscle so a new session can be balanced before it is ever trained.</p>
 
+      <h4>Maintenance Mode</h4>
+      <p>The <strong>Goal</strong> toggle (Programme tab, or Settings → Profile) switches between <em>Build</em> and <em>Maintain</em>. In Maintain, every exercise opens at 2 sets on your current working load, RIR 2–3, with the rep target at the bottom-to-middle of the range — the minimum that holds strength. No sets, load or variants are queued and the dashboard shows no pending suggestions. A missed rep floor still steps the load down. Deload week behaves as usual. Switch back to Build and the mesocycle climb resumes from your working loads.</p>
+
       <h4>Stalls</h4>
       <p>Four sessions at the same load with the weakest set never improving, and still short of the ceiling, is a stall. The app steps the load down one notch for a rebuild — 3 sets, run the range back up, then retry the old load. With no lighter option it asks for a change of stimulus instead: a slower eccentric, a pause, or the next variant.</p>
 
@@ -1667,6 +1689,7 @@ const INITIAL_STATE = {
   // Mesocycle
   mesoStartDate:        null,   // ISO date string 'YYYY-MM-DD'
   mesoWeekOverride:     null,   // integer 1–5, or null for auto
+  trainingGoal:         'build', // 'build' | 'maintain'
 
   // Programme edits: sessionId → exNum → { sets, reps, rir, load, repRange }
   exOverrides:          {},
@@ -1704,6 +1727,7 @@ const INITIAL_STATE = {
 const STATE_EFFECTS = {
   mesoStartDate:    ['saveSettings', 'updateMesoDisplay'],
   mesoWeekOverride: ['saveSettings', 'updateMesoDisplay'],
+  trainingGoal:     ['saveSettings', 'updateMesoDisplay'],
   bodyweight:       ['saveSettings'],
   weightLog:        ['saveSettings'],
   jeLadderKeyMap:   ['saveSettings'],
@@ -1855,6 +1879,7 @@ async function loadLocalState() {
   // Apply all settings fields directly (no side effects during init)
   state.mesoStartDate    = data.mesoStartDate    || null;
   state.mesoWeekOverride = data.mesoWeekOverride || null;
+  state.trainingGoal     = data.trainingGoal === 'maintain' ? 'maintain' : 'build';
   state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
   state.weightLog        = weightLog;
   state.bodyweight       = bodyweight;
@@ -1951,6 +1976,7 @@ function saveSettings(bumpVersion = true) {
   StorageManager.saveSettings(state.profile, {
     mesoStartDate:    state.mesoStartDate,
     mesoWeekOverride: state.mesoWeekOverride,
+    trainingGoal:     state.trainingGoal || 'build',
     restPeriods,
     exOverrides:      state.exOverrides       || {},
     sessionsConfig:   serializeSessions(),
@@ -2035,12 +2061,14 @@ function isDeloadWeek() {
 }
 
 function getMesoSetTarget(week) {
+  if (isMaintenanceMode() && !(getMesoPlanWeek(week)?.deload)) return MAINTAIN_SETS;
   const DEFAULT = { 1: 3, 2: 4, 3: 5, 4: 5, 5: 2 };
   const w = getMesoPlanWeek(week);
   return w ? parseSetsSpec(w.sets, DEFAULT[week] || 3) : (DEFAULT[week] || 3);
 }
 
 function getMesoRIRTarget(week) {
+  if (isMaintenanceMode() && !(getMesoPlanWeek(week)?.deload)) return [2, 3];
   const DEFAULT = { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] };
   const w = getMesoPlanWeek(week);
   return w ? parseRIRSpec(w.rir, DEFAULT[week] || [1,4]) : (DEFAULT[week] || [1,4]);
@@ -2078,10 +2106,37 @@ function updateMesoDisplay() {
   if (isDeloadWeek()) {
     el.textContent = 'Deload Week';
     el.className = 'topbar-meso deload-active';
+  } else if (isMaintenanceMode()) {
+    el.textContent = `Week ${week} / 5 · Maintain`;
+    el.className = 'topbar-meso maintain-active';
   } else {
     el.textContent = `Week ${week} / 5`;
     el.className = 'topbar-meso';
   }
+  // Goal toggles (programme tab + settings) and the explanatory note
+  const goal = state.trainingGoal || 'build';
+  document.querySelectorAll('.goal-btn').forEach(b => b.classList.toggle('on', b.dataset.goal === goal));
+  document.getElementById('goal-note')?.classList.toggle('hidden', goal !== 'maintain');
+}
+
+/* ── TRAINING GOAL ─────────────────────────────
+   'build'    — the mesocycle climb and every step-up rule run as normal
+   'maintain' — hold strength on minimum volume: 2 sets at the working
+                load, RIR 2–3, reps bottom-to-middle of the range. No
+                set / load / variant step-ups are queued; step-downs on a
+                missed rep floor still apply so the load stays honest.  */
+function isMaintenanceMode() { return state.trainingGoal === 'maintain'; }
+const MAINTAIN_SETS = 2;
+
+function setTrainingGoal(goal) {
+  const g = goal === 'maintain' ? 'maintain' : 'build';
+  if (g === state.trainingGoal) return;
+  setState({ trainingGoal: g });
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Settings push failed:', e));
+  renderProgramme();
+  renderTracker();
+  if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
+  toast(g === 'maintain' ? 'Maintenance mode — holding strength on minimum volume' : 'Build mode — mesocycle progression resumed', 'success');
 }
 
 /* ═══════════════════════════════════════════
@@ -5294,6 +5349,7 @@ async function saveProgrammeToDrive() {
       profile: state.profile,
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
+      trainingGoal: state.trainingGoal || 'build',
       weightLog: state.weightLog || [],
       // The whole programme: custom sessions, added exercises, muscles,
       // progression models. `full` tells older readers to take it as-is.
@@ -5370,6 +5426,10 @@ async function loadProgrammeFromDrive() {
       state.mesoWeekOverride = config.mesoWeekOverride;
       const el = document.getElementById('meso-week-override');
       if (el) el.value = config.mesoWeekOverride;
+    }
+    if (config.trainingGoal && remoteNewer) {
+      state.trainingGoal = config.trainingGoal === 'maintain' ? 'maintain' : 'build';
+      updateMesoDisplay();
     }
 
     // ── Restore rest periods and exercise customisations ────────
@@ -6172,7 +6232,7 @@ function getThisWeekSessions() {
 // session: sets, load, variant, tempo, stall — not the per-set rep nudges.
 function getPendingProgressions() {
   const suggestions = [];
-  if (isDeloadWeek()) return [];
+  if (isDeloadWeek() || isMaintenanceMode()) return [];
   const SKIP = ['add_reps', 'repeat', 'deload', 'calibrating', 'maintain', 'hold'];
 
   state.programme.sessions.forEach(sess => {
@@ -6715,7 +6775,7 @@ function renderDashboard() {
     <!-- Greeting -->
     <div class="dash-section dashboard-col-left">
       <div class="dash-greeting">${greeting}, ${profile.name}</div>
-      <div class="dash-greeting-sub">${dateStr} · Week ${week} of 5${isDeload ? ' · Deload' : ''}</div>
+      <div class="dash-greeting-sub">${dateStr} · Week ${week} of 5${isDeload ? ' · Deload' : isMaintenanceMode() ? ' · <span style="color:var(--amber)">Maintenance</span>' : ''}</div>
     </div>
 
     <!-- Mesocycle timeline -->
@@ -8091,6 +8151,7 @@ function resolveProgressionRule(sessionId, ex) {
   const setsForWeek = week => {
     const deload = getMesoPlanWeek(week)?.deload || week === 5;
     if (deload) return Math.min(2, fixed || 2);
+    if (isMaintenanceMode()) return Math.min(MAINTAIN_SETS, fixed || MAINTAIN_SETS, ex.maxSets || Infinity);
     return fixed || Math.min(getMesoSetTarget(week), ex.maxSets || Infinity);
   };
 
@@ -8387,9 +8448,20 @@ function getExercisePrescription(sessionId, ex) {
     return rx;
   }
 
+  // ── Maintenance: hold the working load on minimum volume ──────
+  // Sets and RIR already come from the rule / meso helpers. Reps aim at
+  // the bottom-to-middle of the range; no step-up runs. A missed floor
+  // still steps down (below), so the held load stays one you can lift.
+  const maintaining = isMaintenanceMode();
+  if (maintaining) {
+    rx.sets = rule.setsForWeek(week);
+    rx.reps = [rr[0], Math.max(rr[0], Math.round((rr[0] + rr[1]) / 2))];
+  }
+
   // ── Step up: the model's own trigger ──────────────────────────
   let sug = null;
-  if (rule.model === 'ladder')      sug = getLadderSuggestion(ex.name, sessionId, rr);
+  if (maintaining)                  sug = null;
+  else if (rule.model === 'ladder') sug = getLadderSuggestion(ex.name, sessionId, rr);
   else if (rule.model === 'skill')  sug = getSkillStepUp(sessionId, ex, rule, logs);
   else if (rule.model === 'timed')  sug = getTimedStepUp(sessionId, ex, rule, logs);
   else                              sug = getDoubleStepUp(sessionId, ex, rule, logs);
@@ -8430,6 +8502,12 @@ function getExercisePrescription(sessionId, ex) {
       rx.change = { type: 'hold', label: 'Hold',
         message: `Missed ${rr[0]} reps last time at ${fmtLoad(lastLoad) || 'this load'} — same load, get every set to ${rr[0]}+.` };
     }
+    return rx;
+  }
+
+  if (maintaining) {
+    rx.change = { type: 'maintain', label: 'Maintain',
+      message: `Maintenance block — ${rx.sets} set${rx.sets === 1 ? '' : 's'} at ${fmtLoad(rx.load) || 'your working load'}, ${fmtRepBand(rx.reps)} reps, RIR 2–3. Strength held, nothing queued.` };
     return rx;
   }
 
