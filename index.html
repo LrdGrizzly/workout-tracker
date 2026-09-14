@@ -433,7 +433,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.11.0';
+const APP_VERSION = '5.0.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -884,6 +884,57 @@ const Validator = (() => {
     };
   }
 
+  // ── Programme (sessionsConfig) validation ─────────────────────
+  const SESSION_STR_FIELDS  = ['id', 'name', 'subtitle', 'class', 'color', 'colorRgb', 'sessionType', 'note'];
+  const EXERCISE_STR_FIELDS = ['name', 'type', 'sets', 'reps', 'load', 'prog', 'notes', 'desc', 'altName', 'pattern', 'equipment', 'progression'];
+  const strArr = v => Array.isArray(v) ? v.filter(x => typeof x === 'string') : null;
+
+  function validateExerciseConfig(ex) {
+    if (!ex || typeof ex !== 'object' || typeof ex.name !== 'string' || !ex.name.trim()) return null;
+    const o = {};
+    EXERCISE_STR_FIELDS.forEach(f => { if (typeof ex[f] === 'string') o[f] = ex[f]; });
+    if (!['compound', 'accessory', 'prehab', 'optional'].includes(o.type)) o.type = 'accessory';
+    o.tags = strArr(ex.tags) || [o.type];
+    const subs = strArr(ex.substitutions);
+    if (subs) o.substitutions = subs;
+    if (Array.isArray(ex.repRange) && ex.repRange.length === 2
+        && ex.repRange.every(n => typeof n === 'number' && isFinite(n))) o.repRange = ex.repRange;
+    const ms = coerceNumber(ex.maxSets, 1, 10);
+    if (ms !== null) o.maxSets = ms;
+    if (ex.muscles && typeof ex.muscles === 'object') {
+      const p = strArr(ex.muscles.primary) || [], s = strArr(ex.muscles.secondary) || [];
+      if (p.length || s.length) o.muscles = { primary: p, secondary: s };
+    }
+    if (Array.isArray(ex.ladder)) {
+      const ladder = ex.ladder
+        .filter(r => r && typeof r.variant === 'string')
+        .map(r => ({ variant: r.variant, cue: typeof r.cue === 'string' ? r.cue : '',
+                     type: typeof r.type === 'string' ? r.type : 'bw', support: !!r.support }));
+      if (ladder.length) o.ladder = ladder;
+    }
+    return o;
+  }
+
+  function validateSessionsConfig(arr) {
+    if (!Array.isArray(arr)) return null;
+    const out = [];
+    arr.forEach(s => {
+      if (!s || typeof s !== 'object' || typeof s.id !== 'string' || typeof s.name !== 'string') return;
+      const o = {};
+      SESSION_STR_FIELDS.forEach(f => { if (typeof s[f] === 'string') o[f] = s[f]; });
+      const rest = coerceNumber(s.rest, 10, 600);
+      o.rest = rest === null ? 60 : rest;
+      const days = strArr(s.days);
+      if (days) o.days = days;
+      const focus = strArr(s.focus);
+      if (focus) o.focus = focus;
+      if (s.custom) o.custom = true;
+      o.exercises = (Array.isArray(s.exercises) ? s.exercises : []).map(validateExerciseConfig).filter(Boolean);
+      out.push(o);
+    });
+    return out.length ? out : null;
+  }
+
   // ── Settings validation ───────────────────────────────────────
   function validateSettings(data) {
     if (!data || typeof data !== 'object') return {};
@@ -934,6 +985,10 @@ const Validator = (() => {
         if (Object.keys(cleanEx).length) clean.exOverrides[sid] = cleanEx;
       });
     }
+
+    // sessionsConfig: the full programme — array of sessions, each with
+    // an exercises array. Only known fields survive, with type checks.
+    clean.sessionsConfig = validateSessionsConfig(data.sessionsConfig);
 
     // jeLadderKeyMap: object of string → string
     clean.jeLadderKeyMap = {};
@@ -994,7 +1049,7 @@ const Validator = (() => {
     return validateSettings(obj);
   }
 
-  return { sessions, settings };
+  return { sessions, settings, sessionsConfig: validateSessionsConfig };
 })();
 
 const PROGRAMMES = {
@@ -1022,6 +1077,7 @@ const PROGRAMMES = {
     sessions: [
       {
         id: 'push-a',
+        days: ['Mon'],
         name: 'Push A',
         subtitle: 'Chest & Triceps',
         class: 's-push-a',
@@ -1050,6 +1106,7 @@ const PROGRAMMES = {
       },
       {
         id: 'pull',
+        days: ['Tue'],
         name: 'Pull',
         subtitle: 'Back, Biceps & Rear Delt',
         class: 's-pull',
@@ -1074,6 +1131,7 @@ const PROGRAMMES = {
       },
       {
         id: 'legs-a',
+        days: ['Wed'],
         name: 'Legs A',
         subtitle: 'Quad Focus',
         class: 's-legs-a',
@@ -1096,6 +1154,7 @@ const PROGRAMMES = {
       },
       {
         id: 'push-b',
+        days: ['Thu'],
         name: 'Push B',
         subtitle: 'Shoulders & Triceps',
         class: 's-push-b',
@@ -1124,6 +1183,7 @@ const PROGRAMMES = {
       },
       {
         id: 'legs-b',
+        days: ['Fri'],
         name: 'Legs B',
         subtitle: 'Hip Hinge, Hamstrings & Glutes',
         class: 's-legs-b',
@@ -1152,6 +1212,7 @@ const PROGRAMMES = {
         color: 'var(--kb-flow)',
         colorRgb: '255,144,80',
         rest: 60,
+        sessionType: 'optional',
         note: 'Sporadic session — use as a Saturday bonus or replacement for any PPL session. Best substitution for Push B or Legs B. Not a substitute for Pull or Legs A. Quality over speed throughout.',
         exercises: [
           { num: '01', name: 'Two-Hand Swing', tags: ['compound'], type: 'compound', sets: '3', reps: '15', repRange: [15,15], load: '16 kg', prog: '20 kg', notes: 'Foundation ballistic. Hip snap drives the bell.',
@@ -1296,6 +1357,7 @@ const PROGRAMMES = {
         color: 'var(--session-a)',
         colorRgb: '126,200,227',
         rest: 60,
+        days: ['Mon', 'Fri'],
         note: 'Full body session. Squat pattern leads with support. Push and pull balanced. Hinge via RDL. Glute bridge requires no squat pattern. Dead bug teaches spinal stability.',
         exercises: [
           { num: '01', name: 'Supported Bodyweight Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '10–12', repRange: [10,12], load: 'BW (wall / chair)', prog: 'Fingertips only → freestanding → 4 kg goblet', notes: 'Wall or chair hold. Depth and posture first. Progress support gradually.',
@@ -1319,6 +1381,7 @@ const PROGRAMMES = {
         color: 'var(--session-b)',
         colorRgb: '249,168,117',
         rest: 60,
+        days: ['Wed'],
         note: 'Full body session alternating with Session A. Reverse lunge is more accessible than bilateral squat for those with mobility restrictions. Incline push-up reduces load. Sumo deadlift offers a wider, more stable stance. Hip thrust maximises glute activation.',
         exercises: [
           { num: '01', name: 'Supported Reverse Lunge', tags: ['compound', 'unilateral', 'bw'], type: 'compound', sets: '3', reps: '10/side', repRange: [10,10], load: 'BW (chair hold)', prog: 'Fingertips → freestanding → 4 kg goblet', notes: 'Chair hold for balance. Step back, knee toward floor. Control.',
@@ -1386,6 +1449,25 @@ const GUIDE_SECTIONS = [
     content: `
       <div class="guide-rule">The golden rule: change one variable at a time. Never increase load and sets in the same session. Never increase reps and load simultaneously.</div>
 
+      <h4>Every Exercise Runs Its Own Rule</h4>
+      <p>The app picks a <strong>progression model</strong> for each exercise from its attributes — target muscles, movement pattern, equipment and role — and runs that model against the exercise's own history, the mesocycle week and your weekly volume per muscle. You see the model on the programme card and under “Today” in the tracker. New exercises get a model the moment they are added; nothing needs configuring unless you want to override it in Settings → Programme Editor.</p>
+      <table class="guide-table">
+        <thead><tr><th>Model</th><th>Used for</th><th>How it moves</th></tr></thead>
+        <tbody>
+          <tr><td>Double</td><td>Loaded work — KB, band, BW + band</td><td>Reps up through the range → sets up with the meso week → load up, sets reset to 3 (the steps below)</td></tr>
+          <tr><td>Variant ladder</td><td>Bodyweight and light-load patterns with a defined ladder</td><td>Next rung when the rep ceiling is hit twice at the current rung; support grip reduced after 3 clean sessions</td></tr>
+          <tr><td>Skill / power</td><td>Swings, cleans, snatches, get-ups, jumps</td><td>Sets follow the plan. Next bell only when every set is clean at RIR 2+ for two sessions — quality before load</td></tr>
+          <tr><td>Timed hold</td><td>Reps written as a time (30s)</td><td>+5s once every set reaches the target twice</td></tr>
+          <tr><td>Maintain</td><td>Prehab, transition sessions</td><td>Repeats last time. No automatic change</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Muscle-Aware Volume</h4>
+      <p>Each exercise is tagged with the muscles it targets. The app counts <strong>hard sets per muscle per week</strong> (secondary muscles count half). When a Double exercise is due an extra set but its primary muscle is already past its weekly maximum (MRV — 20 sets for large muscles, less for calves, core and small hip muscles), the set is not added: the load moves instead, or the card says <em>Volume cap</em> and holds. The Programme Editor shows the planned sets per muscle so a new session can be balanced before it is ever trained.</p>
+
+      <h4>Stalls</h4>
+      <p>Four sessions at the same load with the weakest set never improving, and still short of the ceiling, is a stall. The app steps the load down one notch for a rebuild — 3 sets, run the range back up, then retry the old load. With no lighter option it asks for a change of stimulus instead: a slower eccentric, a pause, or the next variant.</p>
+
       <h4>Step 1 — Add a Rep</h4>
       <p>If you finish a set with more capacity than expected, you may move through the rep range naturally. This happens organically — no formal action needed yet.</p>
       <div class="guide-example"><strong>Example</strong>Floor Press target: 6–8 reps. Week 1 session 1: 6 reps at 3 RIR. Week 1 session 2: 7 reps at same RIR. Moving through the range naturally — no action needed yet.</div>
@@ -1439,7 +1521,8 @@ const GUIDE_SECTIONS = [
           <tr><td style="color:var(--pull)">Blue</td><td>Increase load</td><td>Session opens with 3 sets — increase load before starting</td></tr>
           <tr><td style="color:var(--push-b)">Purple</td><td>Tempo</td><td>Apply 3s eccentric. Tap “Mark tempo applied” on the card</td></tr>
           <tr><td style="color:var(--red)">Red</td><td>Equipment ceiling</td><td>No automatic progression — new kit needed</td></tr>
-          <tr><td style="color:var(--amber)">Amber</td><td>Support reduction</td><td>Reduce support grip (Je’s programme only — see section below)</td></tr>
+          <tr><td style="color:var(--amber)">Amber</td><td>Support reduction / Volume cap</td><td>Reduce the support grip (ladder exercises), or hold sets because the muscle is at its weekly maximum</td></tr>
+          <tr><td style="color:var(--red)">Red</td><td>Stall / Load down</td><td>Session opens on a lighter load for a rebuild</td></tr>
         </tbody>
       </table>
       <p>No card appears in week 1 or during deload. Those weeks are intentionally suppressed.</p>
@@ -1491,9 +1574,9 @@ const GUIDE_SECTIONS = [
   }
   ,{
     num: '05',
-    title: "Je’s Programme — How Progression Works",
+    title: "Variant Ladders — How They Progress",
     content: `
-      <p>Je’s programme uses a <strong>variant ladder</strong> system rather than load-driven progression. Each exercise has a defined sequence of variants, from easier to harder. The app tracks which rung you’re on and suggests the next step when conditions are met.</p>
+      <p>Bodyweight and light-load exercises use a <strong>variant ladder</strong> rather than load-driven progression. Each exercise has a defined sequence of variants, from easier to harder. The app tracks which rung you’re on and suggests the next step when conditions are met. Je’s programme is built on ladders; any exercise in any programme can be given one in Settings → Programme Editor (one rung per line, easiest first).</p>
 
       <h4>Two Trigger Types</h4>
       <table class="guide-table">
@@ -1533,8 +1616,39 @@ const GUIDE_SECTIONS = [
       <h4>At the Top of the Ladder</h4>
       <p>When you reach the final rung, no suggestion card appears. This is intentional — the goal is quality and consistency at that level, not further complexity. Load increases for KB exercises at the top follow the same add-set → increase-load logic as Alex’s programme.</p>
 
-      <h4>No Deload Suppression for Je</h4>
-      <p>Je’s progression suggestions are suppressed during deload week, same as Alex’s. Week 5 sessions are logged normally but don’t count toward trigger conditions.</p>
+      <h4>Deload</h4>
+      <p>Ladder suggestions are suppressed during deload week, the same as every other model. Week 5 sessions are logged normally but don’t count toward trigger conditions.</p>
+    `
+  },
+  {
+    num: '06',
+    title: 'Building a Programme',
+    content: `
+      <p>Settings → <strong>Programme Editor</strong> is where sessions and exercises are created. Everything built there is saved with your profile and synced to Drive, and the rule engine picks it up immediately.</p>
+
+      <h4>Sessions from a Template</h4>
+      <p><strong>+ New Session</strong> offers templates — Push, Pull, Legs (quad or hinge), Upper, Lower, Full Body, Core &amp; Mobility, or blank. A template sets the name, rest, colour and target muscles and seeds the session with matching exercises from the library. Edit the session to set its training days: those feed the weekly volume plan and the “sessions this week” count. A session marked <em>Optional</em> sits outside the rotation; <em>Transition</em> sessions never progress.</p>
+
+      <h4>Exercises: Library or New</h4>
+      <p><strong>+ From library</strong> lists every exercise the app knows — both built-in programmes, the alternatives, and anything you have ever logged — searchable and filterable by muscle. Adding one copies its targets and loads. <strong>+ New exercise</strong> opens the full form.</p>
+
+      <h4>What the Rule Engine Reads</h4>
+      <table class="guide-table">
+        <thead><tr><th>Field</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>Primary / secondary muscles</td><td>Weekly volume per muscle, the MRV cap on adding sets, the volume plan. Inferred from the name when not set — tap the chips to fix it</td></tr>
+          <tr><td>Pattern</td><td>Ballistic, carry and mobility patterns run the Skill model; everything else runs Double or a ladder</td></tr>
+          <tr><td>Equipment</td><td>Which load ladder steps are available: KB sizes, band colours, BW + band, or none</td></tr>
+          <tr><td>Sets</td><td>“3” is fixed; “3–5” follows the meso week. Max sets caps a superset addition</td></tr>
+          <tr><td>Rep range</td><td>Floor and ceiling for every trigger. Write “30s” for a timed hold</td></tr>
+          <tr><td>Progression</td><td>Auto picks the model; set it explicitly to pin one</td></tr>
+          <tr><td>Ladder</td><td>Variant rungs, easiest first. Present → the exercise runs the ladder model</td></tr>
+        </tbody>
+      </table>
+      <p>The form previews the resolved rule as you type, so you can see what the app will do with the exercise before saving it.</p>
+
+      <h4>Calibration</h4>
+      <p>A new exercise opens blank for its first two sessions. Log what you do; from the third session the targets, loads and rule kick in from that baseline.</p>
     `
   }
 ];
@@ -1621,7 +1735,7 @@ const state = { ...INITIAL_STATE };
 ═══════════════════════════════════════════ */
 async function selectProfile(profile) {
   state.profile = profile;
-  state.programme = PROGRAMMES[profile];
+  state.programme = buildProgramme(profile);
 
   document.getElementById('profile-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
@@ -1756,6 +1870,12 @@ async function loadLocalState() {
   state.configVersion = data.configVersion || 0;
   state.exOverrides = data.exOverrides || {};
   applyExOverrides();
+  // The saved programme (custom sessions, added / edited exercises) wins
+  // over the built-in defaults; exOverrides above only matter for
+  // settings written before the programme was persisted in full.
+  if (Array.isArray(data.sessionsConfig) && data.sessionsConfig.length) {
+    applySessionsConfig(data.sessionsConfig);
+  }
 
   // Update date inputs
   if (state.mesoStartDate) {
@@ -1773,6 +1893,38 @@ async function loadLocalState() {
     console.warn('[loadLocalState] IndexedDB load failed, falling back to empty', e);
     state.sessions = [];
   }
+}
+
+// A working copy of the built-in programme. Never hand out the constant
+// itself: edits, custom sessions and Drive pulls all mutate the copy.
+function buildProgramme(profile) {
+  const base = PROGRAMMES[profile];
+  return { ...base, sessions: JSON.parse(JSON.stringify(base.sessions)) };
+}
+
+// The programme as persisted: every session with every exercise field
+function serializeSessions() {
+  return JSON.parse(JSON.stringify(state.programme.sessions));
+}
+
+// Replace the working programme with a saved one. Built-in sessions and
+// exercises fill any field the saved copy lacks from the defaults, so the
+// long descriptions and coaching text keep coming from code.
+function applySessionsConfig(cfgSessions) {
+  const defaults = PROGRAMMES[state.profile].sessions;
+  const sessions = cfgSessions.map(cs => {
+    const base = defaults.find(d => d.id === cs.id);
+    const baseEx = name => base?.exercises.find(e => e.name === name)
+      || defaults.flatMap(d => d.exercises).find(e => e.name === name);
+    const exercises = (cs.exercises || []).map(cex => {
+      const d = baseEx(cex.name);
+      return d ? { ...JSON.parse(JSON.stringify(d)), ...cex } : { ...cex };
+    });
+    const merged = base ? { ...JSON.parse(JSON.stringify(base)), ...cs, exercises } : { ...cs, exercises };
+    merged.exercises.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); });
+    return merged;
+  });
+  state.programme.sessions = sessions;
 }
 
 // Re-apply stored programme exercise edits onto the default programme definition
@@ -1801,6 +1953,7 @@ function saveSettings(bumpVersion = true) {
     mesoWeekOverride: state.mesoWeekOverride,
     restPeriods,
     exOverrides:      state.exOverrides       || {},
+    sessionsConfig:   serializeSessions(),
     jeLadderKeyMap:   state.jeLadderKeyMap   || {},
     weightLog:        state.weightLog        || [],
     bodyweight:       state.bodyweight       || null,
@@ -1851,11 +2004,46 @@ function getCurrentMesoNumber() {
   return diffDays < 0 ? 1 : Math.floor(diffDays / 35) + 1;
 }
 
-function isDeloadWeek() { return getCurrentMesoWeek() === 5; }
+// The mesocycle plan comes from the programme's mesoWeeks rows, so a
+// programme with its own set / RIR ramp drives every target below.
+function getMesoPlanWeek(week) {
+  const plan = state.programme?.mesoWeeks || [];
+  return plan[(week || 1) - 1] || null;
+}
+
+// "3" → 3, "3–5" → 5 (the week's ceiling)
+function parseSetsSpec(spec, fallback) {
+  const m = String(spec || '').match(/(\d+)\s*[–\-]\s*(\d+)/);
+  if (m) return parseInt(m[2], 10);
+  const n = parseInt(spec, 10);
+  return isNaN(n) ? fallback : n;
+}
+
+// "3–4" → [3,4], "2" → [2,2], "5+" → [5,9]
+function parseRIRSpec(spec, fallback) {
+  const s = String(spec || '');
+  if (/\+/.test(s)) return [parseInt(s, 10) || 5, 9];
+  const m = s.match(/(\d+)\s*[–\-]\s*(\d+)/);
+  if (m) return [parseInt(m[1], 10), parseInt(m[2], 10)];
+  const n = parseInt(s, 10);
+  return isNaN(n) ? fallback : [n, n];
+}
+
+function isDeloadWeek() {
+  const w = getMesoPlanWeek(getCurrentMesoWeek());
+  return w ? !!w.deload : getCurrentMesoWeek() === 5;
+}
 
 function getMesoSetTarget(week) {
-  const targets = { 1: 3, 2: 4, 3: 5, 4: 5, 5: 2 };
-  return targets[week] || 3;
+  const DEFAULT = { 1: 3, 2: 4, 3: 5, 4: 5, 5: 2 };
+  const w = getMesoPlanWeek(week);
+  return w ? parseSetsSpec(w.sets, DEFAULT[week] || 3) : (DEFAULT[week] || 3);
+}
+
+function getMesoRIRTarget(week) {
+  const DEFAULT = { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] };
+  const w = getMesoPlanWeek(week);
+  return w ? parseRIRSpec(w.rir, DEFAULT[week] || [1,4]) : (DEFAULT[week] || [1,4]);
 }
 
 function saveMesoSettings() {
@@ -1945,6 +2133,10 @@ function buildSessionCard(session) {
     }).join('');
     const optTag = ex.type === 'optional' ? `<span class="ex-tag opt">Optional</span>` : '';
     const preTag = ex.type === 'prehab' ? `<span class="ex-tag pre">Prehab</span>` : '';
+    const rule   = resolveProgressionRule(session.id, ex);
+    const musTags = rule.attrs.primary.map(m => `<span class="ex-tag mus">${muscleLabel(m)}</span>`).join('')
+                  + rule.attrs.secondary.map(m => `<span class="ex-tag mus sec">${muscleLabel(m)}</span>`).join('');
+    const ruleTag = ex.type === 'optional' ? '' : `<span class="ex-tag rule" title="Progression: ${rule.label} — ${rule.why}">${rule.label}</span>`;
 
     return `<tr>
       <td class="ex-num">${ex.num}</td>
@@ -1956,7 +2148,7 @@ function buildSessionCard(session) {
               ${ex.name}
               ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
             </div>
-            <div class="ex-tags">${tags}${optTag}${preTag}</div>
+            <div class="ex-tags">${musTags}${tags}${optTag}${preTag}${ruleTag}</div>
           </div>
         </div>
       </td>
@@ -1978,7 +2170,7 @@ function buildSessionCard(session) {
       <td class="ex-load">
         <div class="ex-cell-view">
           <span>${ex.load}</span>
-          <div class="ex-load-prog">${computeNextProgression(ex)}</div>
+          <div class="ex-load-prog">${computeNextProgression(ex, session.id)}</div>
         </div>
         <div class="ex-cell-edit" style="display:none">
           ${buildExEditField(session.id, ex.num, 'load', 'Load', ex.load)}
@@ -1988,10 +2180,13 @@ function buildSessionCard(session) {
     </tr>`;
   }).join('');
 
-  return `<div class="session-card ${session.class}" id="card-${session.id}">
+  const focus = sessionFocusLabel(session);
+  const rgb   = session.colorRgb || '0,212,160';
+  const tagStyle = `color:${session.color};border-color:rgba(${rgb},0.4);background:rgba(${rgb},0.1)`;
+  return `<div class="session-card ${session.class || ''}" id="card-${session.id}" style="--sess-rgb:${rgb}">
     <div class="session-head" onclick="toggleSession('${session.id}')">
-      <div class="session-pip"></div>
-      <span class="session-tag">${session.name}</span>
+      <div class="session-pip" style="background:${session.color}"></div>
+      <span class="session-tag" style="${tagStyle}">${session.name}</span>
       <span class="session-title">${session.subtitle}</span>
       <div class="session-head-actions">
         <span class="session-meta">${session.exercises.filter(e=>e.type!=='optional').length} ex</span>
@@ -2000,7 +2195,8 @@ function buildSessionCard(session) {
       <span class="session-chevron">›</span>
     </div>
     <div class="session-body">
-      <div class="session-note"><strong>Order:</strong> ${session.note}</div>
+      ${focus ? `<div class="session-focus"><strong>Targets:</strong> ${focus}${session.days?.length ? ` · <strong>Days:</strong> ${session.days.join(', ')}` : ''}</div>` : ''}
+      ${session.note ? `<div class="session-note"><strong>Order:</strong> ${session.note}</div>` : ''}
       <div class="edit-plan-hint">Editing here changes the <strong>plan targets</strong> (set/rep ranges).
         To change the reps and RIR you actually performed, open the session in <strong>History</strong> and tap Edit.</div>
       <div class="rest-row">
@@ -2293,15 +2489,16 @@ function buildExerciseBody(session, idx) {
 
   const CHIP = {
     add_set: 'up', increase_load: 'up', add_reps: 'up', support_reduce: 'up',
-    'variant advancement': 'up', 'band progression': 'up',
-    decrease_load: 'down', decrease_set: 'down',
-    hold: 'hold', tempo: 'hold', equipment_ceiling: 'hold',
+    'variant advancement': 'up', 'band progression': 'up', skill_load: 'up', extend_hold: 'up',
+    decrease_load: 'down', decrease_set: 'down', stall: 'down',
+    hold: 'hold', tempo: 'hold', equipment_ceiling: 'hold', hold_volume: 'hold', maintain: 'info',
   };
   const why = [];
   if (rx.change) why.push(rx.change.message);
   if (rx.last && rx.last.session.sessionId !== session.id) {
     why.push(`Previous values from ${rx.last.session.sessionName || 'another session'}.`);
   }
+  if (rx.rule) why.push(`<span class="ex-rx-rule" title="${rx.rule.why}">${describeRule(rx.rule)}</span>`);
 
   const rxLine = `<div class="ex-rx">
       <span class="ex-rx-label">Today</span>
@@ -3054,13 +3251,10 @@ function endSession() {
     });
     const hasData = sets.some(s => s.reps || s.load);
     const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name]);
-    // For Je: store the ladder rung index explicitly so future reads don't need string matching
+    // Ladder exercises store the rung index explicitly so future reads don't need string matching
     let ladderRungIndex = undefined;
-    if (state.profile === 'je') {
-      const _ladder = getJeLadder(ex.name);
-      if (_ladder) {
-        ladderRungIndex = getCurrentVariantIndex(ex.name, state.activeSessionId);
-      }
+    if (getJeLadder(ex.name, state.activeSessionId)) {
+      ladderRungIndex = getCurrentVariantIndex(ex.name, state.activeSessionId);
     }
     exerciseData.push({
       name: ex.name, type: ex.type, repRange: ex.repRange,
@@ -3428,71 +3622,320 @@ function getE1RMComparison(days = 28) {
 // Ordered keyword → muscle-group rules; first match wins, so
 // specific patterns must come before generic ones (e.g. 'upright
 // row' before 'row', 'hamstring' before 'curl').
+/* ═══════════════════════════════════════════
+   EXERCISE ATTRIBUTES
+   Every exercise — built-in or user-added — resolves to the same
+   attribute set: target muscles (primary / secondary), movement
+   pattern and equipment. Explicit fields set in the Programme
+   Editor win; anything missing is inferred from the name, load
+   and tags, so a new exercise works without any configuration.
+   The progression rule engine, the dashboard volume panel and the
+   programme builder all read these.
+   Future home: /js/logic/exercise-attrs.js
+═══════════════════════════════════════════ */
+const MUSCLES = [
+  { id: 'chest',       label: 'Chest' },
+  { id: 'back',        label: 'Back' },
+  { id: 'shoulders',   label: 'Shoulders' },
+  { id: 'biceps',      label: 'Biceps' },
+  { id: 'triceps',     label: 'Triceps' },
+  { id: 'forearms',    label: 'Forearms' },
+  { id: 'quads',       label: 'Quads' },
+  { id: 'hamstrings',  label: 'Hamstrings' },
+  { id: 'glutes',      label: 'Glutes' },
+  { id: 'adductors',   label: 'Adductors' },
+  { id: 'hip-flexors', label: 'Hip flexors' },
+  { id: 'calves',      label: 'Calves' },
+  { id: 'core',        label: 'Core' },
+];
+const MUSCLE_IDS = MUSCLES.map(m => m.id);
+const muscleLabel = id => (MUSCLES.find(m => m.id === id) || { label: id }).label;
+
+// Weekly hard-set landmarks per muscle. Below MEV the muscle is under-
+// stimulated; past MRV extra sets stop paying back. The rule engine will
+// not add sets to an exercise whose primary muscle is already past MRV
+// this week, and the builder flags a plan that sits outside the band.
+const VOLUME_LANDMARKS = {
+  default:       { mev: 10, mrv: 20 },
+  forearms:      { mev: 4,  mrv: 12 },
+  'hip-flexors': { mev: 4,  mrv: 12 },
+  adductors:     { mev: 4,  mrv: 12 },
+  calves:        { mev: 6,  mrv: 16 },
+  core:          { mev: 6,  mrv: 16 },
+};
+const volumeLandmark = m => VOLUME_LANDMARKS[m] || VOLUME_LANDMARKS.default;
+
+const PATTERNS = [
+  { id: 'push-h',    label: 'Horizontal push' },
+  { id: 'push-v',    label: 'Vertical push' },
+  { id: 'pull-h',    label: 'Horizontal pull' },
+  { id: 'pull-v',    label: 'Vertical pull' },
+  { id: 'squat',     label: 'Squat' },
+  { id: 'hinge',     label: 'Hinge' },
+  { id: 'lunge',     label: 'Lunge / split' },
+  { id: 'isolation', label: 'Isolation' },
+  { id: 'core',      label: 'Core' },
+  { id: 'ballistic', label: 'Ballistic / plyo' },
+  { id: 'carry',     label: 'Carry / loaded hold' },
+  { id: 'mobility',  label: 'Mobility / prehab' },
+];
+const patternLabel = id => (PATTERNS.find(p => p.id === id) || { label: id }).label;
+
+const EQUIPMENT = [
+  { id: 'kb',      label: 'Kettlebell / weight' },
+  { id: 'band',    label: 'Band' },
+  { id: 'bw',      label: 'Bodyweight' },
+  { id: 'bw+band', label: 'Bodyweight + band' },
+  { id: 'timed',   label: 'Timed hold' },
+];
+const equipmentLabel = id => (EQUIPMENT.find(e => e.id === id) || { label: id }).label;
+
+// Progression models the rule engine can run. `auto` picks one from the
+// attributes; the others pin it for that exercise.
+const PROGRESSION_MODELS = {
+  auto:     { label: 'Auto',           desc: 'Pick the model from the exercise attributes.' },
+  double:   { label: 'Double',         desc: 'Reps climb through the range, sets climb with the meso week, then load steps up and sets reset.' },
+  ladder:   { label: 'Variant ladder', desc: 'Step through a list of variants, easiest to hardest, when the rep ceiling is hit at the current rung.' },
+  skill:    { label: 'Skill / power',  desc: 'Sets follow the plan. Load steps up only when every set is clean at RIR 2+ for two sessions — quality before load.' },
+  timed:    { label: 'Timed hold',     desc: 'Extend the hold once every set reaches the target time.' },
+  maintain: { label: 'Maintain',       desc: 'Repeat what was done last time. No automatic change (prehab, transition work).' },
+};
+
+// Attributes for the built-in exercises, by exact name.
+const KNOWN_EXERCISE_ATTRS = {
+  'KB Floor Press':                 { primary: ['chest'], secondary: ['triceps','shoulders'], pattern: 'push-h' },
+  'Banded Incline Press':           { primary: ['chest'], secondary: ['shoulders','triceps'], pattern: 'push-h' },
+  'Archer Push-up':                 { primary: ['chest'], secondary: ['triceps','core'], pattern: 'push-h' },
+  'Banded Chest Fly':               { primary: ['chest'], secondary: [], pattern: 'isolation' },
+  'KB Gorilla Row':                 { primary: ['back'], secondary: ['biceps'], pattern: 'pull-h' },
+  'Overhead Tricep Extension':      { primary: ['triceps'], secondary: [], pattern: 'isolation' },
+  'Dead Bug':                       { primary: ['core'], secondary: [], pattern: 'core' },
+  'Hollow Body Hold':               { primary: ['core'], secondary: [], pattern: 'core' },
+  'Bent-Over Row':                  { primary: ['back'], secondary: ['biceps'], pattern: 'pull-h' },
+  'Face Pull':                      { primary: ['shoulders'], secondary: ['back'], pattern: 'pull-h' },
+  'Banded Overhead Pull → Straight-Arm Pulldown': { primary: ['back'], secondary: [], pattern: 'pull-v' },
+  'Zottman Curl':                   { primary: ['biceps'], secondary: ['forearms'], pattern: 'isolation' },
+  'Banded Rear Delt Fly':           { primary: ['shoulders'], secondary: ['back'], pattern: 'isolation' },
+  'Supinated KB Curl':              { primary: ['biceps'], secondary: [], pattern: 'isolation' },
+  'Goblet Squat':                   { primary: ['quads'], secondary: ['glutes','core'], pattern: 'squat' },
+  'Lateral Band Walk':              { primary: ['glutes'], secondary: [], pattern: 'isolation' },
+  'Sissy Squat':                    { primary: ['quads'], secondary: [], pattern: 'squat' },
+  'ATG Split Squat':                { primary: ['quads'], secondary: ['glutes'], pattern: 'lunge' },
+  'Quad Nordic Curl':               { primary: ['quads'], secondary: [], pattern: 'isolation' },
+  'Single-Arm KB Press':            { primary: ['shoulders'], secondary: ['triceps','core'], pattern: 'push-v' },
+  'Banded Overhead Press':          { primary: ['shoulders'], secondary: ['triceps'], pattern: 'push-v' },
+  'Banded Lateral Raise':           { primary: ['shoulders'], secondary: [], pattern: 'isolation' },
+  'Banded Straight-Arm Pulldown':   { primary: ['back'], secondary: [], pattern: 'pull-v' },
+  'Banded Upright Row':             { primary: ['shoulders'], secondary: ['back'], pattern: 'pull-v' },
+  'Skullcrusher':                   { primary: ['triceps'], secondary: [], pattern: 'isolation' },
+  'Rotator Cuff External Rotation': { primary: ['shoulders'], secondary: [], pattern: 'mobility' },
+  'Plank':                          { primary: ['core'], secondary: [], pattern: 'core' },
+  'Ab Wheel Rollout':               { primary: ['core'], secondary: [], pattern: 'core' },
+  'KB Deadlift':                    { primary: ['hamstrings','glutes'], secondary: ['back'], pattern: 'hinge' },
+  'Single-Leg RDL':                 { primary: ['hamstrings','glutes'], secondary: ['core'], pattern: 'hinge' },
+  'Hip Thrust':                     { primary: ['glutes'], secondary: ['hamstrings'], pattern: 'hinge' },
+  'KB Swing':                       { primary: ['glutes','hamstrings'], secondary: ['back'], pattern: 'ballistic' },
+  'Banded Hamstring Curl':          { primary: ['hamstrings'], secondary: [], pattern: 'isolation' },
+  'Two-Hand Swing':                 { primary: ['glutes','hamstrings'], secondary: ['back'], pattern: 'ballistic' },
+  'KB Clean':                       { primary: ['glutes'], secondary: ['back','shoulders'], pattern: 'ballistic' },
+  'Clean-to-Press':                 { primary: ['shoulders','glutes'], secondary: ['triceps','core'], pattern: 'ballistic' },
+  'Cross-Body Clean':               { primary: ['glutes'], secondary: ['core','back'], pattern: 'ballistic' },
+  'Single-Arm Snatch':              { primary: ['glutes','shoulders'], secondary: ['back','core'], pattern: 'ballistic' },
+  'Windmill':                       { primary: ['core'], secondary: ['shoulders','hamstrings'], pattern: 'carry' },
+  'Turkish Get-Up':                 { primary: ['core','shoulders'], secondary: ['glutes'], pattern: 'carry' },
+  'Standing Banded Hip Flexion':    { primary: ['hip-flexors'], secondary: [], pattern: 'isolation' },
+  'Tuck Jump':                      { primary: ['quads','hip-flexors'], secondary: ['calves'], pattern: 'ballistic' },
+  'Cossack Squat':                  { primary: ['adductors','quads'], secondary: ['glutes'], pattern: 'lunge' },
+  'Lateral Bound to Stick':         { primary: ['glutes'], secondary: ['quads','calves'], pattern: 'ballistic' },
+  'Single-Leg Glute Bridge with Knee Hold': { primary: ['glutes'], secondary: ['hip-flexors'], pattern: 'hinge' },
+  'Single-Leg Pogo':                { primary: ['calves'], secondary: [], pattern: 'ballistic' },
+  'Dead Bug with Hip Flexion Drive': { primary: ['core','hip-flexors'], secondary: [], pattern: 'core' },
+  'Serratus Wall Slide':            { primary: ['shoulders'], secondary: [], pattern: 'mobility' },
+  'Reverse Nordic':                 { primary: ['quads','hip-flexors'], secondary: [], pattern: 'isolation' },
+  'Single-Leg Balance with KB Reach': { primary: ['calves','glutes'], secondary: ['core'], pattern: 'mobility' },
+  'Lateral Band Walk — Athletic Lean': { primary: ['glutes'], secondary: [], pattern: 'isolation' },
+  'Tibialis Anterior Raise':        { primary: ['calves'], secondary: [], pattern: 'isolation' },
+  'KB Windmill':                    { primary: ['core'], secondary: ['shoulders','hamstrings'], pattern: 'mobility' },
+  'Band Pull-Apart with Overhead Reach': { primary: ['shoulders'], secondary: ['back'], pattern: 'mobility' },
+  'KB Clean — Light and Fast':      { primary: ['glutes'], secondary: ['back','shoulders'], pattern: 'ballistic' },
+  'Single-Arm Alternating KB Swing': { primary: ['glutes','hamstrings'], secondary: ['core'], pattern: 'ballistic' },
+  'Single-Leg Calf Raise — Explosive Tempo': { primary: ['calves'], secondary: [], pattern: 'isolation' },
+  'Standing Hip Drive to Knee Raise (Banded)': { primary: ['hip-flexors'], secondary: [], pattern: 'isolation' },
+  'Lateral Step and Drive':         { primary: ['glutes','hip-flexors'], secondary: ['quads'], pattern: 'lunge' },
+  'Supported Bodyweight Squat':     { primary: ['quads','glutes'], secondary: [], pattern: 'squat' },
+  'Knee Push-up':                   { primary: ['chest'], secondary: ['triceps','shoulders'], pattern: 'push-h' },
+  'KB Romanian Deadlift':           { primary: ['hamstrings','glutes'], secondary: ['back'], pattern: 'hinge' },
+  'Banded Row':                     { primary: ['back'], secondary: ['biceps'], pattern: 'pull-h' },
+  'Glute Bridge':                   { primary: ['glutes'], secondary: ['hamstrings'], pattern: 'hinge' },
+  'Supported Reverse Lunge':        { primary: ['quads','glutes'], secondary: [], pattern: 'lunge' },
+  'Incline Push-up':                { primary: ['chest'], secondary: ['triceps','shoulders'], pattern: 'push-h' },
+  'KB Sumo Deadlift':               { primary: ['glutes','quads'], secondary: ['hamstrings','adductors'], pattern: 'hinge' },
+};
+
+// Keyword fallback for any exercise not in the table. First match wins,
+// so the more specific keywords sit higher.
 const MUSCLE_RULES = [
-  ['hamstring',     ['hamstrings']],
-  ['quad nordic',   ['quads']],
-  ['reverse nordic',['quads']],
-  ['nordic',        ['hamstrings']],
-  ['upright row',   ['shoulders']],
-  ['face pull',     ['shoulders']],
-  ['rear delt',     ['shoulders']],
-  ['lateral raise', ['shoulders']],
-  ['pull-apart',    ['back']],
-  ['pulldown',      ['back']],
-  ['pull-up',       ['back']],
-  ['chin-up',       ['back']],
-  ['overhead pull', ['back']],
-  ['row',           ['back']],
-  ['tricep',        ['triceps']],
-  ['skullcrusher',  ['triceps']],
-  ['pushdown',      ['triceps']],
-  ['curl',          ['biceps']],
-  ['chest fly',     ['chest']],
-  ['floor press',   ['chest']],
-  ['incline press', ['chest']],
-  ['bench',         ['chest']],
-  ['push-up',       ['chest']],
-  ['pushup',        ['chest']],
-  ['dip',           ['chest']],
-  ['press',         ['shoulders']],
-  ['deadlift',      ['hamstrings','glutes']],
-  ['rdl',           ['hamstrings','glutes']],
-  ['good morning',  ['hamstrings']],
-  ['swing',         ['glutes','hamstrings']],
-  ['hip thrust',    ['glutes']],
-  ['glute bridge',  ['glutes']],
-  ['band walk',     ['glutes']],
-  ['bound',         ['glutes']],
-  ['sissy',         ['quads']],
-  ['squat',         ['quads','glutes']],
-  ['lunge',         ['quads','glutes']],
-  ['step-up',       ['quads','glutes']],
-  ['tuck jump',     ['quads']],
-  ['calf',          ['calves']],
-  ['pogo',          ['calves']],
-  ['tibialis',      ['calves']],
-  ['clean',         ['glutes']],
-  ['snatch',        ['glutes']],
-  ['windmill',      ['core']],
-  ['get-up',        ['core']],
-  ['dead bug',      ['core']],
-  ['plank',         ['core']],
-  ['hollow',        ['core']],
-  ['ab wheel',      ['core']],
+  ['hamstring curl',    { primary: ['hamstrings'], pattern: 'isolation' }],
+  ['reverse nordic',    { primary: ['quads','hip-flexors'], pattern: 'isolation' }],
+  ['quad nordic',       { primary: ['quads'], pattern: 'isolation' }],
+  ['nordic',            { primary: ['hamstrings'], pattern: 'isolation' }],
+  ['hip flexion',       { primary: ['hip-flexors'], pattern: 'isolation' }],
+  ['knee raise',        { primary: ['hip-flexors'], secondary: ['core'], pattern: 'isolation' }],
+  ['upright row',       { primary: ['shoulders'], secondary: ['back'], pattern: 'pull-v' }],
+  ['face pull',         { primary: ['shoulders'], secondary: ['back'], pattern: 'pull-h' }],
+  ['rear delt',         { primary: ['shoulders'], secondary: ['back'], pattern: 'isolation' }],
+  ['lateral raise',     { primary: ['shoulders'], pattern: 'isolation' }],
+  ['front raise',       { primary: ['shoulders'], pattern: 'isolation' }],
+  ['external rotation', { primary: ['shoulders'], pattern: 'mobility' }],
+  ['pull-apart',        { primary: ['shoulders'], secondary: ['back'], pattern: 'mobility' }],
+  ['wall slide',        { primary: ['shoulders'], pattern: 'mobility' }],
+  ['pulldown',          { primary: ['back'], pattern: 'pull-v' }],
+  ['pull-up',           { primary: ['back'], secondary: ['biceps'], pattern: 'pull-v' }],
+  ['chin-up',           { primary: ['back','biceps'], pattern: 'pull-v' }],
+  ['overhead pull',     { primary: ['back'], pattern: 'pull-v' }],
+  ['row',               { primary: ['back'], secondary: ['biceps'], pattern: 'pull-h' }],
+  ['tricep',            { primary: ['triceps'], pattern: 'isolation' }],
+  ['skullcrusher',      { primary: ['triceps'], pattern: 'isolation' }],
+  ['pushdown',          { primary: ['triceps'], pattern: 'isolation' }],
+  ['hammer curl',       { primary: ['biceps','forearms'], pattern: 'isolation' }],
+  ['curl',              { primary: ['biceps'], pattern: 'isolation' }],
+  ['chest fly',         { primary: ['chest'], pattern: 'isolation' }],
+  ['fly',               { primary: ['chest'], pattern: 'isolation' }],
+  ['floor press',       { primary: ['chest'], secondary: ['triceps'], pattern: 'push-h' }],
+  ['incline press',     { primary: ['chest'], secondary: ['shoulders','triceps'], pattern: 'push-h' }],
+  ['chest press',       { primary: ['chest'], secondary: ['triceps'], pattern: 'push-h' }],
+  ['bench',             { primary: ['chest'], secondary: ['triceps'], pattern: 'push-h' }],
+  ['push-up',           { primary: ['chest'], secondary: ['triceps','shoulders'], pattern: 'push-h' }],
+  ['pushup',            { primary: ['chest'], secondary: ['triceps','shoulders'], pattern: 'push-h' }],
+  ['dip',               { primary: ['chest','triceps'], pattern: 'push-v' }],
+  ['press',             { primary: ['shoulders'], secondary: ['triceps'], pattern: 'push-v' }],
+  ['sumo',              { primary: ['glutes','quads'], secondary: ['hamstrings','adductors'], pattern: 'hinge' }],
+  ['deadlift',          { primary: ['hamstrings','glutes'], secondary: ['back'], pattern: 'hinge' }],
+  ['rdl',               { primary: ['hamstrings','glutes'], pattern: 'hinge' }],
+  ['good morning',      { primary: ['hamstrings'], secondary: ['back'], pattern: 'hinge' }],
+  ['swing',             { primary: ['glutes','hamstrings'], secondary: ['back'], pattern: 'ballistic' }],
+  ['hip thrust',        { primary: ['glutes'], secondary: ['hamstrings'], pattern: 'hinge' }],
+  ['glute bridge',      { primary: ['glutes'], secondary: ['hamstrings'], pattern: 'hinge' }],
+  ['bridge',            { primary: ['glutes'], pattern: 'hinge' }],
+  ['band walk',         { primary: ['glutes'], pattern: 'isolation' }],
+  ['bound',             { primary: ['glutes'], secondary: ['quads','calves'], pattern: 'ballistic' }],
+  ['sissy',             { primary: ['quads'], pattern: 'squat' }],
+  ['cossack',           { primary: ['adductors','quads'], secondary: ['glutes'], pattern: 'lunge' }],
+  ['split squat',       { primary: ['quads'], secondary: ['glutes'], pattern: 'lunge' }],
+  ['squat',             { primary: ['quads'], secondary: ['glutes'], pattern: 'squat' }],
+  ['lunge',             { primary: ['quads','glutes'], pattern: 'lunge' }],
+  ['step-up',           { primary: ['quads','glutes'], pattern: 'lunge' }],
+  ['step and drive',    { primary: ['glutes','hip-flexors'], pattern: 'lunge' }],
+  ['tuck jump',         { primary: ['quads','hip-flexors'], secondary: ['calves'], pattern: 'ballistic' }],
+  ['jump',              { primary: ['quads','glutes'], secondary: ['calves'], pattern: 'ballistic' }],
+  ['tibialis',          { primary: ['calves'], pattern: 'isolation' }],
+  ['calf',              { primary: ['calves'], pattern: 'isolation' }],
+  ['pogo',              { primary: ['calves'], pattern: 'ballistic' }],
+  ['snatch',            { primary: ['glutes','shoulders'], secondary: ['back','core'], pattern: 'ballistic' }],
+  ['clean',             { primary: ['glutes'], secondary: ['back','shoulders'], pattern: 'ballistic' }],
+  ['windmill',          { primary: ['core'], secondary: ['shoulders','hamstrings'], pattern: 'carry' }],
+  ['get-up',            { primary: ['core','shoulders'], secondary: ['glutes'], pattern: 'carry' }],
+  ['farmer',            { primary: ['forearms','core'], pattern: 'carry' }],
+  ['carry',             { primary: ['core','forearms'], pattern: 'carry' }],
+  ['dead bug',          { primary: ['core'], pattern: 'core' }],
+  ['plank',             { primary: ['core'], pattern: 'core' }],
+  ['hollow',            { primary: ['core'], pattern: 'core' }],
+  ['ab wheel',          { primary: ['core'], pattern: 'core' }],
+  ['crunch',            { primary: ['core'], pattern: 'core' }],
+  ['balance',           { primary: ['calves','glutes'], secondary: ['core'], pattern: 'mobility' }],
 ];
 
-function getMuscleGroups(exName) {
-  const n = (exName || '').toLowerCase();
-  for (const [kw, muscles] of MUSCLE_RULES) {
-    if (n.includes(kw)) return muscles;
+// The programme entry for an exercise name — same session first, then any
+function findExerciseConfig(exName, sessionId) {
+  const sessions = state.programme ? state.programme.sessions : [];
+  if (sessionId) {
+    const hit = sessions.find(s => s.id === sessionId)?.exercises.find(e => e.name === exName);
+    if (hit) return hit;
+  }
+  for (const s of sessions) {
+    const hit = s.exercises.find(e => e.name === exName);
+    if (hit) return hit;
   }
   return null;
 }
 
+// Reps written as a duration: '30s', '45 sec', '1 min'
+function isTimedExercise(ex) {
+  return /^\s*\d+\s*(s|sec|secs|min|m)\b/i.test(String(ex?.reps || ''));
+}
+
+function inferEquipment(ex) {
+  if (ex.equipment && EQUIPMENT.some(e => e.id === ex.equipment)) return ex.equipment;
+  if (isTimedExercise(ex)) return 'timed';
+  const load = (ex.load || '').toString().toLowerCase();
+  const tags = ex.tags || [];
+  const hasBand = /band/.test(load);
+  const hasKg   = /\d+(\.\d+)?\s*kg/.test(load);
+  const bw      = tags.includes('bw') || /\bbw\b|bodyweight/.test(load);
+  if (bw && hasBand) return 'bw+band';
+  if (bw && !hasKg)  return 'bw';
+  if (hasBand && !hasKg) return 'band';
+  return 'kb';
+}
+
+function inferExerciseAttrs(ex) {
+  const name  = ex.name || '';
+  const known = KNOWN_EXERCISE_ATTRS[name];
+  let base;
+  if (known) {
+    base = { primary: known.primary.slice(), secondary: (known.secondary || []).slice(), pattern: known.pattern };
+  } else {
+    const n   = name.toLowerCase();
+    const hit = MUSCLE_RULES.find(([kw]) => n.includes(kw));
+    base = hit
+      ? { primary: hit[1].primary.slice(), secondary: (hit[1].secondary || []).slice(), pattern: hit[1].pattern }
+      : { primary: [], secondary: [], pattern: 'isolation' };
+  }
+  if (!base.primary.length && (ex.tags || []).includes('core')) { base.primary = ['core']; base.pattern = 'core'; }
+  return base;
+}
+
+// Resolved attributes: explicit fields on the exercise win over inference
+function getExerciseAttrs(ex) {
+  if (!ex) return { primary: [], secondary: [], pattern: 'isolation', equipment: 'kb', inferred: true };
+  const inf   = inferExerciseAttrs(ex);
+  const clean = arr => Array.isArray(arr) ? arr.filter(m => MUSCLE_IDS.includes(m)) : [];
+  const primary   = clean(ex.muscles?.primary);
+  const secondary = clean(ex.muscles?.secondary);
+  const explicit  = primary.length > 0;
+  const p = explicit ? primary : inf.primary;
+  const s = (explicit ? secondary : inf.secondary).filter(m => !p.includes(m));
+  return {
+    primary:   p,
+    secondary: s,
+    pattern:   PATTERNS.some(x => x.id === ex.pattern) ? ex.pattern : inf.pattern,
+    equipment: inferEquipment(ex),
+    inferred:  !explicit,
+  };
+}
+
+// Primary muscles for a logged exercise name (null when nothing is known)
+function getMuscleGroups(exName) {
+  const cfg = findExerciseConfig(exName);
+  const a = getExerciseAttrs(cfg || { name: exName, tags: [] });
+  return a.primary.length ? a.primary : null;
+}
+
+// Per-muscle weight of one hard set: 1 for a primary, 0.5 for a secondary
+function getMuscleSetWeights(exName) {
+  const cfg = findExerciseConfig(exName);
+  const a = getExerciseAttrs(cfg || { name: exName, tags: [] });
+  const w = {};
+  a.primary.forEach(m => { w[m] = 1; });
+  a.secondary.forEach(m => { if (!w[m]) w[m] = 0.5; });
+  return w;
+}
+
 // Hard sets per muscle group in a rolling window. A hard set =
 // reps logged, on a non-optional/non-prehab exercise, at RIR ≤ 4
-// (sets without RIR logged count — assume working set).
-function getWeeklyHardSets(days = 7, offsetDays = 0) {
+// (sets without RIR logged count — assume working set). Secondary
+// muscles count half a set; totals are rounded at the end.
+function getWeeklyHardSets(days = 7, offsetDays = 0, primaryOnly = false) {
   const end = new Date();
   end.setDate(end.getDate() - offsetDays);
   const cutoff = new Date(end);
@@ -3506,19 +3949,22 @@ function getWeeklyHardSets(days = 7, offsetDays = 0) {
     (sess.exercises || []).forEach(ex => {
       const cfg = allConfigs.find(e => e.name === ex.name);
       if (cfg?.tags?.includes('optional') || cfg?.tags?.includes('prehab')) return;
-      const muscles = getMuscleGroups(ex.name);
-      if (!muscles) return;
+      const weights = getMuscleSetWeights(ex.name);
+      if (!Object.keys(weights).length) return;
       (ex.sets || []).forEach(set => {
         if (!(parseInt(set.reps) > 0)) return;
         const rir = parseFloat(set.rir);
         if (!isNaN(rir) && rir > 4) return;
-        muscles.forEach(m => { counts[m] = (counts[m] || 0) + 1; });
+        Object.entries(weights).forEach(([m, w]) => {
+          if (primaryOnly && w < 1) return;
+          counts[m] = (counts[m] || 0) + w;
+        });
       });
     });
   });
+  Object.keys(counts).forEach(m => { counts[m] = Math.round(counts[m]); });
   return counts;
 }
-
 /* Every trend graph in the app plots at most the most recent
    CHART_WINDOW data points, so all charts read at the same density
    regardless of how much history sits behind them. */
@@ -4849,12 +5295,10 @@ async function saveProgrammeToDrive() {
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
       weightLog: state.weightLog || [],
-      sessions: state.programme.sessions.map(s => ({
-        id: s.id, rest: s.rest,
-        exercises: s.exercises.map(e => ({
-          num: e.num, name: e.name, sets: e.sets, reps: e.reps, load: e.load, repRange: e.repRange
-        }))
-      }))
+      // The whole programme: custom sessions, added exercises, muscles,
+      // progression models. `full` tells older readers to take it as-is.
+      full: true,
+      sessions: serializeSessions()
     };
     const body = JSON.stringify(config);
     const q    = `name='${filename}' and 'appDataFolder' in parents and trashed=false`;
@@ -4932,7 +5376,11 @@ async function loadProgrammeFromDrive() {
     // Skipped outright while a workout is live: rewriting the programme
     // under an in-progress session would throw away unsaved sets.
     const sessionLive = state.activeSessionId !== null;
-    if (config.sessions && remoteNewer && !sessionLive) {
+    if (config.full && Array.isArray(config.sessions) && remoteNewer && !sessionLive) {
+      // Full programme from the other device — replace ours wholesale
+      const cfg = Validator.sessionsConfig(config.sessions);
+      if (cfg) { applySessionsConfig(cfg); state.exOverrides = {}; }
+    } else if (config.sessions && remoteNewer && !sessionLive) {
       config.sessions.forEach(remote => {
         const local = state.programme.sessions.find(s => s.id === remote.id);
         if (local) {
@@ -5614,12 +6062,44 @@ function getGreeting() {
   return 'Good evening';
 }
 
+// Sessions in the weekly rotation (not optional, not transition)
+function getRotationSessions() {
+  return state.programme.sessions.filter(s => !['optional', 'transition'].includes(s.sessionType));
+}
+
+// Training sessions planned per week: the sum of assigned days, one per
+// rotation session where no days are set
+function plannedSessionsPerWeek() {
+  return getRotationSessions().reduce((n, s) => n + (s.days?.length || 1), 0);
+}
+
+// Session chips for the dashboard picker, grouped by role
+function buildSessionPickerChips(nextSess, allS) {
+  const rotation   = allS.filter(s => !['optional', 'transition'].includes(s.sessionType));
+  const optional   = allS.filter(s => s.sessionType === 'optional');
+  const transition = allS.filter(s => s.sessionType === 'transition');
+  const makeChip = s => {
+    const isSelected = s.id === nextSess.session.id;
+    const rgb = s.colorRgb || '0,212,160';
+    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
+      style="--picker-rgb:${rgb}"
+      onclick="setNextSessionOverride('${s.id}')"
+      data-session-id="${s.id}">
+      <div class="session-picker-chip-name">${s.name}</div>
+      ${s.subtitle ? `<div class="session-picker-chip-sub">${s.subtitle}</div>` : ''}
+    </div>`;
+  };
+  const makeGroup = (label, sessions) =>
+    sessions.length ? `<div class="session-picker-group-label">${label}</div>${sessions.map(makeChip).join('')}` : '';
+  return makeGroup('Programme', rotation) + makeGroup('Optional', optional) + makeGroup('Transition', transition);
+}
+
 function getNextSession() {
   const allSessions = state.programme.sessions;
 
-  // PPL sequence for auto-inference (excludes KB Flow and transitions)
-  const pplIds = ['push-a', 'pull', 'legs-a', 'push-b', 'legs-b'];
-  const pplSessions = allSessions.filter(s => pplIds.includes(s.id));
+  // The weekly rotation: every training session, in programme order
+  // (optional and transition sessions sit outside it)
+  const pplSessions = getRotationSessions();
   if (!pplSessions.length) return null;
 
   // ── Sequence-aware: find what comes after the last completed PPL session ──
@@ -5688,17 +6168,20 @@ function getThisWeekSessions() {
   return days;
 }
 
+// Structural changes the rule engine has queued for the next visit to each
+// session: sets, load, variant, tempo, stall — not the per-set rep nudges.
 function getPendingProgressions() {
   const suggestions = [];
-  if (state.profile !== 'alex') return [];
-  const week = getCurrentMesoWeek();
-  if (week === 1 || isDeloadWeek()) return [];
+  if (isDeloadWeek()) return [];
+  const SKIP = ['add_reps', 'repeat', 'deload', 'calibrating', 'maintain', 'hold'];
 
   state.programme.sessions.forEach(sess => {
+    if (sess.sessionType === 'transition') return;
     sess.exercises.forEach(ex => {
-      if (ex.tags?.includes('optional') || ex.tags?.includes('prehab')) return;
-      const s = getProgressionSuggestion(sess.id, ex.name, ex.repRange);
-      if (s) suggestions.push({ ...s, sessionName: sess.name, sessionColor: sess.color });
+      if (ex.type === 'optional' || ex.type === 'prehab') return;
+      const c = getExercisePrescription(sess.id, ex).change;
+      if (!c || SKIP.includes(c.type)) return;
+      suggestions.push({ exercise: ex.name, type: c.type, message: c.message, sessionName: sess.name, sessionColor: sess.color });
     });
   });
   return suggestions;
@@ -5712,9 +6195,10 @@ function getPendingProgressions() {
    and prehab exercises, partial sessions.                       */
 function getExerciseAlerts() {
   const alerts = [];
-  if (state.profile !== 'alex' || isDeloadWeek()) return alerts;
+  if (isDeloadWeek()) return alerts;
 
   state.programme.sessions.forEach(sessConfig => {
+    if (sessConfig.sessionType === 'transition') return;
     const history = state.sessions
       .filter(s => s.sessionId === sessConfig.id && s.status === 'complete')
       .sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -5875,6 +6359,19 @@ function selectMesoWeek(w) {
 
 // Rebuild only the right column of the dashboard (volume / Je ladder)
 // without touching the left column (greeting, meso blocks, week, next session)
+// The programme's meso plan in the dashboard's { w, sets, rir, deload } shape
+function getMesoWeeksForDashboard() {
+  const plan = state.programme?.mesoWeeks || [];
+  const rows = plan.map((m, i) => ({ w: i + 1, sets: m.sets, rir: m.rir, ...(m.deload ? { deload: true } : {}) }));
+  return rows.length ? rows : [
+    { w:1, sets:'3',   rir:'3–4' },
+    { w:2, sets:'4',   rir:'2–3' },
+    { w:3, sets:'4–5', rir:'2'   },
+    { w:4, sets:'5',   rir:'1–2' },
+    { w:5, sets:'2',   rir:'5+', deload: true },
+  ];
+}
+
 function _renderDashboardRightCol() {
   const card = document.getElementById('dashboard-card');
   if (!card) return;
@@ -5882,13 +6379,7 @@ function _renderDashboardRightCol() {
   if (!rightColEl) { renderDashboard(); return; }
 
   const week       = getCurrentMesoWeek();
-  const MESO_WEEKS = [
-    { w:1, sets:'3',   rir:'3–4' },
-    { w:2, sets:'4',   rir:'2–3' },
-    { w:3, sets:'4–5', rir:'2'   },
-    { w:4, sets:'5',   rir:'1–2' },
-    { w:5, sets:'2',   rir:'5+', deload: true },
-  ];
+  const MESO_WEEKS = getMesoWeeksForDashboard();
   const weekVolumes = MESO_WEEKS.map(wk => ({ ...wk, vol: calcWeekVolume(wk.w) }));
   const maxVol   = Math.max(...weekVolumes.map(w => w.vol), 1);
   const totalVol = weekVolumes.reduce((s, w) => s + w.vol, 0);
@@ -5918,34 +6409,7 @@ function _renderDashboardNextSession() {
   const nextColorRgb = nextSess.session?.colorRgb || '0,212,160';
   const pending      = getPendingProgressions();
 
-  const allS = nextSess.allSessions || [];
-  const pplIds = ['push-a','pull','legs-a','push-b','legs-b'];
-  const pplGroup        = allS.filter(s => pplIds.includes(s.id));
-  const kbGroup         = allS.filter(s => s.id === 'kb-flow');
-  const transitionGroup = allS.filter(s => s.id.startsWith('transition'));
-  const jeGroup         = allS.filter(s => s.id.startsWith('session-'));
-
-  const makeChip = s => {
-    const isSelected = s.id === nextSess.session.id;
-    const rgb = s.colorRgb || '0,212,160';
-    return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
-      style="--picker-rgb:${rgb}"
-      onclick="setNextSessionOverride('${s.id}')"
-      data-session-id="${s.id}">
-      <div class="session-picker-chip-name">${s.name}</div>
-      ${s.subtitle ? `<div class="session-picker-chip-sub">${s.subtitle}</div>` : ''}
-    </div>`;
-  };
-  const makeGroup = (label, sessions) =>
-    sessions.length
-      ? `<div class="session-picker-group-label">${label}</div>${sessions.map(makeChip).join('')}`
-      : '';
-
-  const chips = state.profile === 'je'
-    ? makeGroup('Sessions', jeGroup)
-    : makeGroup('Programme', pplGroup) +
-      makeGroup('Saturday', kbGroup) +
-      makeGroup('Transition', transitionGroup);
+  const chips = buildSessionPickerChips(nextSess, nextSess.allSessions || []);
 
   const pendingForNext = pending.filter(p =>
     p.exercise && nextSess.session.exercises?.some(e => e.name === p.exercise)
@@ -6165,19 +6629,20 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     : '';
 
   // ── Weekly hard sets per muscle group vs 10–20 target band ──
-  const MUSCLE_ORDER = ['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes','core','calves'];
+  const MUSCLE_ORDER = MUSCLE_IDS;
   const hardSets = getWeeklyHardSets(7);
   const musclesToShow = MUSCLE_ORDER.filter(m =>
-    (hardSets[m] || 0) > 0 || !['core','calves'].includes(m));
+    (hardSets[m] || 0) > 0 || !['core','calves','forearms','adductors','hip-flexors'].includes(m));
   const hasAnyHardSets = MUSCLE_ORDER.some(m => hardSets[m] > 0);
   const hardSetsHtml = hasAnyHardSets
-    ? '<div class="dash-section-label" style="margin-top:16px">Hard Sets / Muscle &middot; 7d &middot; target 10&ndash;20</div>' +
+    ? '<div class="dash-section-label" style="margin-top:16px">Hard Sets / Muscle &middot; 7d &middot; MEV&ndash;MRV band</div>' +
       musclesToShow.map(m => {
         const n   = hardSets[m] || 0;
-        const col = n < 10 ? 'var(--amber)' : n <= 20 ? 'var(--green)' : 'var(--red)';
-        const pct = Math.min(n / 20 * 100, 100);
+        const lm  = volumeLandmark(m);
+        const col = n < lm.mev ? 'var(--amber)' : n <= lm.mrv ? 'var(--green)' : 'var(--red)';
+        const pct = Math.min(n / lm.mrv * 100, 100);
         return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">' +
-          '<div style="width:76px;font-size:9px;color:var(--text-dim);text-transform:capitalize">' + m + '</div>' +
+          '<div style="width:76px;font-size:9px;color:var(--text-dim)">' + muscleLabel(m) + '</div>' +
           '<div style="flex:1;height:5px;border-radius:3px;background:rgba(128,128,128,0.14);overflow:hidden">' +
             '<div style="width:' + pct + '%;height:100%;border-radius:3px;background:' + col + '"></div>' +
           '</div>' +
@@ -6232,13 +6697,7 @@ function renderDashboard() {
   const pending    = getPendingProgressions();
 
   // Week volumes for meso
-  const MESO_WEEKS = [
-    { w:1, sets:'3',   rir:'3–4' },
-    { w:2, sets:'4',   rir:'2–3' },
-    { w:3, sets:'4–5', rir:'2'   },
-    { w:4, sets:'5',   rir:'1–2' },
-    { w:5, sets:'2',   rir:'5+', deload: true },
-  ];
+  const MESO_WEEKS = getMesoWeeksForDashboard();
 
   const weekVolumes = MESO_WEEKS.map(wk => ({
     ...wk,
@@ -6298,7 +6757,7 @@ function renderDashboard() {
         }).join('')}
       </div>
       <div class="dash-week-summary">
-        <strong>${doneDays.length}</strong> of ${state.profile === 'je' ? '3' : '5'} sessions this week
+        <strong>${doneDays.length}</strong> of ${plannedSessionsPerWeek()} sessions this week
         ${doneDays.length > 0 ? '· ' + doneDays.flatMap(d => d.logged.map(s => s.sessionName?.split(' ')[0] || '')).filter(Boolean).join(', ') : ''}
       </div>
     </div>
@@ -6307,37 +6766,7 @@ function renderDashboard() {
     <div class="dash-section dashboard-col-left">
       <div class="dash-section-label">Next Session</div>
       ${nextSess ? (() => {
-        const allS = nextSess.allSessions || [];
-        // Group sessions: PPL, KB Flow, Transition
-        const pplIds = ['push-a','pull','legs-a','push-b','legs-b'];
-        const pplGroup        = allS.filter(s => pplIds.includes(s.id));
-        const kbGroup         = allS.filter(s => s.id === 'kb-flow');
-        const transitionGroup = allS.filter(s => s.id.startsWith('transition'));
-        const jeGroup         = allS.filter(s => s.id.startsWith('session-'));
-
-        function makeChip(s) {
-          const isSelected = s.id === nextSess.session.id;
-          const rgb = s.colorRgb || '0,212,160';
-          return `<div class="session-picker-chip${isSelected ? ' selected' : ''}"
-            style="--picker-rgb:${rgb}"
-            onclick="setNextSessionOverride('${s.id}')"
-            data-session-id="${s.id}">
-            <div class="session-picker-chip-name">${s.name}</div>
-            ${s.subtitle ? `<div class="session-picker-chip-sub">${s.subtitle}</div>` : ''}
-          </div>`;
-        }
-
-        function makeGroup(label, sessions) {
-          if (!sessions.length) return '';
-          return `<div class="session-picker-group-label">${label}</div>` +
-            sessions.map(makeChip).join('');
-        }
-
-        const chips = state.profile === 'je'
-          ? makeGroup('Sessions', jeGroup)
-          : makeGroup('Programme', pplGroup) +
-            makeGroup('Saturday', kbGroup) +
-            makeGroup('Transition', transitionGroup);
+        const chips = buildSessionPickerChips(nextSess, nextSess.allSessions || []);
 
         const pendingForNext = pending.filter(p =>
           p.exercise && nextSess.session.exercises?.some(e => e.name === p.exercise)
@@ -6729,8 +7158,6 @@ function selectReviewFeel(pill, value) {
    JE MILESTONE CELEBRATION
 ═══════════════════════════════════════════ */
 function checkJeMilestones(exerciseData) {
-  if (state.profile !== 'je') return;
-
   const milestones = [];
 
   exerciseData.forEach(ex => {
@@ -7362,28 +7789,13 @@ function renderConsecutivePartialWarning(sessionId) {
 }
 
 /* ═══════════════════════════════════════════
-   LOGIC — PROGRESSION (ALEX)
-   Pure functions. No DOM access.
-   Future home: /js/logic/progression.js
-
-   Algorithm summary:
-   1. Suppress in week 1 and deload
-   2. Check rep ceiling hit in last 2 complete sessions
-   3a. Below set ceiling → add set
-   3b. At set ceiling, load can increase → increase load (sets reset to 3)
-   3c. At set ceiling, no tempo yet → suggest tempo
-   3d. Tempo applied, ceiling still hit → equipment ceiling
+   PROGRESSION — VARIANT LADDERS
+   Default ladders for the built-in bodyweight / light-load
+   exercises. Any exercise can carry its own `ladder` array
+   (set in the Programme Editor); these are the fallbacks,
+   looked up by exercise name.
 ═══════════════════════════════════════════ */
-/* ═══════════════════════════════════════════
-   LOGIC — PROGRESSION (JE) — VARIANT LADDERS
-   Pure functions + ladder data. No DOM access.
-   Future home: /js/logic/progressionJe.js
-
-   Each ladder entry: { variant, type, cue }
-   type: 'bw' | 'load' | 'band' | 'support'
-   support: true → triggers support-reduction logic (3 clean sessions)
-═══════════════════════════════════════════ */
-const JE_LADDERS = {
+const DEFAULT_LADDERS = {
   'Supported Bodyweight Squat': [
     { variant: 'Supported squat — full hand grip',  type: 'support', support: true,  cue: 'Hold firmly with both hands. Focus on depth and upright torso.' },
     { variant: 'Supported squat — fingertips only', type: 'support', support: true,  cue: 'Fingertips on support only. Balance is starting to come.' },
@@ -7448,17 +7860,43 @@ const JE_LADDERS = {
     { variant: 'BW + 8 kg on hips',         type: 'load', support: false, cue: 'Maintain 1s hold at top.' },
   ],
 };
+const JE_LADDERS = DEFAULT_LADDERS; // legacy alias
 
-/* ── JE PROGRESSION HELPERS ─────────────────── */
-
-function getJeLadder(exerciseName) {
-  // Check for a key remap (set when exercise is renamed in Programme Editor)
-  const mapped = state.jeLadderKeyMap?.[exerciseName];
-  return JE_LADDERS[mapped || exerciseName] || null;
+// Parse "Variant | cue" lines from the Programme Editor into rungs
+function parseLadderText(text) {
+  return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+    const [variant, cue] = line.split('|').map(s => s.trim());
+    const low = variant.toLowerCase();
+    const support = /support|hold|grip|fingertip/.test(low) && !/freestanding|no support/.test(low);
+    const type = support ? 'support' : /band/.test(low) ? 'band' : /\d+\s*kg/.test(low) ? 'load' : 'bw';
+    return { variant, cue: cue || '', type, support };
+  });
+}
+function ladderToText(ladder) {
+  return (ladder || []).map(r => r.cue ? `${r.variant} | ${r.cue}` : r.variant).join('\n');
 }
 
+/* ── LADDER HELPERS ─────────────────────────── */
+
+// The ladder an exercise runs on: its own `ladder` field, else the
+// built-in default for that name (the key map survives renames), unless
+// the exercise has been pinned to a different progression model.
+function getJeLadder(exerciseName, sessionId) {
+  const cfg = findExerciseConfig(exerciseName, sessionId);
+  if (cfg) {
+    if (Array.isArray(cfg.ladder) && cfg.ladder.length > 1) return cfg.ladder;
+    if (cfg.progression && !['auto', 'ladder'].includes(cfg.progression)) return null;
+  }
+  // The built-in ladders describe Je's bodyweight / light-load versions of
+  // these movements; Alex's Hip Thrust at 20 kg is a loaded hinge, not a rung.
+  if (state.profile !== 'je') return null;
+  const mapped = state.jeLadderKeyMap?.[exerciseName];
+  return DEFAULT_LADDERS[mapped || exerciseName] || null;
+}
+const getExerciseLadder = (ex, sessionId) => ex ? getJeLadder(ex.name, sessionId) : null;
+
 function getCurrentVariantIndex(exerciseName, sessionId) {
-  const ladder = getJeLadder(exerciseName);
+  const ladder = getJeLadder(exerciseName, sessionId);
   if (!ladder) return 0;
 
   // Find the most recent complete session of this type that contains this exercise
@@ -7476,36 +7914,27 @@ function getCurrentVariantIndex(exerciseName, sessionId) {
   }
 
   // ── Fallback for legacy sessions: match by load string ──
-  // Uses exact matching per type to avoid the false-match problem.
   const load = (ex.sets[0].load || '').toString().toLowerCase().trim();
   if (!load || load === 'bw') {
-    // Match BW rungs only — pick the highest BW rung that matches
-    // (avoids matching load-based rungs that contain 'bw')
     for (let i = ladder.length - 1; i >= 0; i--) {
       if (ladder[i].type === 'bw' || ladder[i].type === 'support') return i;
     }
     return 0;
   }
 
-  // Numeric load: match exact kg value in variant string
   const kg = parseFloat(load);
   if (!isNaN(kg)) {
-    // Find the highest rung whose variant contains this exact kg value
     for (let i = ladder.length - 1; i >= 0; i--) {
       const v = ladder[i].variant.toLowerCase();
-      // Match "4 kg", "4kg", "4 kg / arm" etc. — exact number match
       if (new RegExp(`\\b${kg}\\s*kg`).test(v)) return i;
     }
   }
 
-  // Band load: match colour exactly
   const bandColors = ['yellow', 'green', 'red', 'blue', 'black'];
   const matchedBand = bandColors.find(b => load.includes(b));
   if (matchedBand) {
     for (let i = ladder.length - 1; i >= 0; i--) {
       const v = ladder[i].variant.toLowerCase();
-      // Only match if the variant's primary colour is the matched band
-      // (avoids matching "Full push-up + Yellow band" when load is "yellow")
       const primaryBand = bandColors.find(b => v.startsWith(b) || v.includes(`${b} band`));
       if (primaryBand === matchedBand) return i;
     }
@@ -7515,22 +7944,19 @@ function getCurrentVariantIndex(exerciseName, sessionId) {
 }
 
 function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
-  // Count consecutive complete sessions at the same rung (support or variant)
-  // "Clean" means: same rung AND all sets hit the rep ceiling
-  const ladder = getJeLadder(exerciseName);
-  const prog    = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
+  // Consecutive complete sessions at the same rung where every set hit the rep ceiling
+  const ladder   = getJeLadder(exerciseName, sessionId);
+  const prog     = findExerciseConfig(exerciseName, sessionId);
   const repRange = prog?.repRange || [10, 12];
 
-  // Get last 5 complete sessions of this type, most recent first (no mutation)
   const sessions = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
     .slice(-5)
-    .slice()    // copy to avoid mutating
+    .slice()
     .reverse();
 
   if (!sessions.length) return 0;
 
-  // Get the rung of the most recent session
   const latestEx = sessions[0].exercises.find(e => e.name === exerciseName);
   if (!latestEx || !latestEx.sets.length) return 0;
 
@@ -7543,11 +7969,9 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
     const ex = s.exercises.find(e => e.name === exerciseName);
     if (!ex || !ex.sets.length) break;
 
-    // Check same rung — prefer stored index, fall back to string match
     const rung = typeof ex.ladderRungIndex === 'number'
       ? ex.ladderRungIndex
       : (ladder ? (() => {
-          // inline fallback using load string
           const load = (ex.sets[0].load || '').toString().toLowerCase().trim();
           for (let i = ladder.length - 1; i >= 0; i--) {
             if (ladder[i].variant.toLowerCase().includes(load.split(' ')[0])) return i;
@@ -7557,7 +7981,6 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
 
     if (rung !== latestRung) break;
 
-    // Check all sets hit rep ceiling
     const allHit = ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
     if (!allHit) break;
 
@@ -7566,37 +7989,18 @@ function countCleanSessionsAtCurrentVariant(exerciseName, sessionId) {
   return count;
 }
 
-function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
+// Step-up check for the ladder model: reduce support after 3 clean
+// sessions, otherwise advance a rung after the rep ceiling × 2 sessions.
+function getLadderSuggestion(exerciseName, sessionId, repRange) {
   if (isDeloadWeek()) return null;
-  const ladder = getJeLadder(exerciseName);
+  const ladder = getJeLadder(exerciseName, sessionId);
+  if (!ladder) return null;
 
-  // ── Load-driven exercises (no ladder) ────────────────────────
-  if (!ladder) {
-    // Use Alex-style logic: rep ceiling × 2 sessions
-    const completeSessions = state.sessions
-      .filter(s => s.sessionId === sessionId && s.status === 'complete')
-      .slice(-2);
-    if (completeSessions.length < 2) return null;
-    const bothHit = completeSessions.every(sess => {
-      const ex = sess.exercises.find(e => e.name === exerciseName);
-      if (!ex || !ex.sets.length) return false;
-      return ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
-    });
-    if (!bothHit) return null;
-    return {
-      exercise: exerciseName,
-      type: 'increase_load',
-      message: `Rep ceiling hit for 2 sessions. Move to the next load.`
-    };
-  }
-
-  // ── Ladder-based exercises ────────────────────────────────────
-  const currentIdx = getCurrentVariantIndex(exerciseName, sessionId);
+  const currentIdx  = getCurrentVariantIndex(exerciseName, sessionId);
   const currentRung = ladder[currentIdx];
   const nextRung    = ladder[currentIdx + 1];
   if (!nextRung) return null; // already at top of ladder
 
-  // Support-reduction trigger: 3 clean sessions at current variant
   if (currentRung.support) {
     const cleanCount = countCleanSessionsAtCurrentVariant(exerciseName, sessionId);
     if (cleanCount >= 3) {
@@ -7611,7 +8015,6 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
     return null;
   }
 
-  // Variant advancement trigger: rep ceiling × 2 complete sessions at same rung
   const completeSessions = state.sessions
     .filter(s => s.sessionId === sessionId && s.status === 'complete')
     .slice(-2);
@@ -7620,7 +8023,6 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
   const bothHitCeiling = completeSessions.every(sess => {
     const ex = sess.exercises.find(e => e.name === exerciseName);
     if (!ex || !ex.sets.length) return false;
-    // Must be at the same rung
     const rung = typeof ex.ladderRungIndex === 'number' ? ex.ladderRungIndex : currentIdx;
     if (rung !== currentIdx) return false;
     return ex.sets.every(set => parseInt(set.reps) >= repRange[1]);
@@ -7639,128 +8041,86 @@ function getJeProgressionSuggestion(exerciseName, sessionId, repRange) {
 }
 
 /* ═══════════════════════════════════════════
-   ALEX — PROGRESSION ALGORITHM
-   Steps:
-   1. Suppress in week 1 and deload
-   2. Check rep ceiling hit in last 2 complete sessions of same type
-   3a. Below set ceiling → add set
-   3b. At set ceiling, load can increase → increase load (sets reset to 3)
-   3c. At set ceiling, load cannot increase, no tempo flag → suggest tempo
-   3d. At set ceiling, tempo already applied → equipment ceiling flag
-═══════════════════════════════════════════ */
+   PROGRESSION — RULE ENGINE
+   One rule per exercise, resolved from its attributes (or pinned in
+   the Programme Editor), the session it sits in and the programme's
+   mesocycle plan. The prescription below runs whichever model the
+   rule names, so a new exercise picks up the right behaviour the
+   moment it is added.
 
-// Determine whether an exercise has a higher KB or band load available
-function canIncreaseLoad(exerciseName) {
-  const KB_SIZES  = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
-  const BAND_ORDER = ['yellow', 'green', 'red', 'blue', 'black'];
-  const exConfig   = state.programme.sessions.flatMap(s => s.exercises).find(e => e.name === exerciseName);
-  if (!exConfig) return true; // unknown — don't block
-  const load = (exConfig.load || '').toString().toLowerCase();
-  // BW-only exercises never get a load increase suggestion
-  if (isBWExercise(exConfig) && !load.includes('band')) return false;
-  // Band exercise
-  let topBand = null;
-  BAND_ORDER.forEach(b => { if (load.includes(b)) topBand = b; });
-  if (topBand) return BAND_ORDER.indexOf(topBand) < BAND_ORDER.length - 1;
-  // KB numeric
-  const kg = parseFloat(load);
-  if (!isNaN(kg)) return KB_SIZES.some(s => s > kg);
-  return true;
-}
+   Models
+     double    reps → sets (meso week) → load, sets reset   (loaded work)
+     ladder    variant rungs, easiest → hardest             (BW / light)
+     skill     fixed sets, load only when clean at RIR 2+   (ballistic, carries)
+     timed     extend the hold when every set hits target   ('30s' reps)
+     maintain  repeat last time, no change                  (prehab, transition)
 
-// Check if tempo has already been flagged for this exercise
-function hasTempoApplied(sessionId, exerciseName) {
-  return state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .some(s => {
-      const ex = s.exercises.find(e => e.name === exerciseName);
-      return ex && ex.tempoApplied === true;
-    });
-}
-
-function getProgressionSuggestion(sessionId, exerciseName, repRange) {
-  const week = getCurrentMesoWeek();
-  if (week === 1 || isDeloadWeek()) return null;
-
-  const completeSessions = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-2);
-
-  if (completeSessions.length < 2) return null;
-
-  const bothHitCeiling = completeSessions.every(sess => {
-    const ex = sess.exercises.find(e => e.name === exerciseName);
-    if (!ex || !ex.sets.length) return false;
-    return ex.sets.every(set => {
-      const reps = parseInt(set.reps);
-      return !isNaN(reps) && reps >= repRange[1];
-    });
-  });
-
-  if (!bothHitCeiling) return null;
-
-  const lastSess    = completeSessions[completeSessions.length - 1];
-  const lastEx      = lastSess.exercises.find(e => e.name === exerciseName);
-  const currentSets = lastEx ? lastEx.sets.length : 0;
-  // Respect per-exercise set caps (time-boxed superset additions)
-  const exCfg = state.programme.sessions.find(s => s.id === sessionId)
-    ?.exercises.find(e => e.name === exerciseName);
-  const targetSets = Math.min(getMesoSetTarget(week), exCfg?.maxSets || Infinity);
-
-  // Step 3a — below set ceiling
-  if (currentSets < targetSets) {
-    return {
-      exercise: exerciseName,
-      type: 'add_set',
-      message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.`
-    };
-  }
-
-  // At set ceiling — check if load can go up
-  if (canIncreaseLoad(exerciseName)) {
-    return {
-      exercise: exerciseName,
-      type: 'increase_load',
-      message: `Set ceiling reached (${currentSets} sets). Increase load — sets reset to 3.`
-    };
-  }
-
-  // Step 3c — equipment ceiling, check if tempo already applied
-  if (hasTempoApplied(sessionId, exerciseName)) {
-    return {
-      exercise: exerciseName,
-      type: 'equipment_ceiling',
-      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached — new kit needed to progress further.`
-    };
-  }
-
-  // Step 3c — suggest tempo manipulation
-  return {
-    exercise: exerciseName,
-    type: 'tempo',
-    message: `Equipment ceiling reached. Apply 3s eccentric tempo — same load, significantly harder. Flag session with tempo once applied.`
-  };
-}
-
-/* ═══════════════════════════════════════════
-   EXERCISE PRESCRIPTION
-   One answer per exercise to "what do I do today": sets, load, rep target
-   and RIR band. Merges the meso week (set target, RIR), the progression
-   engines above (add set / load up / tempo / ladder), a load-down check
-   for missed rep floors, and double progression off the last log. The
-   tracker card, its set rows and the adjustments banner all read this,
-   so they can't disagree.
+   Muscle-aware: a `double` exercise will not add a set once its
+   primary muscle is already past MRV for the week — it moves load
+   instead, or holds.
+   Future home: /js/logic/progression.js
 ═══════════════════════════════════════════ */
 const KB_SIZES_KG = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 // Sessions an exercise is logged blank before targets kick in
 const CALIBRATION_SESSIONS = 2;
+// Same load, no rep gain across this many logs → reset one step
+const STALL_SESSIONS = 4;
 const BAND_STEP_LADDER = [
   'yellow', 'green', 'red', 'blue', 'black',
   'black+yellow', 'black+green', 'black+red', 'black+blue', 'black+black'
 ];
 
-function getMesoRIRTarget(week) {
-  return { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] }[week] || [1,4];
+function resolveProgressionRule(sessionId, ex) {
+  const sess   = state.programme.sessions.find(s => s.id === sessionId);
+  const attrs  = getExerciseAttrs(ex);
+  const rr     = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
+  const fixed  = /^\s*\d+\s*$/.test(String(ex.sets || '')) ? parseInt(ex.sets, 10) : null;
+  const ladder = getExerciseLadder(ex, sessionId);
+  const pinned = ex.progression && ex.progression !== 'auto' && PROGRESSION_MODELS[ex.progression] ? ex.progression : null;
+
+  let model, why;
+  if (pinned)                                   { model = pinned;     why = 'set in programme'; }
+  else if (sess?.sessionType === 'transition')  { model = 'maintain'; why = 'transition session'; }
+  else if (ex.type === 'prehab')                { model = 'maintain'; why = 'prehab'; }
+  else if (attrs.equipment === 'timed')         { model = 'timed';    why = 'timed hold'; }
+  else if (ladder)                              { model = 'ladder';   why = 'variant ladder'; }
+  else if (['ballistic', 'carry', 'mobility'].includes(attrs.pattern)) { model = 'skill'; why = patternLabel(attrs.pattern).toLowerCase(); }
+  else                                          { model = 'double';   why = equipmentLabel(attrs.equipment).toLowerCase(); }
+
+  const canStepLoad = ['kb', 'band', 'bw+band'].includes(attrs.equipment);
+  const setsForWeek = week => {
+    const deload = getMesoPlanWeek(week)?.deload || week === 5;
+    if (deload) return Math.min(2, fixed || 2);
+    return fixed || Math.min(getMesoSetTarget(week), ex.maxSets || Infinity);
+  };
+
+  return {
+    model, label: PROGRESSION_MODELS[model].label, why, attrs,
+    repRange: rr, fixedSets: fixed, maxSets: ex.maxSets || null,
+    ladder: model === 'ladder' ? ladder : null,
+    canStepLoad, setsForWeek,
+    volumeAware: model === 'double' && !fixed,
+  };
+}
+
+// Short badge text for the tracker card / programme tab
+function describeRule(rule) {
+  const m = rule.attrs.primary.map(muscleLabel).join(', ') || 'no muscle set';
+  return `${rule.label} · ${m}`;
+}
+
+// Weekly standing of an exercise's primary muscles: hard sets where the
+// muscle was the primary target, over the last 6 days (this session's own
+// last instance a week ago drops out) plus what today would add. Returns
+// the first muscle that would end past MRV.
+function getVolumeCeilingHit(attrs, projectedSets) {
+  const counts = getWeeklyHardSets(6, 0, true);
+  for (const m of attrs.primary) {
+    const lm = volumeLandmark(m);
+    const n  = (counts[m] || 0) + projectedSets;
+    if (n > lm.mrv) return { muscle: m, sets: counts[m] || 0, projected: n, mrv: lm.mrv };
+  }
+  return null;
 }
 
 function fmtRIRBand(b) { return b[0] >= 5 ? '5+' : b[0] === b[1] ? `${b[0]}` : `${b[0]}–${b[1]}`; }
@@ -7841,16 +8201,139 @@ function getExerciseLogs(sessionId, exName, limit = 3) {
   return same.length ? same : collect(() => true);
 }
 
+// Has tempo already been flagged for this exercise in this session type
+function hasTempoApplied(sessionId, exerciseName) {
+  return state.sessions
+    .filter(s => s.sessionId === sessionId && s.status === 'complete')
+    .some(s => {
+      const ex = s.exercises.find(e => e.name === exerciseName);
+      return ex && ex.tempoApplied === true;
+    });
+}
+
+const setsAtCeiling = (log, rr) => log.ex.sets.length > 0 && log.ex.sets.every(s => {
+  const n = parseInt(s.reps, 10);
+  return !isNaN(n) && n >= rr[1];
+});
+const setsCleanRIR = (log, minRIR) => log.ex.sets.every(s => {
+  const r = parseFloat(s.rir);
+  return isNaN(r) || r >= minRIR;
+});
+
+/* ── Step-up checks per model ─────────────────────────────────
+   Each returns { type, message, sets?, load? } or null. They only
+   say "go up"; step-downs and rep nudges live in the prescription. */
+
+// double: rep ceiling × 2 complete logs → add set → load up (sets reset)
+//         → tempo → equipment ceiling. Volume-aware on the add-set step.
+function getDoubleStepUp(sessionId, ex, rule, logs) {
+  const week = getCurrentMesoWeek();
+  if (week === 1 || isDeloadWeek()) return null;
+  const rr = rule.repRange;
+  const complete = logs.filter(l => l.session.status === 'complete').slice(0, 2);
+  if (complete.length < 2 || !complete.every(l => setsAtCeiling(l, rr))) return null;
+
+  const last        = complete[0];
+  const lastLoad    = getLogLoad(last.ex) || planLoadValue(ex);
+  const currentSets = last.ex.sets.length;
+  const targetSets  = rule.setsForWeek(week);
+  const nextLoad    = rule.canStepLoad ? stepLoad(lastLoad, 1) : null;
+
+  if (currentSets < targetSets) {
+    const hit = rule.volumeAware ? getVolumeCeilingHit(rule.attrs, currentSets + 1) : null;
+    if (!hit) {
+      return { type: 'add_set', sets: currentSets + 1,
+        message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.` };
+    }
+    const mus = muscleLabel(hit.muscle);
+    if (nextLoad) {
+      return { type: 'increase_load', load: nextLoad, sets: Math.min(3, targetSets),
+        message: `${mus} already at ${hit.sets} hard sets this week (MRV ${hit.mrv}) — no extra set. Move to ${fmtLoad(nextLoad)} instead, sets back to ${Math.min(3, targetSets)}.` };
+    }
+    return { type: 'hold_volume',
+      message: `Rep ceiling hit, but ${mus} is already at ${hit.sets} hard sets this week (MRV ${hit.mrv}). Hold ${currentSets} sets and this load — extra volume here won't pay back.` };
+  }
+
+  if (nextLoad) {
+    return { type: 'increase_load', load: nextLoad, sets: Math.min(3, targetSets),
+      message: `Rep ceiling hit — move to ${fmtLoad(nextLoad)}, ${Math.min(3, targetSets)} sets, start at the bottom of the range.` };
+  }
+  if (hasTempoApplied(sessionId, ex.name)) {
+    return { type: 'equipment_ceiling',
+      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached — new kit needed to progress further.` };
+  }
+  return { type: 'tempo',
+    message: `Equipment ceiling reached. Apply 3s eccentric tempo — same load, significantly harder. Flag session with tempo once applied.` };
+}
+
+// skill: fixed sets; load steps up only when every set is clean at RIR 2+
+// for two complete sessions. Quality first, never a set climb.
+function getSkillStepUp(sessionId, ex, rule, logs) {
+  if (isDeloadWeek()) return null;
+  const complete = logs.filter(l => l.session.status === 'complete').slice(0, 2);
+  if (complete.length < 2) return null;
+  const clean = complete.every(l => setsAtCeiling(l, rule.repRange) && setsCleanRIR(l, 2));
+  if (!clean) return null;
+  const lastLoad = getLogLoad(complete[0].ex) || planLoadValue(ex);
+  const next = rule.canStepLoad ? stepLoad(lastLoad, 1) : null;
+  if (!next) return null;
+  return { type: 'skill_load', load: next,
+    message: `Every set clean at RIR 2+ for 2 sessions — next bell: ${fmtLoad(next)}. Same sets, speed and form first.` };
+}
+
+// timed: every set at the target time twice → extend the hold
+function getTimedStepUp(sessionId, ex, rule, logs) {
+  if (isDeloadWeek()) return null;
+  const target = parseInt(ex.reps, 10);
+  if (!target) return null;
+  const complete = logs.filter(l => l.session.status === 'complete').slice(0, 2);
+  if (complete.length < 2) return null;
+  const hit = complete.every(l => l.ex.sets.length && l.ex.sets.every(s => parseInt(s.reps, 10) >= target));
+  if (!hit) return null;
+  return { type: 'extend_hold', message: `Target hold reached twice — extend to ${target + 5}s per set.` };
+}
+
+// Stall: STALL_SESSIONS complete logs at the same load, weakest set never
+// improving and still under the ceiling → step the load down for a rebuild
+function getStallReset(sessionId, ex, rule, logs) {
+  if (rule.model !== 'double' || isDeloadWeek()) return null;
+  const complete = logs.filter(l => l.session.status === 'complete').slice(0, STALL_SESSIONS);
+  if (complete.length < STALL_SESSIONS) return null;
+  const load = getLogLoad(complete[0].ex);
+  if (!load || !complete.every(l => getLogLoad(l.ex) === load)) return null;
+  const floors = complete.map(l => {
+    const r = l.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n));
+    return r.length ? Math.min(...r) : null;
+  });
+  if (floors.some(f => f === null)) return null;
+  // newest first: no log's floor beats the one before it, none at ceiling
+  const noGain = floors.every((f, i) => i === floors.length - 1 || f <= floors[i + 1]);
+  if (!noGain || floors[0] >= rule.repRange[1]) return null;
+  const lower = rule.canStepLoad ? stepLoad(load, -1) : null;
+  if (lower) {
+    return { type: 'stall', load: lower, sets: 3,
+      message: `Stalled — ${STALL_SESSIONS} sessions at ${fmtLoad(load)} with no rep gain. Drop to ${fmtLoad(lower)} for a rebuild: 3 sets, run the range back up, then retry ${fmtLoad(load)}.` };
+  }
+  return { type: 'stall',
+    message: `Stalled — ${STALL_SESSIONS} sessions at ${fmtLoad(load) || 'this load'} with no rep gain. Change the stimulus: slower eccentric, a pause, or the next variant.` };
+}
+
+/* ═══════════════════════════════════════════
+   EXERCISE PRESCRIPTION
+   One answer per exercise to "what do I do today": sets, load, rep target
+   and RIR band. Runs the exercise's resolved rule against its logs, the
+   meso week and the weekly muscle volume. The tracker card, its set rows
+   and the adjustments banner all read this, so they can't disagree.
+═══════════════════════════════════════════ */
 function getExercisePrescription(sessionId, ex) {
   const week   = getCurrentMesoWeek();
   const deload = isDeloadWeek();
-  const rr     = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
-  // "3" in the plan is a fixed set count; "3–5" follows the meso week
-  const fixed  = /^\s*\d+\s*$/.test(String(ex.sets || '')) ? parseInt(ex.sets, 10) : null;
-  const target = deload ? Math.min(2, fixed || 2)
-               : (fixed || Math.min(getMesoSetTarget(week), ex.maxSets || Infinity));
+  const rule   = resolveProgressionRule(sessionId, ex);
+  const rr     = rule.repRange;
+  const fixed  = rule.fixedSets;
+  const target = rule.setsForWeek(week);
 
-  const logs = getExerciseLogs(sessionId, ex.name, 3);
+  const logs = getExerciseLogs(sessionId, ex.name, Math.max(3, STALL_SESSIONS));
   const last = logs[0] || null;
   const lastComplete = logs.find(l => l.session.status === 'complete') || null;
   const lastLoad = last ? getLogLoad(last.ex) : '';
@@ -7867,6 +8350,7 @@ function getExercisePrescription(sessionId, ex) {
     rir:    getMesoRIRTarget(week),
     change: null,   // { type, label, message } — what moved vs last time
     last,
+    rule,
   };
 
   if (deload) {
@@ -7878,8 +8362,7 @@ function getExercisePrescription(sessionId, ex) {
   // ── Calibration: new exercises ────────────────────────────────
   // With fewer than CALIBRATION_SESSIONS logs anywhere there's no basis for
   // targets: sets open blank (plan set count, no load, no rep target) and
-  // whatever is logged becomes the baseline. From the next session on, the
-  // logic below takes over.
+  // whatever is logged becomes the baseline.
   const logCount = state.sessions.filter(s =>
     s.status !== 'deload' && s.mesoWeek !== 5 &&
     (s.exercises || []).some(e => e.name === ex.name && (e.sets || []).some(st => st.reps))
@@ -7889,39 +8372,38 @@ function getExercisePrescription(sessionId, ex) {
     rx.sets = fixed ? target : Math.min(3, target);
     rx.load = '';
     rx.change = { type: 'calibrating', label: `Calibrating ${logCount + 1}/${CALIBRATION_SESSIONS}`,
-      message: `New exercise — no pre-selection for the first ${CALIBRATION_SESSIONS} sessions. Log what you do; sets, reps and load are set automatically from session ${CALIBRATION_SESSIONS + 1}.` };
+      message: `New exercise — no pre-selection for the first ${CALIBRATION_SESSIONS} sessions. Log what you do; sets, reps and load are set automatically from session ${CALIBRATION_SESSIONS + 1}. Rule: ${describeRule(rule)}.` };
     return rx;
   }
   if (!last) return rx;
 
-  // ── Step up: the progression engines ──────────────────────────
-  const cfgSess = state.programme.sessions.find(s => s.id === sessionId);
-  const sug = cfgSess?.sessionType === 'transition' ? null
-    : state.profile === 'je' ? getJeProgressionSuggestion(ex.name, sessionId, rr)
-    : getProgressionSuggestion(sessionId, ex.name, rr);
+  // ── maintain: repeat last time, say why ───────────────────────
+  if (rule.model === 'maintain') {
+    rx.sets = fixed || baseSets;
+    rx.change = { type: 'maintain', label: rule.why === 'transition session' ? 'Transition' : 'Maintain',
+      message: rule.why === 'transition session'
+        ? 'Transition work — not counted in mesocycle progression. Same as last time, quality over load.'
+        : 'Prehab — no automatic progression. Same load and sets, never rushed.' };
+    return rx;
+  }
+
+  // ── Step up: the model's own trigger ──────────────────────────
+  let sug = null;
+  if (rule.model === 'ladder')      sug = getLadderSuggestion(ex.name, sessionId, rr);
+  else if (rule.model === 'skill')  sug = getSkillStepUp(sessionId, ex, rule, logs);
+  else if (rule.model === 'timed')  sug = getTimedStepUp(sessionId, ex, rule, logs);
+  else                              sug = getDoubleStepUp(sessionId, ex, rule, logs);
 
   if (sug) {
     const LABELS = {
       tempo: 'Tempo 3s', equipment_ceiling: 'Kit ceiling', support_reduce: 'Less support',
       'variant advancement': 'Next variant', 'band progression': 'Next band',
+      hold_volume: 'Volume cap', extend_hold: '+5s hold', add_set: '+1 set',
     };
     let label = LABELS[sug.type] || sug.type.replace(/_/g, ' ');
-    let message = sug.message;
-    if (sug.type === 'add_set') {
-      rx.sets = Math.min(baseSets + 1, target);
-      label = '+1 set';
-    } else if (sug.type === 'increase_load') {
-      const next = stepLoad(lastLoad, 1);
-      rx.sets = Math.min(3, target);
-      if (next) {
-        rx.load = next;
-        label = `↑ ${fmtLoad(next)}`;
-        message = `Rep ceiling hit — move to ${fmtLoad(next)}, ${rx.sets} sets, start at the bottom of the range.`;
-      } else {
-        label = '↑ load';
-      }
-    }
-    rx.change = { type: sug.type, label, message };
+    if (sug.sets) rx.sets = Math.min(sug.sets, target);
+    if (sug.load) { rx.load = sug.load; label = `↑ ${fmtLoad(sug.load)}`; }
+    rx.change = { type: sug.type, label, message: sug.message };
     return rx;
   }
 
@@ -7933,12 +8415,12 @@ function getExercisePrescription(sessionId, ex) {
   if (lastReps.length && missedFloor(last)) {
     const prev = logs[1];
     if (prev && getLogLoad(prev.ex) === lastLoad && missedFloor(prev)) {
-      const lower = stepLoad(lastLoad, -1);
+      const lower = rule.canStepLoad ? stepLoad(lastLoad, -1) : null;
       if (lower) {
         rx.load = lower;
         rx.change = { type: 'decrease_load', label: `↓ ${fmtLoad(lower)}`,
           message: `Under ${rr[0]} reps at ${fmtLoad(lastLoad)} two sessions running — drop to ${fmtLoad(lower)} and rebuild into the range.` };
-      } else if (rx.sets > 2) {
+      } else if (rx.sets > 2 && !fixed) {
         rx.sets -= 1;
         rx.change = { type: 'decrease_set', label: '−1 set',
           message: `Under ${rr[0]} reps two sessions running with no lighter option — one set fewer until every set reaches ${rr[0]}.` };
@@ -7948,6 +8430,15 @@ function getExercisePrescription(sessionId, ex) {
       rx.change = { type: 'hold', label: 'Hold',
         message: `Missed ${rr[0]} reps last time at ${fmtLoad(lastLoad) || 'this load'} — same load, get every set to ${rr[0]}+.` };
     }
+    return rx;
+  }
+
+  // ── Stall: same load, no rep gain for STALL_SESSIONS logs ─────
+  const stall = getStallReset(sessionId, ex, rule, logs);
+  if (stall) {
+    if (stall.load) rx.load = stall.load;
+    if (stall.sets) rx.sets = Math.min(stall.sets, target);
+    rx.change = { type: 'stall', label: stall.load ? `↓ ${fmtLoad(stall.load)}` : 'Stalled', message: stall.message };
     return rx;
   }
 
@@ -7961,12 +8452,22 @@ function getExercisePrescription(sessionId, ex) {
         message: `Weakest set last time: ${floor}. Aim for ${t}+ on every set.` };
     } else {
       rx.change = { type: 'repeat', label: 'Repeat',
-        message: `Top of the range last time — match it again to unlock the next step.` };
+        message: rule.model === 'skill'
+          ? `Every set at target — repeat it clean at RIR 2+ to unlock the next bell.`
+          : `Top of the range last time — match it again to unlock the next step.` };
     }
   }
   return rx;
 }
 
+// Legacy entry point: the structural change for one exercise, or null
+function getProgressionSuggestion(sessionId, exerciseName) {
+  const ex = findExerciseConfig(exerciseName, sessionId);
+  if (!ex) return null;
+  const c = getExercisePrescription(sessionId, ex).change;
+  if (!c || ['add_reps', 'repeat', 'deload', 'calibrating', 'maintain', 'hold'].includes(c.type)) return null;
+  return { exercise: exerciseName, type: c.type, message: c.message };
+}
 /* ═══════════════════════════════════════════
    RENDER — PROGRESSION SUGGESTIONS
    Routes to the correct algorithm per profile
@@ -8007,7 +8508,7 @@ function renderProgressionSuggestions(session) {
     if (ex.type === 'optional' || ex.type === 'prehab') return;
     const def = getTrackedExDef(session, idx);
     const c = getExercisePrescription(session.id, def).change;
-    if (!c || ['add_reps', 'repeat', 'deload', 'calibrating'].includes(c.type)) return;
+    if (!c || ['add_reps', 'repeat', 'deload', 'calibrating', 'maintain'].includes(c.type)) return;
     suggestions.push({ exercise: def.name, type: c.type, message: c.message });
   });
 
@@ -8024,6 +8525,10 @@ function renderProgressionSuggestions(session) {
         'band progression':    'var(--legs-a)',
         'tempo':               'var(--push-b)',
         'equipment_ceiling':   'var(--red)',
+        'hold_volume':         'var(--amber)',
+        'stall':               'var(--red)',
+        'skill_load':          'var(--pull)',
+        'extend_hold':         'var(--green)',
       };
       const col = typeColors[s.type] || 'var(--text-dim)';
       const tempoBtn = s.type === 'tempo'
@@ -8623,7 +9128,26 @@ function deleteDummyData() {
 /* ═══════════════════════════════════════════
    COMPUTE NEXT PROGRESSION (dynamic)
 ═══════════════════════════════════════════ */
-function computeNextProgression(ex) {
+// What the next step up looks like for the programme tab, per the
+// exercise's resolved rule: next ladder rung, next load, or nothing.
+function computeNextProgression(ex, sessionId) {
+  const sid  = sessionId || state.programme.sessions.find(s => s.exercises.includes(ex))?.id || '';
+  const rule = resolveProgressionRule(sid, ex);
+  if (rule.model === 'maintain') return '— no auto progression';
+  if (rule.model === 'timed')    return '→ +5s hold';
+  if (rule.model === 'ladder' && rule.ladder) {
+    const idx = getCurrentVariantIndex(ex.name, sid);
+    return idx < rule.ladder.length - 1 ? `→ ${rule.ladder[idx + 1].variant}` : '→ Top of ladder';
+  }
+  const logs = getExerciseLogs(sid, ex.name, 1);
+  const cur  = logs[0] ? getLogLoad(logs[0].ex) : '';
+  const next = rule.canStepLoad ? stepLoad(cur || planLoadValue(ex), 1) : null;
+  if (next) return `→ ${fmtLoad(next)}${rule.model === 'skill' ? ' (when clean at RIR 2+)' : ''}`;
+  if (rule.canStepLoad) return '→ Top of load ladder — tempo next';
+  return computeNextProgressionLegacy(ex);
+}
+
+function computeNextProgressionLegacy(ex) {
   const load = (ex.load || '').toString().toLowerCase();
   const BAND_ORDER = ['yellow','green','red','blue','black'];
   const KB_SIZES   = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
@@ -8897,36 +9421,259 @@ function saveProfileSettings() {
   toast('Profile settings saved', 'success');
 }
 
-/* ── PROGRAMME EDITOR ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   PROGRAMME BUILDER
+   Settings → Programme Editor. Sessions are built from a template,
+   exercises come from the shared library (every exercise the app
+   knows, plus anything ever logged) or are created new. Each
+   exercise carries its target muscles, pattern, equipment and
+   progression model — the rule engine reads those, so a session
+   built here progresses automatically from its first log.
+   The whole programme is persisted (sessionsConfig) and synced.
+   Future home: /js/render/builder.js
+═══════════════════════════════════════════ */
+const SESSION_PALETTE = [
+  { id: 'push-a',     color: 'var(--push-a)',       rgb: '0,212,160'   },
+  { id: 'pull',       color: 'var(--pull)',         rgb: '77,184,255'  },
+  { id: 'legs-a',     color: 'var(--legs-a)',       rgb: '245,184,48'  },
+  { id: 'push-b',     color: 'var(--push-b)',       rgb: '184,127,255' },
+  { id: 'legs-b',     color: 'var(--legs-b)',       rgb: '255,92,122'  },
+  { id: 'kb-flow',    color: 'var(--kb-flow)',      rgb: '255,144,80'  },
+  { id: 'session-a',  color: 'var(--session-a)',    rgb: '126,200,227' },
+  { id: 'session-b',  color: 'var(--session-b)',    rgb: '249,168,117' },
+  { id: 'transition', color: 'var(--transition-c)', rgb: '0,180,204'   },
+];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const SESSION_TEMPLATES = [
+  { id: 'push',   name: 'Push',      subtitle: 'Chest, Shoulders & Triceps', focus: ['chest','shoulders','triceps'], rest: 60,  palette: 'push-a',
+    note: 'Heaviest compound first, then a second press angle, then isolation. Finish with triceps.' },
+  { id: 'pull',   name: 'Pull',      subtitle: 'Back, Biceps & Rear Delt',   focus: ['back','biceps','shoulders'],  rest: 60,  palette: 'pull',
+    note: 'Horizontal row first, vertical pull second, rear delt while the back is warm, biceps last.' },
+  { id: 'quads',  name: 'Legs — Quad', subtitle: 'Quad Focus',               focus: ['quads','glutes','calves'],    rest: 120, palette: 'legs-a',
+    note: 'Bilateral squat first, unilateral second, lengthened-position quad work last.' },
+  { id: 'hinge',  name: 'Legs — Hinge', subtitle: 'Hamstrings & Glutes',     focus: ['hamstrings','glutes'],        rest: 120, palette: 'legs-b',
+    note: 'Bilateral hinge first while fresh, unilateral hinge second, glute-dominant work, hamstring curl last.' },
+  { id: 'upper',  name: 'Upper',     subtitle: 'Push & Pull',                focus: ['chest','back','shoulders','biceps','triceps'], rest: 75, palette: 'push-b',
+    note: 'Alternate push and pull so one pattern rests while the other works.' },
+  { id: 'lower',  name: 'Lower',     subtitle: 'Squat & Hinge',              focus: ['quads','hamstrings','glutes'], rest: 120, palette: 'legs-b',
+    note: 'Squat pattern first, hinge pattern second, single-leg work, calves or core to finish.' },
+  { id: 'full',   name: 'Full Body', subtitle: 'Squat, Push, Hinge, Pull',   focus: ['quads','chest','hamstrings','back','glutes'], rest: 60, palette: 'session-a',
+    note: 'One movement per pattern. Compounds first, accessories last.' },
+  { id: 'core',   name: 'Core & Mobility', subtitle: 'Stability & Range',    focus: ['core','hip-flexors','shoulders'], rest: 45, palette: 'transition', sessionType: 'transition',
+    note: 'Slow and deliberate. Movement quality over load. Not counted in mesocycle progression.' },
+  { id: 'blank',  name: 'New Session', subtitle: 'Custom',                   focus: [],                             rest: 60,  palette: 'kb-flow',
+    note: '' },
+];
+
+const _builder = { openForm: null, libSearch: '', libMuscle: '', libTarget: null };
+
+/* ── Library ────────────────────────────────── */
+
+// Every exercise the app knows: both built-in programmes, the current
+// programme, the swap alternatives and anything ever logged. Deduped by name.
+function getExerciseLibrary() {
+  const seen = new Map();
+  const add = (ex, source) => {
+    if (!ex || !ex.name || seen.has(ex.name)) return;
+    seen.set(ex.name, { name: ex.name, def: ex, source });
+  };
+  state.programme.sessions.forEach(s => s.exercises.forEach(e => add(e, 'programme')));
+  Object.entries(PROGRAMMES).forEach(([pid, prog]) =>
+    prog.sessions.forEach(s => s.exercises.forEach(e => add(e, prog.name))));
+  Object.values(EXERCISE_SWAP_MAP).forEach(alt =>
+    add({ name: alt.name, type: 'accessory', tags: ['accessory'], sets: '3', reps: '8–12', repRange: [8,12], load: alt.load, notes: alt.notes, desc: alt.desc }, 'alternative'));
+  state.sessions.forEach(s => (s.exercises || []).forEach(e =>
+    add({ name: e.name, type: e.type || 'accessory', tags: [e.type || 'accessory'], sets: '3–5', reps: '8–12', repRange: Array.isArray(e.repRange) ? e.repRange : [8,12], load: '', notes: '', desc: '' }, 'history')));
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Deep copy of an exercise definition, keeping only programme fields
+function cloneExerciseDef(ex) {
+  const c = JSON.parse(JSON.stringify(ex));
+  delete c.num;
+  return c;
+}
+
+/* ── Persistence helpers ────────────────────── */
+
+function slugify(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'session';
+}
+
+function renumberSession(session) {
+  session.exercises.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); });
+}
+
+// Persist the programme locally, push to Drive and refresh every view
+function saveProgrammeEdits(msg) {
+  state.programme.sessions.forEach(renumberSession);
+  saveSettings();
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Programme push failed:', e));
+  renderProgramme();
+  renderTracker();
+  renderSettingsProgramme();
+  if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
+  if (msg) toast(msg, 'success');
+}
+
+function resetProgrammeToDefault() {
+  showModal(
+    'Reset Programme',
+    `Restore the built-in <strong>${PROGRAMMES[state.profile].name}</strong> programme? Custom sessions, added exercises and edited targets are discarded. Session history is untouched.`,
+    [
+      { label: 'Cancel', cls: 'cancel', action: closeModal },
+      { label: 'Reset', cls: 'confirm', action: () => {
+        state.programme = buildProgramme(state.profile);
+        state.exOverrides = {};
+        closeModal();
+        saveProgrammeEdits('Programme reset to default');
+      }}
+    ]
+  );
+}
+
+/* ── Planned volume ─────────────────────────── */
+
+function sessionsPerWeek(session) {
+  if (Array.isArray(session.days) && session.days.length) return session.days.length;
+  return ['transition', 'optional'].includes(session.sessionType) ? 0 : 1;
+}
+
+// Planned hard sets per muscle per week at this meso week's set targets
+function getPlannedWeeklySets(week) {
+  const counts = {};
+  const w = week || getCurrentMesoWeek();
+  state.programme.sessions.forEach(sess => {
+    const perWeek = sessionsPerWeek(sess);
+    if (!perWeek) return;
+    sess.exercises.forEach(ex => {
+      if (ex.type === 'optional' || ex.type === 'prehab') return;
+      const rule = resolveProgressionRule(sess.id, ex);
+      const sets = rule.setsForWeek(w) * perWeek;
+      // Primary targets only — the same count the rule engine caps against
+      rule.attrs.primary.forEach(m => { counts[m] = (counts[m] || 0) + sets; });
+    });
+  });
+  Object.keys(counts).forEach(m => { counts[m] = Math.round(counts[m]); });
+  return counts;
+}
+
+function buildPlannedVolumePanel() {
+  const week   = getCurrentMesoWeek();
+  const counts = getPlannedWeeklySets(week);
+  const rows = MUSCLE_IDS.filter(m => counts[m] > 0 || !['forearms','hip-flexors','adductors','calves'].includes(m));
+  const flags = [];
+  const html = rows.map(m => {
+    const n  = counts[m] || 0;
+    const lm = volumeLandmark(m);
+    const status = n < lm.mev ? 'under' : n > lm.mrv ? 'over' : 'ok';
+    const col = status === 'under' ? 'var(--amber)' : status === 'over' ? 'var(--red)' : 'var(--green)';
+    if (status !== 'ok' && n > 0 || (status === 'under' && !['forearms','hip-flexors','adductors','calves','core'].includes(m))) {
+      flags.push(`${muscleLabel(m)} ${status === 'under' ? 'under MEV' : 'over MRV'} (${n})`);
+    }
+    const pct = Math.min(n / (lm.mrv * 1.2) * 100, 100);
+    return `<div class="vol-row">
+      <div class="vol-name">${muscleLabel(m)}</div>
+      <div class="vol-bar"><div class="vol-fill" style="width:${pct}%;background:${col}"></div>
+        <div class="vol-mark" style="left:${lm.mev / (lm.mrv * 1.2) * 100}%"></div>
+        <div class="vol-mark" style="left:${lm.mrv / (lm.mrv * 1.2) * 100}%"></div></div>
+      <div class="vol-n" style="color:${col}">${n}</div>
+    </div>`;
+  }).join('');
+  return `<div class="vol-panel">
+    <div class="vol-title">Planned hard sets / muscle / week <span>primary targets · week ${week} set targets · marks at MEV and MRV</span></div>
+    ${html}
+    ${flags.length ? `<div class="vol-flags">${flags.join(' · ')}</div>` : '<div class="vol-flags ok">Every muscle inside its MEV–MRV band.</div>'}
+  </div>`;
+}
+
+/* ── Render ─────────────────────────────────── */
+
+function muscleChips(attrs, small) {
+  const p = attrs.primary.map(m => `<span class="ex-tag mus">${muscleLabel(m)}</span>`).join('');
+  const s = attrs.secondary.map(m => `<span class="ex-tag mus sec">${muscleLabel(m)}</span>`).join('');
+  return p + s;
+}
+
 function renderSettingsProgramme() {
   const container = document.getElementById('settings-sessions-list');
   if (!container) return;
 
-  container.innerHTML = state.programme.sessions.map(session => `
-    <div style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <div class="session-pip" style="background:${session.color};width:7px;height:7px;border-radius:50%"></div>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em">${session.name}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)">${session.subtitle}</span>
-      </div>
-      <div id="prog-ex-list-${session.id}">
-        ${session.exercises.map((ex, i) => buildProgExRow(session, ex, i)).join('')}
-      </div>
-      <button class="settings-btn primary" style="width:100%;margin-top:4px" 
-        onclick="showAddExerciseForm('${session.id}')">+ Add Exercise</button>
-      <div id="add-ex-form-${session.id}" class="hidden"></div>
+  const sessions = state.programme.sessions;
+  container.innerHTML = `
+    <div class="builder-toolbar">
+      <button class="settings-btn primary" onclick="showNewSessionPanel()">+ New Session</button>
+      <button class="settings-btn" onclick="resetProgrammeToDefault()">Reset to default</button>
     </div>
-  `).join('');
+    <div id="new-session-panel" class="hidden"></div>
+    ${buildPlannedVolumePanel()}
+    ${sessions.map((session, si) => {
+      const focus = sessionFocusLabel(session);
+      const typeTag = session.sessionType === 'transition' ? '<span class="ex-tag pre">Transition</span>'
+                    : session.sessionType === 'optional'   ? '<span class="ex-tag opt">Optional</span>' : '';
+      const days = (session.days || []).join(' · ');
+      return `
+      <div class="builder-session" id="builder-sess-${session.id}">
+        <div class="builder-session-head">
+          <div class="session-pip" style="background:${session.color};width:7px;height:7px;border-radius:50%"></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="builder-session-name">${session.name}</span>
+              <span class="builder-session-sub">${session.subtitle || ''}</span>
+              ${typeTag}
+            </div>
+            <div class="builder-session-meta">${session.rest}s rest${days ? ' · ' + days : ''}${focus ? ' · ' + focus : ''}</div>
+          </div>
+          <div class="prog-ex-actions">
+            <button class="prog-ex-btn" onclick="moveSession('${session.id}',-1)" ${si === 0 ? 'disabled' : ''}>↑</button>
+            <button class="prog-ex-btn" onclick="moveSession('${session.id}',1)" ${si === sessions.length - 1 ? 'disabled' : ''}>↓</button>
+            <button class="prog-ex-btn edit-btn" onclick="showSessionMetaForm('${session.id}')">Edit</button>
+            <button class="prog-ex-btn del-btn" onclick="confirmRemoveSession('${session.id}')">✕</button>
+          </div>
+        </div>
+        <div id="sess-meta-form-${session.id}" class="hidden"></div>
+        <div id="prog-ex-list-${session.id}">
+          ${session.exercises.map((ex, i) => buildProgExRow(session, ex, i)).join('')}
+        </div>
+        <div class="builder-add-row">
+          <button class="settings-btn primary" onclick="showLibraryPicker('${session.id}')">+ From library</button>
+          <button class="settings-btn" onclick="showAddExerciseForm('${session.id}')">+ New exercise</button>
+        </div>
+        <div id="lib-picker-${session.id}" class="hidden"></div>
+        <div id="add-ex-form-${session.id}" class="hidden"></div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// "Chest · Triceps · Shoulders" — primary muscles by weight of sets
+function sessionFocusLabel(session) {
+  const score = {};
+  session.exercises.forEach(ex => {
+    if (ex.type === 'optional') return;
+    const a = getExerciseAttrs(ex);
+    a.primary.forEach(m => { score[m] = (score[m] || 0) + 1; });
+    a.secondary.forEach(m => { score[m] = (score[m] || 0) + 0.4; });
+  });
+  return Object.entries(score).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([m]) => muscleLabel(m)).join(' · ');
 }
 
 function buildProgExRow(session, ex, idx) {
   const dotStyle = ex.type === 'optional' ? 'background:var(--text-muted)' : `background:${session.color}`;
+  const rule = resolveProgressionRule(session.id, ex);
   return `<div class="prog-ex-row" id="prog-row-${session.id}-${idx}">
-    <span class="prog-ex-drag">⋮⋮</span>
     <div class="prog-ex-dot" style="${dotStyle}"></div>
-    <span class="prog-ex-name">${ex.name}</span>
-    <span class="prog-ex-type">${ex.type}</span>
+    <div style="flex:1;min-width:0">
+      <div class="prog-ex-name">${ex.name}
+        <span class="prog-ex-type">${ex.type}</span>
+        <span class="prog-ex-rule" title="${rule.why}">${rule.label}</span>
+      </div>
+      <div class="ex-tags" style="margin-top:2px">${muscleChips(rule.attrs)}${rule.attrs.inferred ? '<span class="ex-tag auto" title="Muscles inferred from the name — set them explicitly in Edit">auto</span>' : ''}</div>
+    </div>
     <div class="prog-ex-actions">
+      <button class="prog-ex-btn" onclick="moveExercise('${session.id}',${idx},-1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
+      <button class="prog-ex-btn" onclick="moveExercise('${session.id}',${idx},1)" ${idx === session.exercises.length - 1 ? 'disabled' : ''}>↓</button>
       <button class="prog-ex-btn edit-btn" onclick="showEditExerciseForm('${session.id}',${idx})">Edit</button>
       <button class="prog-ex-btn del-btn" onclick="confirmRemoveExercise('${session.id}',${idx})">✕</button>
     </div>
@@ -8934,195 +9681,533 @@ function buildProgExRow(session, ex, idx) {
   <div id="edit-ex-form-${session.id}-${idx}" class="hidden"></div>`;
 }
 
-function showEditExerciseForm(sessionId, idx) {
-  const session = state.programme.sessions.find(s => s.id === sessionId);
-  const ex = session.exercises[idx];
-  const formId = `edit-ex-form-${sessionId}-${idx}`;
-
-  // Close any other open forms
-  document.querySelectorAll('.ex-edit-form').forEach(f => {
-    const wrap = f.closest('[id^="edit-ex-form-"], [id^="add-ex-form-"]');
-    if (wrap && wrap.id !== formId) { wrap.innerHTML = ''; wrap.classList.add('hidden'); }
-  });
-
-  const form = document.getElementById(formId);
-  if (!form.classList.contains('hidden')) { form.innerHTML = ''; form.classList.add('hidden'); return; }
-
-  form.innerHTML = buildExerciseEditForm(ex, sessionId, idx);
-  form.classList.remove('hidden');
+function closeAllBuilderForms(exceptId) {
+  document.querySelectorAll('[id^="edit-ex-form-"], [id^="add-ex-form-"], [id^="lib-picker-"], [id^="sess-meta-form-"], #new-session-panel')
+    .forEach(wrap => { if (wrap.id !== exceptId) { wrap.innerHTML = ''; wrap.classList.add('hidden'); } });
 }
 
-function buildExerciseEditForm(ex, sessionId, idx) {
-  const typeOpts = ['compound','accessory','prehab','optional'].map(t =>
-    `<option value="${t}"${ex.type===t?' selected':''}>${t}</option>`).join('');
+/* ── Sessions ───────────────────────────────── */
 
-  const tagsList = (ex.tags || []).filter(t => !['compound','accessory','prehab','optional'].includes(t));
+function moveSession(sessionId, dir) {
+  const arr = state.programme.sessions;
+  const i = arr.findIndex(s => s.id === sessionId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  saveProgrammeEdits();
+}
 
-  return `<div class="ex-edit-form">
-    <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.09em;color:var(--pull);margin-bottom:10px">Editing: ${ex.name}</div>
+function moveExercise(sessionId, idx, dir) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const j = idx + dir;
+  if (!session || j < 0 || j >= session.exercises.length) return;
+  [session.exercises[idx], session.exercises[j]] = [session.exercises[j], session.exercises[idx]];
+  saveProgrammeEdits();
+}
+
+function showNewSessionPanel() {
+  const panel = document.getElementById('new-session-panel');
+  if (!panel) return;
+  if (!panel.classList.contains('hidden')) { panel.innerHTML = ''; panel.classList.add('hidden'); return; }
+  closeAllBuilderForms('new-session-panel');
+  panel.innerHTML = `<div class="ex-edit-form">
+    <div class="builder-form-title">Pick a template</div>
+    <div class="tpl-grid">
+      ${SESSION_TEMPLATES.map(t => {
+        const pal = SESSION_PALETTE.find(p => p.id === t.palette) || SESSION_PALETTE[0];
+        return `<div class="tpl-card" style="--tpl-rgb:${pal.rgb}" onclick="createSessionFromTemplate('${t.id}')">
+          <div class="tpl-name">${t.name}</div>
+          <div class="tpl-sub">${t.subtitle}</div>
+          <div class="ex-tags" style="margin-top:4px">${t.focus.map(m => `<span class="ex-tag mus">${muscleLabel(m)}</span>`).join('') || '<span class="ex-tag">empty</span>'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="builder-hint">A template sets the name, rest, colour and target muscles, and seeds the session with matching exercises from the library. Everything can be changed afterwards.</div>
+  </div>`;
+  panel.classList.remove('hidden');
+}
+
+// Seed: compounds first, then accessories, whose primary muscles sit in the
+// template focus. Prefers exercises already in this programme (known loads).
+function pickSeedExercises(focus, max = 6) {
+  if (!focus.length) return [];
+  const lib = getExerciseLibrary();
+  const score = e => {
+    const a = getExerciseAttrs(e.def);
+    const hit = a.primary.filter(m => focus.includes(m)).length;
+    if (!hit || e.def.type === 'optional' || e.def.type === 'prehab') return -1;
+    const allIn = hit === a.primary.length;
+    return hit * 10 + (allIn ? 6 : 0) + (e.def.type === 'compound' ? 5 : 0) + (e.source === 'programme' ? 2 : 0)
+         + (['ballistic','mobility','carry'].includes(a.pattern) ? -12 : 0);
+  };
+  const perMuscle = {};
+  return lib.map(e => ({ e, s: score(e) })).filter(x => x.s >= 0).sort((a, b) => b.s - a.s)
+    .filter(x => {
+      // keep coverage broad: at most 2 exercises per lead muscle
+      const key = getExerciseAttrs(x.e.def).primary[0];
+      perMuscle[key] = (perMuscle[key] || 0) + 1;
+      return perMuscle[key] <= 2;
+    })
+    .slice(0, max).map(x => cloneExerciseDef(x.e.def));
+}
+
+function createSessionFromTemplate(tplId) {
+  const t = SESSION_TEMPLATES.find(x => x.id === tplId);
+  if (!t) return;
+  const pal = SESSION_PALETTE.find(p => p.id === t.palette) || SESSION_PALETTE[0];
+  let base = slugify(t.name), id = base, n = 2;
+  while (state.programme.sessions.some(s => s.id === id)) id = `${base}-${n++}`;
+  const session = {
+    id, name: t.name, subtitle: t.subtitle, class: 's-custom',
+    color: pal.color, colorRgb: pal.rgb, rest: t.rest,
+    note: t.note, days: [], custom: true,
+    focus: t.focus.slice(),
+    ...(t.sessionType ? { sessionType: t.sessionType } : {}),
+    exercises: t.id === 'blank' ? [] : pickSeedExercises(t.focus),
+  };
+  renumberSession(session);
+  state.programme.sessions.push(session);
+  saveProgrammeEdits(`${t.name} created — ${session.exercises.length} exercise${session.exercises.length === 1 ? '' : 's'} seeded`);
+  setTimeout(() => {
+    showSessionMetaForm(id);
+    document.getElementById(`builder-sess-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+function showSessionMetaForm(sessionId) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const wrap = document.getElementById(`sess-meta-form-${sessionId}`);
+  if (!session || !wrap) return;
+  if (!wrap.classList.contains('hidden')) { wrap.innerHTML = ''; wrap.classList.add('hidden'); return; }
+  closeAllBuilderForms(wrap.id);
+  const days = session.days || [];
+  const type = session.sessionType || 'training';
+  wrap.innerHTML = `<div class="ex-edit-form">
+    <div class="builder-form-title">Session: ${session.name}</div>
     <div class="form-row">
-      <div class="form-field" style="flex:2">
-        <label>Exercise Name *</label>
-        <input id="ef-name-${sessionId}-${idx}" value="${ex.name}" placeholder="Exercise name">
-      </div>
-      <div class="form-field">
-        <label>Type</label>
-        <select id="ef-type-${sessionId}-${idx}">${typeOpts}</select>
+      <div class="form-field" style="flex:2"><label>Name *</label><input id="sm-name-${sessionId}" value="${esc(session.name)}"></div>
+      <div class="form-field" style="flex:2"><label>Subtitle</label><input id="sm-sub-${sessionId}" value="${esc(session.subtitle || '')}"></div>
+      <div class="form-field"><label>Rest (s)</label><input id="sm-rest-${sessionId}" type="number" min="10" max="600" value="${session.rest}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Type</label>
+        <select id="sm-type-${sessionId}">
+          <option value="training"${type === 'training' ? ' selected' : ''}>Training — counts in the mesocycle</option>
+          <option value="optional"${type === 'optional' ? ' selected' : ''}>Optional — extra, not in the weekly rotation</option>
+          <option value="transition"${type === 'transition' ? ' selected' : ''}>Transition — between blocks, no progression</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field">
-        <label>Rep Range (e.g. 8–12)</label>
-        <input id="ef-reps-${sessionId}-${idx}" value="${ex.reps || ''}" placeholder="8–12">
-      </div>
-      <div class="form-field">
-        <label>Sets (meso range)</label>
-        <input id="ef-sets-${sessionId}-${idx}" value="${ex.sets || ''}" placeholder="3–5">
-      </div>
-      <div class="form-field">
-        <label>Default Load</label>
-        <input id="ef-load-${sessionId}-${idx}" value="${ex.load || ''}" placeholder="16 kg">
+      <div class="form-field"><label>Days (for planned weekly volume and the week view)</label>
+        <div class="chip-row" id="sm-days-${sessionId}">
+          ${DAYS.map(d => `<span class="pick-chip${days.includes(d) ? ' on' : ''}" data-v="${d}" onclick="this.classList.toggle('on')">${d}</span>`).join('')}
+        </div>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Tags (comma-separated)</label>
-        <input id="ef-tags-${sessionId}-${idx}" value="${tagsList.join(', ')}" placeholder="unilateral, bw">
+      <div class="form-field"><label>Colour</label>
+        <div class="chip-row" id="sm-color-${sessionId}">
+          ${SESSION_PALETTE.map(p => `<span class="swatch${session.color === p.color ? ' on' : ''}" data-color="${p.color}" data-rgb="${p.rgb}" style="background:rgb(${p.rgb})" onclick="pickSwatch(this)"></span>`).join('')}
+        </div>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Description (shown in ℹ tooltip)</label>
-        <textarea id="ef-desc-${sessionId}-${idx}">${ex.desc || ''}</textarea>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Coaching Notes</label>
-        <textarea id="ef-notes-${sessionId}-${idx}" style="min-height:45px">${ex.notes || ''}</textarea>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-field" style="flex:1">
-        <label>Substitution Alternatives (comma-separated)</label>
-        <input id="ef-subs-${sessionId}-${idx}" value="${(ex.substitutions||[]).join(', ')}" placeholder="Alternative A, Alternative B">
-      </div>
+      <div class="form-field"><label>Order note (shown on the programme card)</label><textarea id="sm-note-${sessionId}" style="min-height:45px">${esc(session.note || '')}</textarea></div>
     </div>
     <div class="form-actions">
-      <button class="settings-btn" onclick="closeExerciseForm('${sessionId}',${idx})">Cancel</button>
-      <button class="settings-btn primary" onclick="saveExerciseEdit('${sessionId}',${idx})">Save Exercise</button>
+      <button class="settings-btn" onclick="closeAllBuilderForms()">Cancel</button>
+      <button class="settings-btn primary" onclick="saveSessionMeta('${sessionId}')">Save Session</button>
     </div>
   </div>`;
+  wrap.classList.remove('hidden');
+}
+
+function pickSwatch(el) {
+  el.parentElement.querySelectorAll('.swatch').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+function saveSessionMeta(sessionId) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  const name = document.getElementById(`sm-name-${sessionId}`)?.value.trim();
+  if (!name) { toast('Session name required', 'error'); return; }
+  const oldName = session.name;
+  session.name     = name;
+  session.subtitle = document.getElementById(`sm-sub-${sessionId}`)?.value.trim() || '';
+  session.rest     = Math.min(600, Math.max(10, parseInt(document.getElementById(`sm-rest-${sessionId}`)?.value, 10) || 60));
+  const type = document.getElementById(`sm-type-${sessionId}`)?.value;
+  if (type === 'training') delete session.sessionType; else session.sessionType = type;
+  session.days = [...document.querySelectorAll(`#sm-days-${sessionId} .pick-chip.on`)].map(c => c.dataset.v);
+  const sw = document.querySelector(`#sm-color-${sessionId} .swatch.on`);
+  if (sw) { session.color = sw.dataset.color; session.colorRgb = sw.dataset.rgb; }
+  session.note = document.getElementById(`sm-note-${sessionId}`)?.value.trim() || '';
+  if (session.sessionType === 'transition') session.class = 's-transition';
+  else if (session.custom) session.class = 's-custom';
+  // History cards show the session name — keep them in step
+  if (oldName !== name) {
+    state.sessions.forEach(s => { if (s.sessionId === sessionId) s.sessionName = name; });
+  }
+  saveProgrammeEdits('Session saved');
+}
+
+function confirmRemoveSession(sessionId) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  showModal(
+    'Remove Session',
+    `Remove <strong>${session.name}</strong> from the programme?<br><br>Logged history for it is kept. A built-in session can be brought back with "Reset to default".`,
+    [
+      { label: 'Cancel', cls: 'cancel', action: closeModal },
+      { label: 'Remove', cls: 'confirm', action: () => {
+        state.programme.sessions = state.programme.sessions.filter(s => s.id !== sessionId);
+        closeModal();
+        saveProgrammeEdits(`${session.name} removed`);
+      }}
+    ]
+  );
+}
+
+/* ── Library picker ─────────────────────────── */
+
+function showLibraryPicker(sessionId) {
+  const wrap = document.getElementById(`lib-picker-${sessionId}`);
+  if (!wrap) return;
+  if (!wrap.classList.contains('hidden')) { wrap.innerHTML = ''; wrap.classList.add('hidden'); return; }
+  closeAllBuilderForms(wrap.id);
+  _builder.libTarget = sessionId;
+  _builder.libSearch = '';
+  _builder.libMuscle = '';
+  wrap.innerHTML = `<div class="ex-edit-form">
+    <div class="builder-form-title">Add from library</div>
+    <div class="form-row">
+      <div class="form-field" style="flex:2"><input id="lib-search-${sessionId}" placeholder="Search exercises…" oninput="_builder.libSearch=this.value;renderLibraryList('${sessionId}')"></div>
+    </div>
+    <div class="chip-row" style="margin-bottom:8px">
+      <span class="pick-chip on" data-v="" onclick="setLibMuscle('${sessionId}','',this)">All</span>
+      ${MUSCLES.map(m => `<span class="pick-chip" data-v="${m.id}" onclick="setLibMuscle('${sessionId}','${m.id}',this)">${m.label}</span>`).join('')}
+    </div>
+    <div class="lib-list" id="lib-list-${sessionId}"></div>
+    <div class="form-actions"><button class="settings-btn" onclick="closeAllBuilderForms()">Close</button></div>
+  </div>`;
+  wrap.classList.remove('hidden');
+  renderLibraryList(sessionId);
+  document.getElementById(`lib-search-${sessionId}`)?.focus();
+}
+
+function setLibMuscle(sessionId, m, el) {
+  _builder.libMuscle = m;
+  el.parentElement.querySelectorAll('.pick-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderLibraryList(sessionId);
+}
+
+function renderLibraryList(sessionId) {
+  const list = document.getElementById(`lib-list-${sessionId}`);
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!list || !session) return;
+  const q = _builder.libSearch.trim().toLowerCase();
+  const inSession = new Set(session.exercises.map(e => e.name));
+  const rows = getExerciseLibrary().filter(e => {
+    if (q && !e.name.toLowerCase().includes(q)) return false;
+    if (_builder.libMuscle) {
+      const a = getExerciseAttrs(e.def);
+      if (!a.primary.includes(_builder.libMuscle) && !a.secondary.includes(_builder.libMuscle)) return false;
+    }
+    return true;
+  });
+  list.innerHTML = rows.length ? rows.map(e => {
+    const a = getExerciseAttrs(e.def);
+    const here = inSession.has(e.name);
+    return `<div class="lib-row${here ? ' in' : ''}">
+      <div style="flex:1;min-width:0">
+        <div class="lib-name">${e.name} <span class="prog-ex-type">${e.def.type || ''}</span><span class="lib-src">${e.source}</span></div>
+        <div class="ex-tags" style="margin-top:2px">${muscleChips(a)}<span class="ex-tag">${e.def.reps || ''}</span>${e.def.load ? `<span class="ex-tag">${esc(e.def.load)}</span>` : ''}</div>
+      </div>
+      <button class="prog-ex-btn ${here ? '' : 'edit-btn'}" ${here ? 'disabled' : ''} onclick="addLibraryExercise('${sessionId}','${esc(e.name).replace(/'/g, '&#39;')}')">${here ? 'Added' : 'Add'}</button>
+    </div>`;
+  }).join('') : '<div class="builder-hint">No exercise matches. Use "+ New exercise" to create one.</div>';
+}
+
+function addLibraryExercise(sessionId, name) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const entry = getExerciseLibrary().find(e => e.name === name);
+  if (!session || !entry) return;
+  if (session.exercises.some(e => e.name === name)) { toast('Already in this session', 'info'); return; }
+  const ex = cloneExerciseDef(entry.def);
+  if (!ex.tags) ex.tags = [ex.type || 'accessory'];
+  session.exercises.push(ex);
+  renumberSession(session);
+  saveSettings();
+  saveProgrammeToDrive().catch(() => {});
+  renderProgramme();
+  renderTracker();
+  // Keep the picker open: refresh only this session's row list and the picker
+  const listEl = document.getElementById(`prog-ex-list-${sessionId}`);
+  if (listEl) listEl.innerHTML = session.exercises.map((e, i) => buildProgExRow(session, e, i)).join('');
+  renderLibraryList(sessionId);
+  toast(`${name} added to ${session.name}`, 'success');
+}
+
+/* ── Exercise form ──────────────────────────── */
+
+function showEditExerciseForm(sessionId, idx) {
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const ex = session?.exercises[idx];
+  const formId = `edit-ex-form-${sessionId}-${idx}`;
+  const form = document.getElementById(formId);
+  if (!ex || !form) return;
+  if (!form.classList.contains('hidden')) { form.innerHTML = ''; form.classList.add('hidden'); return; }
+  closeAllBuilderForms(formId);
+  form.innerHTML = buildExerciseEditForm(ex, sessionId, idx);
+  form.classList.remove('hidden');
+  refreshRulePreview(sessionId, idx);
 }
 
 function showAddExerciseForm(sessionId) {
   const formId = `add-ex-form-${sessionId}`;
   const form = document.getElementById(formId);
+  if (!form) return;
   if (!form.classList.contains('hidden')) { form.innerHTML = ''; form.classList.add('hidden'); return; }
-
+  closeAllBuilderForms(formId);
   const newEx = { num: '00', name: '', type: 'accessory', tags: [], sets: '3–5', reps: '8–12', repRange: [8,12], load: '', notes: '', desc: '', substitutions: [] };
   form.innerHTML = buildExerciseEditForm(newEx, sessionId, 'new');
   form.classList.remove('hidden');
+  refreshRulePreview(sessionId, 'new');
+}
+
+function buildExerciseEditForm(ex, sessionId, idx) {
+  const k = `${sessionId}-${idx}`;
+  const typeOpts = ['compound','accessory','prehab','optional'].map(t =>
+    `<option value="${t}"${ex.type===t?' selected':''}>${t}</option>`).join('');
+  const tagsList = (ex.tags || []).filter(t => !['compound','accessory','prehab','optional'].includes(t));
+  const attrs = getExerciseAttrs(ex);
+  const expP = ex.muscles?.primary || [];
+  const expS = ex.muscles?.secondary || [];
+  const chips = (id, on) => MUSCLES.map(m =>
+    `<span class="pick-chip${on.includes(m.id) ? ' on' : ''}" data-v="${m.id}" onclick="this.classList.toggle('on');refreshRulePreview('${sessionId}','${idx}')">${m.label}</span>`).join('');
+  const sel = (id, opts, cur, blankLabel) => `<select id="${id}" onchange="refreshRulePreview('${sessionId}','${idx}')">
+      <option value="">${blankLabel}</option>${opts.map(o => `<option value="${o.id}"${cur === o.id ? ' selected' : ''}>${o.label}</option>`).join('')}</select>`;
+  const progOpts = Object.entries(PROGRESSION_MODELS).map(([id, m]) => `<option value="${id}"${(ex.progression || 'auto') === id ? ' selected' : ''}>${m.label}</option>`).join('');
+  const hasLadder = Array.isArray(ex.ladder) && ex.ladder.length > 0;
+  const defaultLadder = !hasLadder && getJeLadder(ex.name, sessionId);
+
+  return `<div class="ex-edit-form">
+    <div class="builder-form-title">${idx === 'new' ? 'New exercise' : 'Editing: ' + esc(ex.name)}</div>
+    <div class="form-row">
+      <div class="form-field" style="flex:2">
+        <label>Exercise Name *</label>
+        <input id="ef-name-${k}" value="${esc(ex.name)}" placeholder="Exercise name" oninput="refreshRulePreview('${sessionId}','${idx}')">
+      </div>
+      <div class="form-field">
+        <label>Role</label>
+        <select id="ef-type-${k}" onchange="refreshRulePreview('${sessionId}','${idx}')">${typeOpts}</select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Rep Range (e.g. 8–12, or 30s)</label>
+        <input id="ef-reps-${k}" value="${esc(ex.reps || '')}" placeholder="8–12" oninput="refreshRulePreview('${sessionId}','${idx}')">
+      </div>
+      <div class="form-field">
+        <label>Sets (3 fixed · 3–5 meso)</label>
+        <input id="ef-sets-${k}" value="${esc(ex.sets || '')}" placeholder="3–5" oninput="refreshRulePreview('${sessionId}','${idx}')">
+      </div>
+      <div class="form-field">
+        <label>Max sets (optional)</label>
+        <input id="ef-maxsets-${k}" type="number" min="1" max="10" value="${ex.maxSets || ''}" placeholder="—">
+      </div>
+      <div class="form-field">
+        <label>Default Load</label>
+        <input id="ef-load-${k}" value="${esc(ex.load || '')}" placeholder="16 kg / Blue band / BW" oninput="refreshRulePreview('${sessionId}','${idx}')">
+      </div>
+    </div>
+
+    <div class="builder-subtitle">Targeting</div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Primary muscles ${attrs.inferred ? '<em>(auto — tap to set)</em>' : ''}</label>
+        <div class="chip-row" id="ef-mp-${k}">${chips('mp', expP)}</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Secondary muscles</label>
+        <div class="chip-row" id="ef-ms-${k}">${chips('ms', expS)}</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Pattern</label>${sel(`ef-pattern-${k}`, PATTERNS, ex.pattern || '', 'Auto')}</div>
+      <div class="form-field"><label>Equipment</label>${sel(`ef-equip-${k}`, EQUIPMENT, ex.equipment || '', 'Auto')}</div>
+      <div class="form-field"><label>Progression</label>
+        <select id="ef-prog-${k}" onchange="refreshRulePreview('${sessionId}','${idx}')">${progOpts}</select></div>
+    </div>
+    <div class="rule-preview" id="ef-preview-${k}"></div>
+    <div class="form-row" id="ef-ladder-row-${k}">
+      <div class="form-field" style="flex:1">
+        <label>Ladder rungs — one per line, easiest first: <code>Variant | cue</code></label>
+        <textarea id="ef-ladder-${k}" style="min-height:70px;font-family:var(--font-mono);font-size:10px" placeholder="${defaultLadder ? 'Using the built-in ladder — type here to replace it' : 'Incline push-up | Hands on sofa\nKnee push-up | Flat surface\nFull push-up | Toes on floor'}">${esc(hasLadder ? ladderToText(ex.ladder) : '')}</textarea>
+        ${defaultLadder ? `<div class="builder-hint">Built-in: ${defaultLadder.map(r => r.variant).join(' → ')}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="builder-subtitle">Text</div>
+    <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Tags (comma-separated: unilateral, bw, superset, core)</label>
+        <input id="ef-tags-${k}" value="${esc(tagsList.join(', '))}" placeholder="unilateral, bw" oninput="refreshRulePreview('${sessionId}','${idx}')">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Description (shown in ℹ tooltip)</label>
+        <textarea id="ef-desc-${k}">${esc(ex.desc || '')}</textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Coaching Notes</label>
+        <textarea id="ef-notes-${k}" style="min-height:45px">${esc(ex.notes || '')}</textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Substitution Alternatives (comma-separated)</label>
+        <input id="ef-subs-${k}" value="${esc((ex.substitutions||[]).join(', '))}" placeholder="Alternative A, Alternative B">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="settings-btn" onclick="closeExerciseForm('${sessionId}','${idx}')">Cancel</button>
+      <button class="settings-btn primary" onclick="saveExerciseEdit('${sessionId}','${idx}')">Save Exercise</button>
+    </div>
+  </div>`;
+}
+
+// Read the form into a candidate exercise object (no save)
+function readExerciseForm(sessionId, idx, base) {
+  const k = `${sessionId}-${idx}`;
+  const g = id => document.getElementById(`${id}-${k}`);
+  const chipsOn = id => [...(g(id)?.querySelectorAll('.pick-chip.on') || [])].map(c => c.dataset.v);
+  const name = g('ef-name')?.value.trim() || '';
+  const type = g('ef-type')?.value || 'accessory';
+  const reps = g('ef-reps')?.value.trim() || '';
+  const sets = g('ef-sets')?.value.trim() || '';
+  const load = g('ef-load')?.value.trim() || '';
+  const tags = (g('ef-tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean)
+    .filter(t => !['compound','accessory','prehab','optional'].includes(t));
+  tags.unshift(type);
+  const repMatch = reps.match(/(\d+)\s*[–\-]\s*(\d+)/);
+  const single   = reps.match(/^\s*(\d+)\s*$/);
+  const repRange = repMatch ? [parseInt(repMatch[1]), parseInt(repMatch[2])]
+                 : single ? [parseInt(single[1]), parseInt(single[1])]
+                 : (base?.repRange || [8, 12]);
+  const maxSets = parseInt(g('ef-maxsets')?.value, 10);
+  const primary = chipsOn('ef-mp'), secondary = chipsOn('ef-ms').filter(m => !primary.includes(m));
+  const pattern = g('ef-pattern')?.value || '';
+  const equipment = g('ef-equip')?.value || '';
+  const progression = g('ef-prog')?.value || 'auto';
+  const ladderText = g('ef-ladder')?.value.trim() || '';
+  const out = {
+    ...(base || {}),
+    name, type, tags, sets, reps, repRange, load,
+    notes: g('ef-notes')?.value.trim() || '',
+    desc:  g('ef-desc')?.value.trim() || '',
+    substitutions: (g('ef-subs')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
+  };
+  if (isFinite(maxSets) && maxSets > 0) out.maxSets = maxSets; else delete out.maxSets;
+  if (primary.length) out.muscles = { primary, secondary }; else delete out.muscles;
+  if (pattern) out.pattern = pattern; else delete out.pattern;
+  if (equipment) out.equipment = equipment; else delete out.equipment;
+  if (progression && progression !== 'auto') out.progression = progression; else delete out.progression;
+  const ladder = ladderText ? parseLadderText(ladderText) : [];
+  if (ladder.length > 1) out.ladder = ladder; else delete out.ladder;
+  return out;
+}
+
+// Live "what the rule engine will do with this" line under the form
+function refreshRulePreview(sessionId, idx) {
+  const k = `${sessionId}-${idx}`;
+  const el = document.getElementById(`ef-preview-${k}`);
+  if (!el) return;
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const base = idx === 'new' ? null : session?.exercises[idx];
+  const cand = readExerciseForm(sessionId, idx, base);
+  if (!cand.name) { el.innerHTML = '<span>Name the exercise to see its rule.</span>'; return; }
+  const rule = resolveProgressionRule(sessionId, cand);
+  const a = rule.attrs;
+  el.innerHTML = `<span class="rule-preview-model">${rule.label}</span>
+    <span>${PROGRESSION_MODELS[rule.model].desc}</span>
+    <div class="ex-tags" style="margin-top:4px">${muscleChips(a)}<span class="ex-tag">${patternLabel(a.pattern)}</span><span class="ex-tag">${equipmentLabel(a.equipment)}</span>${a.inferred ? '<span class="ex-tag auto">muscles inferred</span>' : ''}</div>
+    <div class="builder-hint">Why: ${rule.why}${rule.fixedSets ? ` · fixed ${rule.fixedSets} sets` : ' · sets follow the meso week'}${rule.canStepLoad ? '' : ' · no load ladder for this equipment'}</div>`;
+  const ladderRow = document.getElementById(`ef-ladder-row-${k}`);
+  if (ladderRow) ladderRow.style.display = (rule.model === 'ladder' || (cand.progression || 'auto') === 'ladder' || cand.ladder) ? '' : 'none';
 }
 
 function saveExerciseEdit(sessionId, idx) {
-  const session  = state.programme.sessions.find(s => s.id === sessionId);
-  const isNew    = idx === 'new';
-  const ex       = isNew ? {} : session.exercises[idx];
-  const oldName  = ex.name;
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  const isNew   = idx === 'new';
+  const i       = isNew ? -1 : parseInt(idx, 10);
+  const ex      = isNew ? null : session.exercises[i];
+  const oldName = ex?.name;
 
-  const newName  = document.getElementById(`ef-name-${sessionId}-${idx}`)?.value?.trim();
-  if (!newName) { toast('Exercise name required', 'error'); return; }
-
-  const newType  = document.getElementById(`ef-type-${sessionId}-${idx}`)?.value;
-  const newReps  = document.getElementById(`ef-reps-${sessionId}-${idx}`)?.value?.trim();
-  const newSets  = document.getElementById(`ef-sets-${sessionId}-${idx}`)?.value?.trim();
-  const newLoad  = document.getElementById(`ef-load-${sessionId}-${idx}`)?.value?.trim();
-  const newTags  = document.getElementById(`ef-tags-${sessionId}-${idx}`)?.value?.split(',').map(t=>t.trim()).filter(Boolean);
-  const newDesc  = document.getElementById(`ef-desc-${sessionId}-${idx}`)?.value?.trim();
-  const newNotes = document.getElementById(`ef-notes-${sessionId}-${idx}`)?.value?.trim();
-  const newSubs  = document.getElementById(`ef-subs-${sessionId}-${idx}`)?.value?.split(',').map(t=>t.trim()).filter(Boolean);
-
-  // Parse rep range
-  const repMatch = (newReps || '').match(/(\d+)[–\-–](\d+)/);
-  const repRange = repMatch ? [parseInt(repMatch[1]), parseInt(repMatch[2])] : ex.repRange || [8,12];
-
-  // Add type to tags
-  const baseTags = newTags.filter(t => !['compound','accessory','prehab','optional'].includes(t));
-  baseTags.unshift(newType);
+  const next = readExerciseForm(sessionId, idx, ex);
+  if (!next.name) { toast('Exercise name required', 'error'); return; }
+  if (session.exercises.some((e, j) => e.name === next.name && j !== i)) { toast('That name is already in this session', 'error'); return; }
 
   if (isNew) {
-    const nextNum = String(session.exercises.length + 1).padStart(2, '0');
-    session.exercises.push({
-      num: nextNum, name: newName, type: newType, tags: baseTags,
-      sets: newSets, reps: newReps, repRange, load: newLoad,
-      notes: newNotes, desc: newDesc, prog: '', substitutions: newSubs
-    });
-    toast(`Exercise "${newName}" added`, 'success');
+    if (!next.prog) next.prog = '';
+    session.exercises.push(next);
+    renumberSession(session);
+    toast(`Exercise "${next.name}" added`, 'success');
   } else {
-    // Option A rename: propagate to history and all dependent structures
-    if (oldName !== newName) {
-      // 1. Update all historical session exercise names
+    // Rename: propagate to history and all dependent structures
+    if (oldName !== next.name) {
       const affected = state.sessions.filter(s => s.sessionId === sessionId);
       affected.forEach(sess => {
         const histEx = sess.exercises.find(e => e.name === oldName);
-        if (histEx) histEx.name = newName;
+        if (histEx) histEx.name = next.name;
       });
-
-      // 2. Update Je ladder key map (persisted, survives reload)
       if (!state.jeLadderKeyMap) state.jeLadderKeyMap = {};
-      // If oldName was already remapped, update the chain
       const existingTarget = state.jeLadderKeyMap[oldName];
-      if (existingTarget || JE_LADDERS[oldName]) {
-        state.jeLadderKeyMap[newName] = existingTarget || oldName;
+      if (existingTarget || DEFAULT_LADDERS[oldName]) {
+        state.jeLadderKeyMap[next.name] = existingTarget || oldName;
         delete state.jeLadderKeyMap[oldName];
       }
-
-      // 3. Update EXERCISE_SWAP_MAP if the renamed exercise has an alt
       if (EXERCISE_SWAP_MAP[oldName]) {
-        EXERCISE_SWAP_MAP[newName] = EXERCISE_SWAP_MAP[oldName];
+        EXERCISE_SWAP_MAP[next.name] = EXERCISE_SWAP_MAP[oldName];
         delete EXERCISE_SWAP_MAP[oldName];
       }
-      // Also check if the renamed exercise appears as an alt target in the map
       Object.keys(EXERCISE_SWAP_MAP).forEach(key => {
-        if (EXERCISE_SWAP_MAP[key].name === oldName) {
-          EXERCISE_SWAP_MAP[key].name = newName;
-        }
+        if (EXERCISE_SWAP_MAP[key].name === oldName) EXERCISE_SWAP_MAP[key].name = next.name;
       });
-
-      // 4. Re-push affected sessions to Drive so Drive files are consistent
       if (state.driveConnected && affected.length > 0) {
-        // Fire and forget — don't block the UI
         Promise.all(affected.map(sess => saveToDrive(sess).catch(() => {})))
           .then(() => toast(`Drive updated (${affected.length} session${affected.length > 1 ? 's' : ''})`, 'info'));
       }
-
-      toast(`Renamed "${oldName}" → "${newName}" across ${affected.length} sessions`, 'success');
+      if (affected.length) StorageManager.saveSessions(affected).catch(() => {});
+      toast(`Renamed "${oldName}" → "${next.name}" across ${affected.length} sessions`, 'success');
     }
-    Object.assign(ex, { name: newName, type: newType, tags: baseTags, sets: newSets, reps: newReps, repRange, load: newLoad, notes: newNotes, desc: newDesc, substitutions: newSubs });
+    // Replace in place so removed optional fields really go away
+    Object.keys(ex).forEach(key => { if (!(key in next)) delete ex[key]; });
+    Object.assign(ex, next);
   }
 
-  saveLocalState();
-  renderProgramme();
-  renderTracker();
-  renderSettingsProgramme();
-
-  // Close form
-  closeExerciseForm(sessionId, idx);
-  if (isNew) {
-    const form = document.getElementById(`add-ex-form-${sessionId}`);
-    if (form) { form.innerHTML = ''; form.classList.add('hidden'); }
-  }
+  saveProgrammeEdits();
 }
 
 function closeExerciseForm(sessionId, idx) {
-  const form = document.getElementById(`edit-ex-form-${sessionId}-${idx}`);
+  const form = document.getElementById(idx === 'new' ? `add-ex-form-${sessionId}` : `edit-ex-form-${sessionId}-${idx}`);
   if (form) { form.innerHTML = ''; form.classList.add('hidden'); }
 }
 
 function confirmRemoveExercise(sessionId, idx) {
   const session = state.programme.sessions.find(s => s.id === sessionId);
-  const ex = session.exercises[idx];
+  const ex = session?.exercises[idx];
+  if (!ex) return;
   showModal(
     'Remove Exercise',
     `Remove <strong>${ex.name}</strong> from ${session.name}?<br><br>This only removes it from the programme — historical session data is preserved.`,
@@ -9130,19 +10215,13 @@ function confirmRemoveExercise(sessionId, idx) {
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Remove', cls: 'confirm', action: () => {
         session.exercises.splice(idx, 1);
-        // Renumber
-        session.exercises.forEach((e, i) => e.num = String(i+1).padStart(2,'0'));
-        saveLocalState();
-        renderProgramme();
-        renderTracker();
-        renderSettingsProgramme();
+        renumberSession(session);
         closeModal();
-        toast(`${ex.name} removed from ${session.name}`, 'info');
+        saveProgrammeEdits(`${ex.name} removed from ${session.name}`);
       }}
     ]
   );
 }
-
 /* ── DATA MANAGEMENT ────────────────────────────────────────────── */
 function deleteAllData() {
   showModal(
