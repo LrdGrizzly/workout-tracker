@@ -160,7 +160,7 @@
 
         <!-- Progression suggestion -->
         <div class="prog-suggestion hidden" id="prog-suggestion">
-          <div class="prog-suggestion-title">↑ Progression Available</div>
+          <div class="prog-suggestion-title">Today's Adjustments</div>
           <div id="prog-suggestion-text"></div>
         </div>
 
@@ -172,13 +172,6 @@
           <button class="time-btn start-btn" id="start-btn" onclick="startSession()">▶ Start</button>
           <button class="time-btn end-btn hidden" id="end-btn" onclick="endSession()">■ End</button>
           <button class="time-btn secondary" onclick="cancelSession()" style="font-size:9px;padding:4px 8px;">✕ Cancel</button>
-        </div>
-
-        <!-- Template toggle — shown below toolbar when prev session exists -->
-        <div class="session-template-row" id="template-toggle-row" onclick="toggleSessionTemplate()"
-          title="Pre-fill loads from your last session" style="display:none;margin:8px 0 4px">
-          <div class="session-template-toggle"></div>
-          <span class="session-template-text">Use last session's loads</span>
         </div>
 
         <!-- Exercise list -->
@@ -440,7 +433,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '4.9.0';
+const APP_VERSION = '4.11.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -1587,7 +1580,6 @@ const INITIAL_STATE = {
   jeLadderKeyMap:       {},
 
   // Transient tracker flags (not persisted)
-  _useTemplate:         false,
   _tempoFlags:          {},
   _nextSessionOverride: null,
   _selectedMesoWeek:    null,   // null = current week, integer = user-selected week
@@ -2180,7 +2172,9 @@ function selectTrackerSession(sessionId) {  const session = state.programme.sess
 
   state.activeSessionId = sessionId;
   state.startTime = null;
-  updateTemplateToggleVisibility(sessionId);
+  // Cards always open on the primary exercise — a stale swap flag would
+  // save the alternative's name against the primary's sets.
+  Object.keys(_swapState).forEach(k => delete _swapState[k]);
   clearNotesPills();
   state.endTime = null;
 
@@ -2226,12 +2220,14 @@ function selectTrackerSession(sessionId) {  const session = state.programme.sess
       sets: []
     }))
   };
+
+  // Pull the other device's sessions before training so today's targets
+  // are built from the full history (runs from this tap — see syncAtSessionBoundary)
+  syncAtSessionBoundary('start').then(res => refreshTrackerAfterSync(sessionId, res));
 }
 
 function buildTrackerExercises(session) {
   const container = document.getElementById('tracker-ex-list');
-  const week = getCurrentMesoWeek();
-  const deload = isDeloadWeek();
 
   container.innerHTML = session.exercises.map((ex, idx) => {
     if (ex.type === 'optional') {
@@ -2247,52 +2243,7 @@ function buildTrackerExercises(session) {
       </div>`;
     }
 
-    const prev2 = getPrev2Sessions(session.id, ex.name);
-    // Determine correct starting set count.
-    // If the last suggestion for this exercise was increase_load, reset to 3 sets.
-    // Otherwise carry forward the last session's set count (up to the weekly target).
-    const _lastCompleteSess = state.sessions
-      .filter(s => s.sessionId === session.id && s.status === 'complete')
-      .slice(-1)[0];
-    const _lastExData = _lastCompleteSess?.exercises?.find(e => e.name === ex.name);
-    const _lastSetCount = _lastExData ? _lastExData.sets.length : 3;
-    const _suggestion = state.profile === 'alex'
-      ? getProgressionSuggestion(session.id, ex.name, ex.repRange)
-      : null;
-    const _loadIncreaseSignalled = _suggestion && _suggestion.type === 'increase_load';
-    const setCount = deload ? 2 : (_loadIncreaseSignalled ? 3 : Math.min(_lastSetCount, getMesoSetTarget(week)));
-    const targetSets = deload ? 2 : getMesoSetTarget(week);
-    const loadResetNote = (!deload && _loadIncreaseSignalled)
-      ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--pull);margin-bottom:8px">↑ Load increase — sets reset to 3. Increase load before starting.</div>`
-      : '';
-
-
-    const prevRef = prev2.length > 0
-      ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
-      : 'No previous data';
-
-    // Pass previous load/reps/RIR for pill pre-selection
-    const _prevSess = state.sessions
-      .filter(s => s.sessionId === session.id && s.status === 'complete')
-      .slice(-1)[0];
-    const _prevExData = _prevSess?.exercises?.find(e => e.name === ex.name) || null;
-
-    const initialSets = Array.from({length: setCount}, (_, i) => {
-      const _prevSet = _prevExData?.sets?.[i] || _prevExData?.sets?.[0] || null;
-      // Template mode: pre-select load from last session
-      // Normal mode: clean slate — show prev as ghost hint only, no pre-selection
-      const _prevLoad = state._useTemplate ? (_prevSet?.load || '') : '';
-      const _prevReps = ''; // always clean — prev shown as ghost
-      const _prevRIR  = ''; // always clean
-      // Ghost reference values for the hint line
-      const _ghostLoad = _prevSet?.load || '';
-      const _ghostReps = _prevSet?.reps || '';
-      return buildSetRow(i, ex, deload, session.id, idx, _prevLoad, _prevReps, _prevRIR, _ghostLoad, _ghostReps);
-    });
-
-    const deloadNote = deload
-      ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--deload);margin-bottom:8px">Deload: 2 sets · ~50% load · 5+ RIR target</div>`
-      : '';
+    const { rx, html: bodyHtml } = buildExerciseBody(session, idx);
 
     return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
       <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" style="cursor:pointer">
@@ -2305,7 +2256,7 @@ function buildTrackerExercises(session) {
           ${ex.tags.includes('unilateral') ? '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(61,171,255,0.5);margin-top:2px">🔄 Unilateral</div>' : ''}
         </div>
         <div class="tracker-ex-target">
-          <div id="set-count-${session.id}-${idx}" style="font-family:\'DM Mono\',monospace;font-size:11px">${setCount} sets</div>
+          <div id="set-count-${session.id}-${idx}" style="font-family:\'DM Mono\',monospace;font-size:11px">${rx.sets} sets</div>
           <div class="range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.85;font-weight:600">${ex.reps}</div>
           <div class="range" style="color:var(--text-muted);font-size:8px">${ex.load}</div>
         </div>
@@ -2316,28 +2267,66 @@ function buildTrackerExercises(session) {
         <button class="tracker-ex-collapse-btn" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" title="Collapse">▾</button>
       </div>
       <div class="tracker-ex-body" id="tex-body-${session.id}-${idx}">
-        <div class="prev-sessions-ref">${prevRef}</div>
-        ${deloadNote}${loadResetNote}
-        <div class="set-rows" id="sets-${session.id}-${idx}">
-          ${initialSets.join('')}
-        </div>
-        <button class="add-set-btn" onclick="addSet('${session.id}',${idx},'${ex.name}')">+ Add Set</button>
-        <div class="next-ex-prompt" id="next-prompt-${session.id}-${idx}">
-          <span style="flex:1">All sets done —</span>
-          <button class="prompt-add-set" onclick="addSet('${session.id}',${idx},'${ex.name}');hideNextPrompt('${session.id}',${idx})">+ Add set</button>
-          <button class="prompt-next-ex" onclick="collapseExerciseCard('tex-${session.id}-${idx}')">Next exercise ›</button>
-        </div>
+        ${bodyHtml}
       </div><!-- end tracker-ex-body -->
     </div>`;
   }).join('');
+}
 
-  // Rows pre-filled by template mode are tagged so toggling the template
-  // back off knows exactly which loads it owns and may clear.
-  if (state._useTemplate) {
-    container.querySelectorAll('.set-row').forEach(r => {
-      if ((r.querySelector('.set-load-val')?.value || '') !== '') r.dataset.fromTemplate = '1';
-    });
+// The exercise a tracker card is currently logging: the programme entry, or
+// its swapped-in alternative (same slot, own name, load and history).
+function getTrackedExDef(session, idx) {
+  const primary = session.exercises[idx];
+  if (!primary) return null;
+  const alt = _swapState[primary.name] ? EXERCISE_SWAP_MAP[primary.name] : null;
+  return alt ? { ...primary, name: alt.name, load: alt.load, desc: alt.desc } : primary;
+}
+
+// Card body for one tracked exercise: today's prescription, then set rows
+// opened on the prescribed load, each showing that set's previous
+// load × reps · RIR. Shared by the initial render and the Alt swap.
+function buildExerciseBody(session, idx) {
+  const ex     = getTrackedExDef(session, idx);
+  const deload = isDeloadWeek();
+  const rx     = getExercisePrescription(session.id, ex);
+  const prevSets = rx.last ? rx.last.ex.sets : [];
+
+  const CHIP = {
+    add_set: 'up', increase_load: 'up', add_reps: 'up', support_reduce: 'up',
+    'variant advancement': 'up', 'band progression': 'up',
+    decrease_load: 'down', decrease_set: 'down',
+    hold: 'hold', tempo: 'hold', equipment_ceiling: 'hold',
+  };
+  const why = [];
+  if (rx.change) why.push(rx.change.message);
+  if (rx.last && rx.last.session.sessionId !== session.id) {
+    why.push(`Previous values from ${rx.last.session.sessionName || 'another session'}.`);
   }
+
+  const rxLine = `<div class="ex-rx">
+      <span class="ex-rx-label">Today</span>
+      <span>${rx.sets} × ${fmtRepBand(rx.reps)}</span>
+      <span class="ex-rx-sep">·</span><span>${fmtLoad(rx.load) || (deload ? '~50% load' : '—')}</span>
+      <span class="ex-rx-sep">·</span><span>RIR ${fmtRIRBand(rx.rir)}</span>
+      ${rx.change ? `<span class="ex-rx-chip ${CHIP[rx.change.type] || 'info'}">${rx.change.label}</span>` : ''}
+    </div>
+    ${why.length ? `<div class="ex-rx-why">${why.join(' ')}</div>` : ''}`;
+
+  const rows = Array.from({ length: rx.sets }, (_, i) => {
+    // Every set opens on today's prescribed load (blank while calibrating)
+    return buildSetRow(i, ex, deload, session.id, idx, { load: rx.load }, prevSets[i] || null, rx);
+  });
+
+  return { rx, html: `${rxLine}
+        <div class="set-rows" id="sets-${session.id}-${idx}">
+          ${rows.join('')}
+        </div>
+        <button class="add-set-btn" onclick="addSet('${session.id}',${idx})">+ Add Set</button>
+        <div class="next-ex-prompt" id="next-prompt-${session.id}-${idx}">
+          <span style="flex:1">All sets done —</span>
+          <button class="prompt-add-set" onclick="addSet('${session.id}',${idx});hideNextPrompt('${session.id}',${idx})">+ Add set</button>
+          <button class="prompt-next-ex" onclick="collapseExerciseCard('tex-${session.id}-${idx}')">Next exercise ›</button>
+        </div>` };
 }
 
 function isBWExercise(ex) {
@@ -2410,7 +2399,6 @@ function selectBandPill(btn, band) {
   const container = btn.closest('.band-pills');
   const isBWCtx   = container.dataset.ctx === 'bw';
   const row       = btn.closest('.set-row');
-  if (row) delete row.dataset.fromTemplate;
 
   if (isBWCtx) {
     // BW context: single-select (same as before)
@@ -2499,20 +2487,18 @@ function getRecentLoads(sessionId, exName) {
 }
 
 // Build load pills for KB exercises
-function buildLoadPills(setIdx, exIdx, sessionId, exName, repRange, currentLoad) {
+function buildLoadPills(setIdx, exIdx, sessionId, exName, repRange, currentLoad, suggestedLoad) {
   const recentLoads = getRecentLoads(sessionId, exName);
 
-  // Add suggested next load if there's a progression suggestion
-  const suggestion = state.profile === 'alex'
-    ? getProgressionSuggestion(sessionId, exName, repRange)
-    : null;
-
-  // Build unique pill values: recent loads (most recent first)
+  // Build unique pill values: today's prescribed load first (it may be a
+  // step up or down that was never logged), then recent loads
   const pillValues = [...recentLoads];
+  if (suggestedLoad && !pillValues.includes(suggestedLoad)) pillValues.unshift(suggestedLoad);
 
   const pillsHtml = pillValues.map(load => {
     const isSel = load === currentLoad;
-    return `<button class="input-pill${isSel ? ' selected' : ''}"
+    const isRx  = load === suggestedLoad;
+    return `<button class="input-pill${isSel ? ' selected' : ''}${isRx ? ' rx-target' : ''}"
       onclick="selectLoadPill(this, '${load.replace(/'/g,"\'")}', ${exIdx}, ${setIdx})"
       data-load="${load.replace(/"/g,'&quot;')}">${load}</button>`;
   }).join('');
@@ -2533,8 +2519,8 @@ function buildLoadPills(setIdx, exIdx, sessionId, exName, repRange, currentLoad)
   <input type="hidden" class="set-load-val" id="load-val-${exIdx}-${setIdx}" value="${currentLoad || ''}">`;
 }
 
-// Build rep pills spanning repRange ± 2
-function buildRepPills(setIdx, exIdx, repRange, currentReps) {
+// Build rep pills spanning repRange ± 2. rxBand marks today's rep target.
+function buildRepPills(setIdx, exIdx, repRange, currentReps, rxBand) {
   const [lo, hi] = repRange || [8, 12];
   const min = Math.max(1, lo - 2);
   const max = hi + 3;
@@ -2542,7 +2528,8 @@ function buildRepPills(setIdx, exIdx, repRange, currentReps) {
   for (let r = min; r <= max; r++) {
     const inRange = r >= lo && r <= hi;
     const isSel   = r === parseInt(currentReps);
-    pills.push(`<button class="input-pill${inRange ? ' in-range' : ''}${isSel ? ' selected' : ''}"
+    const isRx    = rxBand && r >= rxBand[0] && r <= rxBand[1];
+    pills.push(`<button class="input-pill${inRange ? ' in-range' : ''}${isRx ? ' rx-target' : ''}${isSel ? ' selected' : ''}"
       onclick="selectRepPill(this, ${r}, ${exIdx}, ${setIdx}, ${JSON.stringify(repRange)})"
       data-reps="${r}">${r}</button>`);
   }
@@ -2552,13 +2539,14 @@ function buildRepPills(setIdx, exIdx, repRange, currentReps) {
   <input type="hidden" class="set-reps-val" id="rep-val-${exIdx}-${setIdx}" value="${currentReps || ''}">`;
 }
 
-// Build RIR pills
-function buildRIRPills(setIdx, exIdx, isUnilateral, currentRIR) {
+// Build RIR pills. rxBand marks this meso week's RIR target.
+function buildRIRPills(setIdx, exIdx, isUnilateral, currentRIR, rxBand) {
   const rirVals = ['0','1','2','3','4','5+'];
-  const placeholder = isUnilateral ? 'RIR L/R' : 'RIR';
   const pills = rirVals.map(r => {
     const isSel = r === (currentRIR || '').toString();
-    return `<button class="input-pill rir-pill${isSel ? ' selected' : ''}"
+    const n     = parseInt(r, 10);
+    const isRx  = rxBand && n >= rxBand[0] && n <= rxBand[1];
+    return `<button class="input-pill rir-pill${isRx ? ' rx-target' : ''}${isSel ? ' selected' : ''}"
       onclick="selectRIRPill(this, '${r}', ${exIdx}, ${setIdx})"
       data-rir="${r}">${r}</button>`;
   }).join('');
@@ -2586,7 +2574,6 @@ function selectLoadPill(btn, load, exIdx, setIdx) {
   }
   const row = btn.closest('.set-row');
   if (row) {
-    delete row.dataset.fromTemplate;
     const repsEl = row.querySelector('.set-reps-val');
     const currentLoad = hiddenEl ? hiddenEl.value : '';
     evaluateSetByValues(row, parseInt(repsEl?.value), currentLoad);
@@ -2617,7 +2604,6 @@ function customLoadChanged(input, exIdx, setIdx, repRange) {
 
   const row = input.closest('.set-row');
   if (row) {
-    delete row.dataset.fromTemplate;
     const repsEl = row.querySelector('.set-reps-val');
     if (repsEl) evaluateSetByValues(row, parseInt(repsEl.value), val);
     checkSetCompletion(row);
@@ -2701,23 +2687,31 @@ function isBandExercise(ex) {
   return hasBand && !isBW;
 }
 
-function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps, prevRIR, ghostLoad, ghostReps) {
+// prefill: values the row opens with ({ load, reps, rir }) — today's
+// prescribed load, or the previous row's values when a set is added.
+// prevSet: this set from the last time the exercise was logged, shown as a
+// reference line. rx: today's prescription, used to mark target pills.
+function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prefill, prevSet, rx) {
   const isUnilateral = ex.tags.includes('unilateral');
   const isBW   = isBWExercise(ex);
   const isBand = isBandExercise(ex);
+  const pre      = prefill || {};
+  const prevLoad = pre.load || '';
+  const prevReps = pre.reps || '';
+  const prevRIR  = pre.rir  || '';
 
-  // Ghost hint — muted previous session reference shown above pills
-  const ghostHint = (ghostLoad || ghostReps)
-    ? `<div class="set-ghost-hint">Last: ${ghostLoad ? ghostLoad : '—'} × ${ghostReps ? ghostReps : '—'}</div>`
-    : '';
+  // Previous load × reps · RIR for this exact set
+  const ghostHint = prevSet
+    ? `<div class="set-ghost-hint">Prev ${fmtLoad(prevSet.load) || '—'} × ${prevSet.reps || '—'} · RIR ${prevSet.rir || '—'}</div>`
+    : (rx && rx.last ? `<div class="set-ghost-hint">Prev — new set</div>` : '');
 
   // Load section
   let loadSection = '';
   if (isBW) {
     loadSection = `<div class="bw-band-wrap">
       <span class="bw-label">BW</span>
-      <input type="hidden" class="set-load-val bw-load-store" value="BW">
-      ${buildBandPills(setIdx, exIdx, sessionId, true, ghostLoad)}
+      <input type="hidden" class="set-load-val bw-load-store" value="${prevLoad || 'BW'}">
+      ${buildBandPills(setIdx, exIdx, sessionId, true, prevLoad)}
     </div>`;
   } else if (isBand) {
     // Restore multi-band pill selections from prevLoad if in template mode
@@ -2726,11 +2720,11 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prevLoad, prevReps,
       ${buildBandPills(setIdx, exIdx, sessionId, false, prevLoad)}
     </div>`;
   } else {
-    loadSection = buildLoadPills(setIdx, exIdx, sessionId, ex.name, ex.repRange, prevLoad || '');
+    loadSection = buildLoadPills(setIdx, exIdx, sessionId, ex.name, ex.repRange, prevLoad, rx?.load || '');
   }
 
-  const repSection = buildRepPills(setIdx, exIdx, ex.repRange, prevReps || '');
-  const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR || '');
+  const repSection = buildRepPills(setIdx, exIdx, ex.repRange, prevReps, rx && !rx.calibrating ? rx.reps : null);
+  const rirSection = buildRIRPills(setIdx, exIdx, isUnilateral, prevRIR, rx?.rir);
 
   const rr = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
 
@@ -2804,21 +2798,29 @@ function evaluateSet(inputEl, repRange) {
   }
 }
 
-function addSet(sessionId, exIdx, exName) {
+function addSet(sessionId, exIdx) {
   const session = state.programme.sessions.find(s => s.id === sessionId);
-  const ex = session.exercises.find(e => e.name === exName);
+  const ex = session && getTrackedExDef(session, exIdx);
   const container = document.getElementById(`sets-${sessionId}-${exIdx}`);
-  const currentSets = container.querySelectorAll('.set-row').length;
-  // Copy last row's values for pill pre-selection
-  const lastRow = container.querySelectorAll('.set-row');
-  const lastLoadEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-load-val') : null;
-  const lastRepsEl = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-reps-val') : null;
-  const lastRIREl  = lastRow.length ? lastRow[lastRow.length-1].querySelector('.set-rir') : null;
+  if (!ex || !container) return;
+  const rows = container.querySelectorAll('.set-row');
+  const currentSets = rows.length;
+  // New set opens with the previous row's values
+  const lastRow = rows[currentSets - 1];
+  const prefill = lastRow ? {
+    load: lastRow.querySelector('.set-load-val')?.value || '',
+    reps: lastRow.querySelector('.set-reps-val')?.value || '',
+    rir:  lastRow.querySelector('.set-rir')?.value || '',
+  } : {};
+  // Pill ids are keyed by set index; after a delete the next index can
+  // still be taken, and a duplicate id makes taps write into another row.
+  let uid = currentSets;
+  while (document.getElementById(`rep-val-${exIdx}-${uid}`)) uid++;
+  const rx = getExercisePrescription(sessionId, ex);
+  const prevSet = rx.last?.ex?.sets?.[currentSets] || null;
   const newRow = document.createElement('div');
-  newRow.innerHTML = buildSetRow(
-    currentSets, ex, isDeloadWeek(), sessionId, exIdx,
-    lastLoadEl?.value || '', lastRepsEl?.value || '', lastRIREl?.value || ''
-  );
+  newRow.innerHTML = buildSetRow(uid, ex, isDeloadWeek(), sessionId, exIdx, prefill, prevSet, rx);
+  newRow.firstElementChild.querySelector('.set-num').textContent = currentSets + 1;
   container.appendChild(newRow.firstElementChild);
   const countEl = document.getElementById(`set-count-${sessionId}-${exIdx}`);
   if (countEl) countEl.textContent = `${currentSets + 1} sets`;
@@ -2828,20 +2830,6 @@ function addSet(sessionId, exIdx, exName) {
     input.addEventListener('change', () => updateExerciseSetGlow(sessionId, exIdx));
   });
   updateExerciseSetGlow(sessionId, exIdx);
-}
-
-function getPrev2Sessions(sessionId, exName) {
-  const relevant = state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .slice(-2)
-    .reverse();
-
-  return relevant.map(s => {
-    const ex = s.exercises.find(e => e.name === exName);
-    if (!ex || !ex.sets.length) return '—';
-    const lastSet = ex.sets[ex.sets.length - 1];
-    return `${lastSet.load || '—'} × ${lastSet.reps || '—'}`;
-  });
 }
 
 // dismissWarmup replaced by dismissWarmupOverlay
@@ -2889,6 +2877,10 @@ function startSession() {
     if (list) list.innerHTML = warmup.cues.map(c => `<li>${c}</li>`).join('');
     overlay.classList.remove('hidden');
   }
+
+  // Second chance to sync if the session was opened a while ago
+  const sid = state.activeSessionId;
+  syncAtSessionBoundary('start').then(res => refreshTrackerAfterSync(sid, res));
 }
 
 function getWarmupCues(sessionId) {
@@ -3044,8 +3036,10 @@ function endSession() {
   const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
   const exerciseData = [];
 
-  session.exercises.forEach((ex, idx) => {
-    if (ex.type === 'optional') return;
+  session.exercises.forEach((cfgEx, idx) => {
+    if (cfgEx.type === 'optional') return;
+    // Log under the name actually trained — the alternative when swapped
+    const ex = getTrackedExDef(session, idx);
     const setRows = document.querySelectorAll(`#sets-${session.id}-${idx} .set-row`);
     const sets = [];
     setRows.forEach(row => {
@@ -3130,21 +3124,24 @@ function saveSession(exerciseData, status) {
 
   cancelSession();
 
-  // Upload new session to Drive immediately (async, silent)
-  if (state.driveConnected) {
-    saveToDrive(session, true).catch(e => {
-      console.warn('[Drive] Session upload failed:', e?.message || e);
-      updateDriveStatusDot('warning', `Last session upload failed: ${e?.message || 'unknown error'}`);
-    });
-  }
+  // Full two-way sync from this Save tap: pushes this session (and anything
+  // else not yet on Drive) and pulls the other device's changes. Running
+  // from the tap lets an expired token be renewed on mobile.
+  syncAtSessionBoundary('end').then(res => {
+    if (res === false) {
+      updateDriveStatusDot('warning', 'Session saved locally — Drive sync failed; it uploads on the next sync');
+      toast('Saved locally — Drive sync failed, will retry next session', 'info');
+    } else if (res) {
+      toast('Session synced to Drive ✓', 'success');
+    }
+  });
 }
 
 function cancelSession() {
-  // Clear swap state, tempo flags, session override, template state
+  // Clear swap state, tempo flags, session override
   Object.keys(_swapState).forEach(k => delete _swapState[k]);
   state._tempoFlags = {};
   state._nextSessionOverride = null;
-  state._useTemplate = false;
   clearNotesPills();
   state.activeSessionId = null;
   state.activeSession = null;
@@ -4543,6 +4540,9 @@ function tryRestoreToken() {
           await syncSessionsFromDrive(false);
           scheduleDriveRefresh();
           startDriveSyncInterval();
+          // Have the token client ready so the next tap can renew the token
+          // (without it, an expired token can only be fixed from Settings)
+          prepareTokenClient().catch(() => {});
         }).catch(e => {
           console.warn('[Drive] Background init failed:', e?.message || e);
           updateDriveStatusDot('error', e?.message || 'Background sync failed on load');
@@ -5025,8 +5025,9 @@ async function deleteSessionFromDrive(session) {
 
 // ── MAIN SYNC FUNCTION ──────────────────────
 // showToast: true for manual sync, false for background auto-sync on load
+// Resolves true when the sync ran, false when it could not.
 async function syncSessionsFromDrive(showToast) {
-  if (!state.driveToken) return;
+  if (!state.driveToken) return false;
 
   try {
     if (showToast) toast('Syncing with Google Drive…', 'info');
@@ -5046,7 +5047,7 @@ async function syncSessionsFromDrive(showToast) {
     if (!driveFiles.length && showToast) {
       toast(configPushed ? 'Settings synced' : 'Drive is empty — nothing to sync', 'info');
       updateLastSynced();
-      return;
+      return true;
     }
 
     // Build maps for conflict detection
@@ -5169,10 +5170,12 @@ async function syncSessionsFromDrive(showToast) {
       if (conflicts.length > 0) parts.push(`${conflicts.length / 2 | 0} conflict${conflicts.length > 2 ? 's' : ''} need review`);
       toast(parts.length ? parts.join(' · ') : 'Already up to date', parts.length ? 'success' : 'success');
     }
+    return true;
 
   } catch(e) {
     console.error('[Drive] Sync failed:', e?.message || e);
     if (showToast) toast(`Sync failed — ${e?.message || 'check connection'}`, 'error');
+    return false;
   }
 }
 
@@ -5778,7 +5781,7 @@ function getExerciseAlerts() {
 function calcSessionQuality(session) {
   if (session.status !== 'complete' || !session.exercises?.length) return null;
 
-  const targetRIR = { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] }[session.mesoWeek] || [1,4];
+  const targetRIR = getMesoRIRTarget(session.mesoWeek);
   let setCount = 0, rirLogged = 0, rirInBand = 0, inRange = 0, rangeChecked = 0;
 
   session.exercises.forEach(ex => {
@@ -6626,172 +6629,6 @@ function clearNotesPills() {
   if (ta) { ta.value = ''; ta.dataset.autoGenerated = 'false'; }
 }
 
-/* ═══════════════════════════════════════════
-   SESSION TEMPLATE
-═══════════════════════════════════════════ */
-// state._useTemplate: boolean — toggled by user
-
-function toggleSessionTemplate() {
-  state._useTemplate = !state._useTemplate;
-  const row = document.getElementById('template-toggle-row');
-  if (row) row.classList.toggle('active', state._useTemplate);
-
-  const n = applySessionTemplate(state._useTemplate);
-  if (state._useTemplate) {
-    toast(n ? `Loads pre-filled from last session (${n} set${n === 1 ? '' : 's'})`
-            : 'No matching loads in your last session', n ? 'success' : 'info');
-  } else {
-    toast('Pre-filled loads cleared', 'info');
-  }
-}
-
-/* Apply (or undo) last session's loads on the set rows already on screen.
-   Only touches rows this toggle owns: an empty load when switching on, and a
-   load the toggle itself wrote when switching off. Hand-entered values stay.
-   Returns the number of rows changed. */
-function applySessionTemplate(on) {
-  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
-  if (!session) return 0;
-
-  const prevSess = state.sessions
-    .filter(s => s.sessionId === session.id && s.status === 'complete')
-    .slice(-1)[0];
-  if (!prevSess) return 0;
-
-  let changed = 0;
-
-  session.exercises.forEach((ex, idx) => {
-    if (ex.type === 'optional') return;
-    const card = document.getElementById(`tex-${session.id}-${idx}`);
-    if (!card) return;
-    const prevEx = prevSess.exercises?.find(e => e.name === ex.name);
-
-    card.querySelectorAll('.set-row').forEach((setRow, i) => {
-      const hidden = setRow.querySelector('.set-load-val');
-      if (!hidden) return;
-      const current = hidden.value.trim();
-
-      if (on) {
-        const prevSet = prevEx?.sets?.[i] || prevEx?.sets?.[0] || null;
-        const load = (prevSet?.load || '').toString().trim();
-        // Nothing to copy, or the user already entered something here
-        if (!load || (current !== '' && current !== 'BW')) return;
-        if (load === current) return;
-        setRowLoad(setRow, load);
-        setRow.dataset.fromTemplate = '1';
-        changed++;
-      } else {
-        if (setRow.dataset.fromTemplate !== '1') return;
-        setRowLoad(setRow, '');
-        delete setRow.dataset.fromTemplate;
-        changed++;
-      }
-    });
-  });
-
-  return changed;
-}
-
-/* Write a load onto one set row, whichever load UI that row uses:
-   numeric pills + custom kg input, BW with band add-on, or pure band pills.
-   Passing '' clears it. */
-function setRowLoad(setRow, load) {
-  const bandPills = setRow.querySelector('.band-pills');
-  if (bandPills) {
-    setRowBandLoad(bandPills, setRow, load);
-  } else {
-    const group  = setRow.querySelector('.load-pills');
-    const hidden = setRow.querySelector('.set-load-val');
-    const custom = setRow.querySelector('.pill-custom-input');
-    if (!group || !hidden) return;
-
-    group.querySelectorAll('.input-pill').forEach(p => p.classList.remove('selected'));
-    hidden.value = load || '';
-
-    if (!load) {
-      if (custom) { custom.value = ''; custom.classList.remove('visible'); }
-    } else {
-      const match = [...group.querySelectorAll('.input-pill')]
-        .find(p => (p.dataset.load || '') === load);
-      if (match) {
-        match.classList.add('selected');
-        if (custom) { custom.value = ''; custom.classList.remove('visible'); }
-      } else if (custom) {
-        // Load isn't one of the recent-load pills — surface it in the custom field
-        custom.value = load;
-        custom.classList.add('visible');
-      }
-    }
-  }
-
-  // Keep target glow, collapsed summary and completion state in sync
-  const repsEl = setRow.querySelector('.set-reps-val');
-  evaluateSetByValues(setRow, parseInt(repsEl?.value), setRow.querySelector('.set-load-val')?.value || '');
-  if (setRow.classList.contains('set-collapsed')) updateSetSummary(setRow);
-  else checkSetCompletion(setRow);
-}
-
-function setRowBandLoad(container, setRow, load) {
-  const isBWCtx = container.dataset.ctx === 'bw';
-  const bands   = ['yellow','green','red','blue','black'];
-
-  const active = new Set();
-  (load || '').toString().toLowerCase().replace(/^bw\+?/, '')
-    .split('+').forEach(part => {
-      const t = part.trim();
-      if (bands.includes(t)) active.add(t);
-    });
-
-  container.querySelectorAll('.band-pill').forEach(b => { b.className = 'band-pill'; });
-  if (active.size === 0) {
-    container.querySelector('.band-pill')?.classList.add('active-none');
-  } else {
-    container.querySelectorAll('.band-pill').forEach(b => {
-      const name = b.textContent.trim().toLowerCase();
-      if (active.has(name)) b.classList.add(`active-${name}`);
-    });
-  }
-
-  const store = setRow.querySelector('.set-load-val');
-  if (!store) return;
-  const ordered = bands.filter(b => active.has(b));
-  const label   = ordered.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join('+');
-
-  if (isBWCtx) {
-    // BW rows always carry a load; the band is an optional add-on
-    store.value = ordered.length ? `BW+${label}` : 'BW';
-  } else {
-    store.value = label;
-  }
-  if (ordered.length) {
-    store.dataset.bandKg = ordered.reduce((sum, c) => sum + (BAND_KG[c] || 0), 0);
-  } else {
-    delete store.dataset.bandKg;
-  }
-}
-
-// Call this when building tracker exercises — applied in buildTrackerExercises
-// Already handled: _prevLoad is used when _loadIncreaseSignalled is false.
-// Template mode forces _prevLoad to be used even when there's no suggestion.
-// The key hook is already there — we just need to respect state._useTemplate
-// when deciding whether to clear the load on a load-increase suggestion.
-
-// When a session is selected in the tracker, show/hide template row
-function updateTemplateToggleVisibility(sessionId) {
-  const row = document.getElementById('template-toggle-row');
-  if (!row) return;
-
-  // Show only if there's a previous complete session of this type
-  const hasPrev = state.sessions.some(
-    s => s.sessionId === sessionId && s.status === 'complete'
-  );
-  row.style.display = hasPrev ? 'flex' : 'none';
-
-  // Reset toggle state on session change
-  state._useTemplate = false;
-  row.classList.remove('active');
-}
-
 
 /* ═══════════════════════════════════════════
    DELOAD REVIEW (end of week 5)
@@ -7061,6 +6898,85 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
+// ── SESSION-BOUNDARY SYNC ───────────────────
+// Mobile browsers freeze timers and discard background tabs, and the
+// 1-hour Drive token is usually dead by the next workout. Google will only
+// renew it silently from inside a user tap, so opening/starting a session
+// and tapping Save each renew the token (if needed) and run a full sync.
+let _lastBoundarySync = 0;
+
+function driveTokenFresh() {
+  return !!state.driveToken && (state.driveTokenExpiry - Date.now()) > 2 * 60 * 1000;
+}
+
+function prepareTokenClient() {
+  if (DriveState.tokenClient) return Promise.resolve(DriveState.tokenClient);
+  if (!DRIVE_CLIENT_ID) return Promise.resolve(null);
+  return loadGIS().then(() => {
+    if (!DriveState.tokenClient) {
+      DriveState.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: DRIVE_CLIENT_ID,
+        scope: DRIVE_SCOPE,
+        callback: () => {},   // attemptSilentRefresh installs its own per request
+      });
+    }
+    return DriveState.tokenClient;
+  });
+}
+
+// Call synchronously from a tap: the token request must happen inside the
+// user gesture, so nothing may be awaited before it when the client is ready.
+function ensureDriveToken() {
+  if (driveTokenFresh()) return Promise.resolve(true);
+  if (!DRIVE_CLIENT_ID) return Promise.resolve(false);
+  const refresh = () => attemptSilentRefresh().then(driveTokenFresh);
+  const attempt = DriveState.tokenClient ? refresh() : prepareTokenClient().then(refresh);
+  // GIS never calls back if the browser swallows the request
+  const timeout = new Promise(resolve => setTimeout(() => resolve(false), 15000));
+  return Promise.race([attempt, timeout]).catch(() => false);
+}
+
+// Resolves null (Drive not set up / skipped), false (failed) or
+// { changed } where changed = sessions were pulled or replaced.
+async function syncAtSessionBoundary(when) {
+  if (!DRIVE_CLIENT_ID && !state.driveToken) return null;
+  if (when === 'start' && Date.now() - _lastBoundarySync < 60 * 1000) return null;
+  _lastBoundarySync = Date.now();
+
+  if (!(await ensureDriveToken())) return false;
+  if (!state.driveConnected) {
+    updateDriveStatus(true);
+    startDriveSyncInterval();
+  }
+  const signature = () => state.sessions.map(s => `${s.id}:${s.endTime || ''}`).join(',');
+  const before = signature();
+  if (!(await syncSessionsFromDrive(false))) return false;
+  return { changed: signature() !== before };
+}
+
+// Rebuild today's cards when a start-of-session sync brought in new history,
+// as long as nothing has been logged yet (loads are prefilled, so reps/RIR decide).
+function refreshTrackerAfterSync(sessionId, res) {
+  if (res === false) {
+    toast('Drive sync failed — open Settings → Google Drive to reconnect', 'info');
+    return;
+  }
+  if (!res || !res.changed || state.activeSessionId !== sessionId) return;
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  const logged = [...document.querySelectorAll('#tracker-ex-list .set-reps-val, #tracker-ex-list .set-rir')]
+    .some(el => el.value);
+  if (logged) {
+    toast('Synced — new history arrived; today\'s targets were kept as-is', 'info');
+    return;
+  }
+  Object.keys(_swapState).forEach(k => delete _swapState[k]);
+  renderProgressionSuggestions(session);
+  buildTrackerExercises(session);
+  initDragAndDrop();
+  toast('Synced — today\'s targets updated', 'success');
+}
 
 
 /* ═══════════════════════════════════════════
@@ -7827,6 +7743,231 @@ function getProgressionSuggestion(sessionId, exerciseName, repRange) {
 }
 
 /* ═══════════════════════════════════════════
+   EXERCISE PRESCRIPTION
+   One answer per exercise to "what do I do today": sets, load, rep target
+   and RIR band. Merges the meso week (set target, RIR), the progression
+   engines above (add set / load up / tempo / ladder), a load-down check
+   for missed rep floors, and double progression off the last log. The
+   tracker card, its set rows and the adjustments banner all read this,
+   so they can't disagree.
+═══════════════════════════════════════════ */
+const KB_SIZES_KG = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
+// Sessions an exercise is logged blank before targets kick in
+const CALIBRATION_SESSIONS = 2;
+const BAND_STEP_LADDER = [
+  'yellow', 'green', 'red', 'blue', 'black',
+  'black+yellow', 'black+green', 'black+red', 'black+blue', 'black+black'
+];
+
+function getMesoRIRTarget(week) {
+  return { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] }[week] || [1,4];
+}
+
+function fmtRIRBand(b) { return b[0] >= 5 ? '5+' : b[0] === b[1] ? `${b[0]}` : `${b[0]}–${b[1]}`; }
+function fmtRepBand(b) { return b[0] === b[1] ? `${b[0]}` : `${b[0]}–${b[1]}`; }
+
+function fmtLoad(load) {
+  const l = (load || '').toString().trim();
+  return /^\d+(\.\d+)?$/.test(l) ? `${l} kg` : l;
+}
+
+// Load value (as the set rows store it) implied by the programme text
+function planLoadValue(ex) {
+  const low = (ex.load || '').toString().toLowerCase();
+  const cap = b => b.charAt(0).toUpperCase() + b.slice(1);
+  const band = ['yellow','green','red','blue','black'].find(b => low.includes(b));
+  if (isBWExercise(ex)) return band ? `BW+${cap(band)}` : 'BW';
+  if (band) return cap(band);
+  const kg = parseFloat(low);
+  return isFinite(kg) ? String(kg) : '';
+}
+
+// One step up (dir 1) or down (dir -1) the KB, band or BW+band ladder.
+// Returns null when there is no further step.
+function stepLoad(load, dir) {
+  const raw = (load || '').toString().trim();
+  if (!raw) return null;
+  const low = raw.toLowerCase();
+  const cap = s => s.split('+').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('+');
+  if (low.startsWith('bw')) {
+    const BW_LADDER = ['', 'yellow', 'green', 'red', 'blue', 'black'];
+    const i = BW_LADDER.indexOf(low.replace(/^bw\+?/, '').trim());
+    const next = i === -1 ? undefined : BW_LADDER[i + dir];
+    if (next === undefined) return null;
+    return next ? `BW+${cap(next)}` : 'BW';
+  }
+  const bi = BAND_STEP_LADDER.indexOf(low.split('+').map(p => p.trim()).sort().join('+'));
+  if (bi !== -1) {
+    const next = BAND_STEP_LADDER[bi + dir];
+    return next ? cap(next) : null;
+  }
+  const kg = parseFloat(raw);
+  if (!isFinite(kg)) return null;
+  const next = dir > 0 ? KB_SIZES_KG.find(s => s > kg) : [...KB_SIZES_KG].reverse().find(s => s < kg);
+  return next ? String(next) : null;
+}
+
+// The load most sets of a logged exercise were done at
+function getLogLoad(ex) {
+  const counts = {};
+  let best = '', bestN = 0;
+  (ex.sets || []).forEach(s => {
+    const l = (s.load || '').toString().trim();
+    if (!l) return;
+    counts[l] = (counts[l] || 0) + 1;
+    if (counts[l] >= bestN) { best = l; bestN = counts[l]; }
+  });
+  return best;
+}
+
+// Most recent logs of an exercise, newest first, as { session, ex }.
+// Prefers the same session type and falls back to any session (exercises
+// shared across days, or first time on this day). Partial sessions count —
+// they still say what was lifted — but deload-week sessions don't, unless
+// this is a deload week.
+function getExerciseLogs(sessionId, exName, limit = 3) {
+  const allowDeload = isDeloadWeek();
+  const hasData = e => e && Array.isArray(e.sets) && e.sets.some(s => s.reps || (s.load && s.load !== 'BW'));
+  const collect = pred => state.sessions
+    .filter(s => s.status !== 'deload' && (allowDeload || s.mesoWeek !== 5) && pred(s))
+    .map(s => ({ session: s, ex: (s.exercises || []).find(e => e.name === exName) }))
+    .filter(r => hasData(r.ex))
+    .sort((a, b) => a.session.date === b.session.date
+      ? String(a.session.id).localeCompare(String(b.session.id))
+      : (a.session.date < b.session.date ? -1 : 1))
+    .slice(-limit)
+    .reverse();
+  const same = collect(s => s.sessionId === sessionId);
+  return same.length ? same : collect(() => true);
+}
+
+function getExercisePrescription(sessionId, ex) {
+  const week   = getCurrentMesoWeek();
+  const deload = isDeloadWeek();
+  const rr     = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
+  // "3" in the plan is a fixed set count; "3–5" follows the meso week
+  const fixed  = /^\s*\d+\s*$/.test(String(ex.sets || '')) ? parseInt(ex.sets, 10) : null;
+  const target = deload ? Math.min(2, fixed || 2)
+               : (fixed || Math.min(getMesoSetTarget(week), ex.maxSets || Infinity));
+
+  const logs = getExerciseLogs(sessionId, ex.name, 3);
+  const last = logs[0] || null;
+  const lastComplete = logs.find(l => l.session.status === 'complete') || null;
+  const lastLoad = last ? getLogLoad(last.ex) : '';
+  const lastReps = last ? last.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n)) : [];
+  // Set count carries over from the last complete log, never a cut-short partial
+  const baseSets = lastComplete
+    ? (lastComplete.ex.sets.filter(s => s.reps).length || lastComplete.ex.sets.length)
+    : 3;
+
+  const rx = {
+    sets:   fixed || deload ? target : Math.min(baseSets, target),
+    load:   deload ? '' : (lastLoad || planLoadValue(ex)),
+    reps:   rr.slice(),
+    rir:    getMesoRIRTarget(week),
+    change: null,   // { type, label, message } — what moved vs last time
+    last,
+  };
+
+  if (deload) {
+    rx.change = { type: 'deload', label: 'Deload',
+      message: `2 sets at ~50% of ${fmtLoad(lastLoad) || 'your working load'}, RIR 5+.` };
+    return rx;
+  }
+
+  // ── Calibration: new exercises ────────────────────────────────
+  // With fewer than CALIBRATION_SESSIONS logs anywhere there's no basis for
+  // targets: sets open blank (plan set count, no load, no rep target) and
+  // whatever is logged becomes the baseline. From the next session on, the
+  // logic below takes over.
+  const logCount = state.sessions.filter(s =>
+    s.status !== 'deload' && s.mesoWeek !== 5 &&
+    (s.exercises || []).some(e => e.name === ex.name && (e.sets || []).some(st => st.reps))
+  ).length;
+  if (logCount < CALIBRATION_SESSIONS) {
+    rx.calibrating = true;
+    rx.sets = fixed ? target : Math.min(3, target);
+    rx.load = '';
+    rx.change = { type: 'calibrating', label: `Calibrating ${logCount + 1}/${CALIBRATION_SESSIONS}`,
+      message: `New exercise — no pre-selection for the first ${CALIBRATION_SESSIONS} sessions. Log what you do; sets, reps and load are set automatically from session ${CALIBRATION_SESSIONS + 1}.` };
+    return rx;
+  }
+  if (!last) return rx;
+
+  // ── Step up: the progression engines ──────────────────────────
+  const cfgSess = state.programme.sessions.find(s => s.id === sessionId);
+  const sug = cfgSess?.sessionType === 'transition' ? null
+    : state.profile === 'je' ? getJeProgressionSuggestion(ex.name, sessionId, rr)
+    : getProgressionSuggestion(sessionId, ex.name, rr);
+
+  if (sug) {
+    const LABELS = {
+      tempo: 'Tempo 3s', equipment_ceiling: 'Kit ceiling', support_reduce: 'Less support',
+      'variant advancement': 'Next variant', 'band progression': 'Next band',
+    };
+    let label = LABELS[sug.type] || sug.type.replace(/_/g, ' ');
+    let message = sug.message;
+    if (sug.type === 'add_set') {
+      rx.sets = Math.min(baseSets + 1, target);
+      label = '+1 set';
+    } else if (sug.type === 'increase_load') {
+      const next = stepLoad(lastLoad, 1);
+      rx.sets = Math.min(3, target);
+      if (next) {
+        rx.load = next;
+        label = `↑ ${fmtLoad(next)}`;
+        message = `Rep ceiling hit — move to ${fmtLoad(next)}, ${rx.sets} sets, start at the bottom of the range.`;
+      } else {
+        label = '↑ load';
+      }
+    }
+    rx.change = { type: sug.type, label, message };
+    return rx;
+  }
+
+  // ── Step down: most sets under the rep floor ──────────────────
+  const missedFloor = l => {
+    const r = l.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n));
+    return r.length > 0 && r.filter(n => n < rr[0]).length * 2 > r.length;
+  };
+  if (lastReps.length && missedFloor(last)) {
+    const prev = logs[1];
+    if (prev && getLogLoad(prev.ex) === lastLoad && missedFloor(prev)) {
+      const lower = stepLoad(lastLoad, -1);
+      if (lower) {
+        rx.load = lower;
+        rx.change = { type: 'decrease_load', label: `↓ ${fmtLoad(lower)}`,
+          message: `Under ${rr[0]} reps at ${fmtLoad(lastLoad)} two sessions running — drop to ${fmtLoad(lower)} and rebuild into the range.` };
+      } else if (rx.sets > 2) {
+        rx.sets -= 1;
+        rx.change = { type: 'decrease_set', label: '−1 set',
+          message: `Under ${rr[0]} reps two sessions running with no lighter option — one set fewer until every set reaches ${rr[0]}.` };
+      }
+    }
+    if (!rx.change) {
+      rx.change = { type: 'hold', label: 'Hold',
+        message: `Missed ${rr[0]} reps last time at ${fmtLoad(lastLoad) || 'this load'} — same load, get every set to ${rr[0]}+.` };
+    }
+    return rx;
+  }
+
+  // ── Same load: double progression ─────────────────────────────
+  if (lastReps.length && rx.load === lastLoad) {
+    const floor = Math.min(...lastReps);
+    if (floor < rr[1]) {
+      const t = Math.max(rr[0], Math.min(rr[1], floor + 1));
+      rx.reps = [t, rr[1]];
+      rx.change = { type: 'add_reps', label: '+1 rep',
+        message: `Weakest set last time: ${floor}. Aim for ${t}+ on every set.` };
+    } else {
+      rx.change = { type: 'repeat', label: 'Repeat',
+        message: `Top of the range last time — match it again to unlock the next step.` };
+    }
+  }
+  return rx;
+}
+
+/* ═══════════════════════════════════════════
    RENDER — PROGRESSION SUGGESTIONS
    Routes to the correct algorithm per profile
    and renders the result to the tracker DOM.
@@ -7860,30 +8001,24 @@ function renderProgressionSuggestions(session) {
     return;
   }
 
-  if (state.profile === 'je') {
-    // Je: pattern-driven, variant ladder, support-reduction
-    session.exercises
-      .filter(ex => ex.type !== 'optional' && ex.type !== 'prehab')
-      .forEach(ex => {
-        const s = getJeProgressionSuggestion(ex.name, session.id, ex.repRange);
-        if (s) suggestions.push(s);
-      });
-  } else {
-    // Alex: load/set-driven — suppress in week 1
-    if (getCurrentMesoWeek() === 1) { card.classList.add('hidden'); return; }
-    session.exercises
-      .filter(ex => ex.type !== 'optional' && ex.type !== 'prehab')
-      .forEach(ex => {
-        const s = getProgressionSuggestion(session.id, ex.name, ex.repRange);
-        if (s) suggestions.push(s);
-      });
-  }
+  // Same prescription the cards use (profile routing happens inside it).
+  // Rep-level nudges stay on the cards; the banner lists structural changes.
+  session.exercises.forEach((ex, idx) => {
+    if (ex.type === 'optional' || ex.type === 'prehab') return;
+    const def = getTrackedExDef(session, idx);
+    const c = getExercisePrescription(session.id, def).change;
+    if (!c || ['add_reps', 'repeat', 'deload', 'calibrating'].includes(c.type)) return;
+    suggestions.push({ exercise: def.name, type: c.type, message: c.message });
+  });
 
   if (suggestions.length > 0) {
     textEl.innerHTML = suggestions.map(s => {
       const typeColors = {
         'add_set':             'var(--green)',
         'increase_load':       'var(--pull)',
+        'decrease_load':       'var(--red)',
+        'decrease_set':        'var(--red)',
+        'hold':                'var(--amber)',
         'support_reduce':      'var(--amber)',
         'variant advancement': 'var(--push-b)',
         'band progression':    'var(--legs-a)',
@@ -9529,27 +9664,6 @@ const EXERCISE_SWAP_MAP = {
 ─────────────────────────────────────────────────────────────── */
 const _swapState = {};
 
-/* ── BUILD TRACKED BODY ───────────────────────────────────────────
-   Shared helper: builds full set-logging body for either the
-   primary or alternative exercise name, with prev-session lookup.
-────────────────────────────────────────────────────────────────── */
-function buildTrackedBody(displayName, logName, sessionId, exDef) {
-  // logName is what gets saved to history; may differ from display
-  const prev2 = getPrev2Sessions(sessionId, logName);
-  const prevRef = prev2.length > 0
-    ? prev2.map((p, i) => `<span>Sess -${i+1}: ${p}</span>`).join(' · ')
-    : 'No previous data for ' + logName;
-  const setCount = isDeloadWeek() ? 2 : 3;
-  const safeId   = logName.replace(/[^a-zA-Z0-9]/g, '_');
-  const initialSets = Array.from({length: setCount}, (_, i) => buildSetRow(i, exDef, isDeloadWeek()));
-  return `
-    <div class="prev-sessions-ref">${prevRef}</div>
-    <div class="set-rows" id="sets-${sessionId}-${safeId}">
-      ${initialSets.join('')}
-    </div>
-    <button class="add-set-btn" onclick="addSet('${sessionId}','${safeId}','${logName}')">+ Add Set</button>`;
-}
-
 /* ── SWAP ANIMATION ───────────────────────────────────────────────
    Triggers the card-emerge animation then applies new content.
 ────────────────────────────────────────────────────────────────── */
@@ -9591,13 +9705,18 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
   window._altDescs = window._altDescs || {};
   window._altDescs[altDef.name] = altDef.desc;
 
-  // Build a synthetic exercise def for the alt (for buildSetRow)
   const primaryEx = session.exercises.find(e => e.name === exName);
-  const altExDef  = {
-    ...(primaryEx || {}),
-    name: altDef.name,
-    load: altDef.load,
-    tags: (primaryEx?.tags || []),
+  const idx = parseInt(cardEl.id.split('-').pop(), 10);
+
+  // Rebuild the body for whichever exercise the slot now tracks (_swapState
+  // is already flipped) — same ids as the primary so endSession finds the sets
+  const rebuildBody = () => {
+    if (!bodyEl || isNaN(idx)) return;
+    const { rx, html } = buildExerciseBody(session, idx);
+    bodyEl.innerHTML = html;
+    const countEl = document.getElementById(`set-count-${session.id}-${idx}`);
+    if (countEl) countEl.textContent = `${rx.sets} sets`;
+    renderProgressionSuggestions(session);
   };
 
   if (newState) {
@@ -9621,12 +9740,7 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
         if (loadSpan) loadSpan.textContent = altDef.load;
       }
 
-      // Build fully tracked body for the alt
-      if (bodyEl) {
-        bodyEl.innerHTML = buildTrackedBody(
-          altDef.name, altDef.name, session.id, altExDef
-        );
-      }
+      rebuildBody();
     });
 
   } else {
@@ -9651,12 +9765,7 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
         if (loadSpan) loadSpan.textContent = primaryEx.load || '';
       }
 
-      // Restore fully tracked body for primary
-      if (bodyEl && primaryEx) {
-        bodyEl.innerHTML = buildTrackedBody(
-          exName, exName, session.id, primaryEx
-        );
-      }
+      rebuildBody();
     });
   }
 }
