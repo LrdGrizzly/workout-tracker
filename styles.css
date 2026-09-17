@@ -4398,3 +4398,143 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   border-color: color-mix(in srgb, var(--amber) 35%, transparent);
   background: color-mix(in srgb, var(--amber) 8%, transparent);
 }
+
+/* ═══════════════════════════════════════════
+   SUPERSETS (tracker)
+═══════════════════════════════════════════ */
+.superset-group {
+  --ss-color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--ss-color) 45%, transparent);
+  border-left: 4px solid var(--ss-color);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ss-color) 5%, transparent);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.superset-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 2px 4px 8px;
+}
+.superset-head .drag-handle { cursor: grab; }
+.superset-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ss-color);
+}
+.superset-how  { font-size: 12px; color: var(--text); font-weight: 600; }
+.superset-rule { flex-basis: 100%; font-size: 10px; color: var(--text-dim); }
+.superset-cue {
+  flex-basis: 100%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ss-color);
+  min-height: 1em;
+}
+.superset-cue:empty { display: none; }
+.superset-cards { display: flex; flex-direction: column; gap: 6px; }
+.superset-cards .tracker-ex-card { margin-bottom: 0; }
+.ss-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  margin-right: 6px;
+  border-radius: 4px;
+  color: var(--bg);
+  background: var(--ss-color, var(--amber));
+  vertical-align: 1px;
+}
+.set-row.ss-next {
+  box-shadow: 0 0 0 2px var(--ss-color, var(--amber));
+  border-radius: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   EXERCISE BUILDER — kind card
+═══════════════════════════════════════════ */
+.kind-card {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.kind-card strong { color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD — meso week comparison
+═══════════════════════════════════════════ */
+.dash-meso-block.selected {
+  opacity: 1;
+  border-color: var(--push-b);
+  box-shadow: 0 0 0 1px var(--push-b);
+}
+.dash-meso-block:focus-visible { outline: 2px solid var(--push-b); outline-offset: 2px; }
+.meso-compare { margin-top: 10px; overflow-x: auto; }
+.meso-compare table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.meso-compare th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  padding: 2px 6px 4px;
+}
+.meso-compare td {
+  padding: 3px 6px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+}
+.meso-compare td:first-child { text-align: left; font-family: inherit; color: var(--text-dim); }
+.meso-compare .mc-lm { font-family: var(--font-mono); font-size: 8px; color: var(--text-muted); }
+.meso-compare .mc-under { color: var(--amber); }
+.meso-compare .mc-over  { color: var(--red); }
+.mc-delta { color: var(--text-muted); }
+.mc-delta.up   { color: var(--green); }
+.mc-delta.down { color: var(--red); }
+.mc-note, .meso-compare-empty { margin-top: 6px; font-size: 10px; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════
+   DESKTOP — use the width
+═══════════════════════════════════════════ */
+@media (min-width: 768px) {
+  /* Left sections size to their content; the tall right column no
+     longer stretches the gaps between them */
+  .dashboard-grid { grid-template-rows: auto auto auto 1fr; }
+}
+@media (min-width: 1100px) {
+  .main { max-width: 1280px; }
+  .history-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .tracker-ex-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px;
+  }
+  .tracker-ex-list > .tracker-ex-card { margin-bottom: 0; }
+  .tracker-ex-list > .superset-group { grid-column: 1 / -1; margin-bottom: 0; }
+  .superset-cards {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+}

@@ -322,6 +322,9 @@
               <button class="goal-btn" data-goal="maintain" onclick="setTrainingGoal('maintain')">Maintain — hold strength, minimum volume</button>
             </div>
           </div>
+          <div class="section-label" style="margin:16px 0 10px">My Equipment</div>
+          <div class="builder-hint" style="margin-bottom:8px">Load steps only suggest what you own. Two-bell lifts pair any two different bells; band work stacks up to two bands. Changes save immediately.</div>
+          <div id="inventory-config"></div>
           <div class="section-label" style="margin:16px 0 10px">Band Resistance Config</div>
           <div id="band-config-list"></div>
           <button class="settings-btn primary" style="margin-top:12px;width:100%" onclick="saveProfileSettings()">Save Profile Settings</button>
@@ -818,6 +821,13 @@ const Validator = (() => {
     return clean;
   }
 
+  // Names some early sessions were logged under
+  const LEGACY_EXERCISE_NAMES = {
+    'Hip Thrusts': 'Hip Thrust',
+    'Sissy squat': 'Sissy Squat',
+    'Skullcrusher unilateral': 'Skullcrusher',
+  };
+
   // ── Exercise validation ───────────────────────────────────────
   function validateExercise(ex, sessionId) {
     if (!ex || typeof ex !== 'object') return null;
@@ -831,7 +841,7 @@ const Validator = (() => {
       : [];
 
     return {
-      name:           ex.name,
+      name:           LEGACY_EXERCISE_NAMES[ex.name] || ex.name,
       type:           typeof ex.type === 'string' ? ex.type : 'accessory',
       repRange:       Array.isArray(ex.repRange) && ex.repRange.length === 2
                         ? ex.repRange
@@ -902,7 +912,7 @@ const Validator = (() => {
 
   // ── Programme (sessionsConfig) validation ─────────────────────
   const SESSION_STR_FIELDS  = ['id', 'name', 'subtitle', 'class', 'color', 'colorRgb', 'sessionType', 'note'];
-  const EXERCISE_STR_FIELDS = ['name', 'type', 'sets', 'reps', 'load', 'prog', 'notes', 'desc', 'altName', 'pattern', 'equipment', 'progression'];
+  const EXERCISE_STR_FIELDS = ['name', 'type', 'sets', 'reps', 'load', 'prog', 'notes', 'desc', 'altName', 'pattern', 'equipment', 'progression', 'kind', 'superset'];
   const strArr = v => Array.isArray(v) ? v.filter(x => typeof x === 'string') : null;
 
   function validateExerciseConfig(ex) {
@@ -1043,7 +1053,21 @@ const Validator = (() => {
       ? coerceNumber(data.bodyweight, 20, 300)
       : null;
 
+    // inventory: { kb: [kg], bands: [colour] } or null (programme default)
+    clean.inventory = validateInventory(data.inventory);
+
     return clean;
+  }
+
+  // Owned equipment the load steps are built from
+  function validateInventory(inv) {
+    if (!inv || typeof inv !== 'object') return null;
+    const kb = Array.isArray(inv.kb)
+      ? [...new Set(inv.kb.map(n => coerceNumber(n, 1, 100)).filter(n => n !== null))].sort((a, b) => a - b)
+      : [];
+    const BANDS = ['yellow', 'green', 'red', 'blue', 'black'];
+    const bands = Array.isArray(inv.bands) ? BANDS.filter(b => inv.bands.includes(b)) : [];
+    return { kb, bands };
   }
 
   // ═══════════════════════════════════════════
@@ -1068,7 +1092,7 @@ const Validator = (() => {
     return validateSettings(obj);
   }
 
-  return { sessions, settings, sessionsConfig: validateSessionsConfig };
+  return { sessions, settings, sessionsConfig: validateSessionsConfig, inventory: validateInventory };
 })();
 
 const PROGRAMMES = {
@@ -1077,6 +1101,8 @@ const PROGRAMMES = {
     color: 'var(--push-a)',
     goal: 'Mass & Strength',
     frequency: '5 days / week',
+    // Kit the load steps are built from (editable in Settings → My equipment)
+    inventory: { kb: [4, 8, 12, 16], bands: ['yellow', 'red', 'blue', 'black'] },
     schedule: [
       { day: 'Mon', session: 'Push A', color: 'var(--push-a)' },
       { day: 'Tue', session: 'Pull',   color: 'var(--pull)' },
@@ -1090,7 +1116,7 @@ const PROGRAMMES = {
       { label: 'Week 1', sets: '3', desc: '3–4 RIR · Base volume', rir: '3–4' },
       { label: 'Week 2', sets: '4', desc: '2–3 RIR · Build', rir: '2–3' },
       { label: 'Week 3', sets: '4–5', desc: '2 RIR · Accumulate', rir: '2' },
-      { label: 'Week 4', sets: '5', desc: '1–2 RIR · Peak', rir: '1–2' },
+      { label: 'Week 4', sets: '5', desc: '0–1 RIR · Peak', rir: '0–1' },
       { label: 'Week 5', sets: '2', desc: 'Deload · 5+ RIR', rir: '5+', deload: true },
     ],
     sessions: [
@@ -1105,17 +1131,17 @@ const PROGRAMMES = {
         rest: 60,
         note: 'Floor press leads as the heaviest compound. Incline press adds upper chest stimulus. Archer push-up bridges chest compounds before isolation. Fly pre-fatigues the pec for the tricep finisher.',
         exercises: [
-          { num: '01', name: 'KB Floor Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '6–8', repRange: [6,8], load: '16 kg / arm', prog: 'Tempo: 3s eccentric → jump to 20 kg', notes: 'Full pause at chest. Elbow 45°. One side at a time.',
+          { num: '01', name: 'KB Floor Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: 'Tempo: 3s eccentric → jump to 20 kg', notes: 'Full pause at chest. Elbow 45°. One side at a time.',
           desc: 'Lie on your back, KB in one hand, elbow at 45°. Press straight up to full extension then lower with control. Eliminates the shoulder instability of a full bench press by limiting the range of motion at the bottom.' },
-          { num: '02', name: 'Banded Incline Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '10–12', repRange: [10,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Band under feet, press at upward angle. Targets clavicular head.',
+          { num: '02', name: 'Banded Incline Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Band under feet, press at upward angle. Targets clavicular head.',
           desc: 'Band anchored low behind you, pressing upward at roughly 45°. Targets the clavicular (upper) head of the pec more than flat pressing. Set up on an incline surface or press standing at an angle.' },
-          { num: '03', name: 'Archer Push-up', tags: ['compound', 'unilateral', 'bw'], type: 'compound', sets: '3–5', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Feet elevated → band across back', notes: 'Working arm handles near-full BW at extended ROM. Non-working arm straight.',
+          { num: '03', name: 'Archer Push-up', tags: ['compound', 'unilateral', 'bw'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW', prog: 'Feet elevated → band across back', notes: 'Working arm handles near-full BW at extended ROM. Non-working arm straight.',
           desc: 'Start in a wide push-up position. As you lower, shift your weight to one side while the other arm extends straight. The working arm handles near-full bodyweight at an extended range of motion. Alternate sides each rep.' },
-          { num: '04', name: 'Banded Chest Fly', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Blue band', prog: 'Blue → Black band', notes: 'Deep pec stretch. 2s controlled return.',
+          { num: '04', name: 'Banded Chest Fly', superset: 'A', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Deep pec stretch. 2s controlled return.',
           desc: 'Band anchored behind you at chest height, one end in each hand. Arms slightly bent, bring hands together in a wide arc. Emphasis on pec stretch at the extended position. Squeeze at the top.' },
-          { num: '05', name: 'KB Gorilla Row', tags: ['compound', 'unilateral', 'superset'], type: 'compound', sets: '3', maxSets: 3, reps: '8–10', repRange: [8,10], load: '16 kg / arm', prog: '20 kg / arm', notes: 'Superset with Banded Chest Fly — row during its rest. Push:pull balance. Fixed 3 sets to protect session time.',
+          { num: '05', name: 'KB Gorilla Row', superset: 'A', tags: ['compound', 'unilateral', 'superset'], type: 'compound', sets: '3', maxSets: 3, reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '20 kg / arm', notes: 'Superset with Banded Chest Fly — row during its rest. Push:pull balance. Fixed 3 sets to protect session time.',
           desc: 'Two KBs on the floor between your feet, hinge position like a deadlift hold. Row one KB to your hip while the other hand rests on the second KB for support. Alternate arms. Heavy horizontal pull that balances the pressing volume of this session.' },
-          { num: '06', name: 'Overhead Tricep Extension', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '10–12', repRange: [10,12], load: '8+12 = 20 kg (two KBs)', prog: '8+16 = 24 kg', notes: 'Long head fully stretched. Elbows narrow.',
+          { num: '06', name: 'Overhead Tricep Extension', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8+12 = 20 kg (two KBs)', prog: '8+16 = 24 kg', notes: 'Long head fully stretched. Elbows narrow.',
           desc: 'Hold two KBs or one heavy KB overhead with both hands. Lower behind your head by bending the elbows, keeping upper arms vertical. Targets the long head of the tricep in its fully stretched position.' },
           { num: '07', name: 'Dead Bug', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '10', repRange: [10,10], load: 'BW', prog: 'Add KB hold overhead', notes: 'Optional core. Lower back stays flat. Exhale on extension.',
           desc: 'Lie on back, arms vertical, hips and knees at 90°. Lower one arm and the opposite leg simultaneously while keeping the lower back flat on the floor. The lower back must not arch. Exhale as you extend. Core stability, not a crunch.' },
@@ -1134,17 +1160,17 @@ const PROGRAMMES = {
         rest: 60,
         note: 'Bent-over row leads as the primary horizontal compound. Face pull hits rear delt as a mass movement while back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Zottman targets brachialis. Rear delt fly is a prehab buffer. Supinated curl finishes with short head emphasis.',
         exercises: [
-          { num: '01', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–10', repRange: [8,10], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
+          { num: '01', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
           desc: 'Hinge at the hip to roughly 45°. Row the KB to your hip crease, not your chest. Full stretch at the bottom — let the shoulder blade protract. One arm at a time for full ROM and to prevent compensation.' },
-          { num: '02', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
+          { num: '02', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
           desc: 'Band anchored high at a door anchor. Pull to face level with external rotation — elbows flaring wide, hands ending beside your ears. Primary rear delt and mid-trap movement, not a bicep exercise.' },
-          { num: '03', name: 'Banded Overhead Pull → Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3–5', reps: '12 / 12', repRange: [12,12], load: 'Blue band (superset)', prog: 'Blue → Black band', notes: 'Superset. Overhead pull from high anchor → immediately straight-arm pulldown. Full lat range.',
+          { num: '03', name: 'Banded Overhead Pull → Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3–5', reps: '8–12 / 8–12', repRange: [8,12], load: 'Blue band (superset)', prog: 'Blue → Black band', notes: 'Superset. Overhead pull from high anchor → immediately straight-arm pulldown. Full lat range.',
           desc: 'Superset. First: band from high anchor, arms start overhead, pull down to thighs with straight arms — hits lat in lengthened position. Immediately: standard straight-arm pulldown from same anchor. No rest between the two movements.' },
-          { num: '04', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '10–12', repRange: [10,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
+          { num: '04', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
           desc: 'Curl up with a supinated grip (palms up), rotate to pronated at the top (palms down), lower slowly in the pronated position. Combines bicep peak stimulus on the way up with brachialis and brachioradialis eccentric on the way down.' },
           { num: '05', name: 'Banded Rear Delt Fly', tags: ['prehab'], type: 'prehab', sets: '3', reps: '12–15', repRange: [12,15], load: 'Yellow band', prog: 'Yellow → Red band', notes: 'Prehab buffer. Zero bicep involvement. Horizontal abduction.',
           desc: 'Band at chest height, one end in each hand. Arms slightly bent, pull outward in a wide arc until arms are parallel. Horizontal abduction — isolates rear delt with zero bicep involvement. Used here as a prehab buffer between curl variations.' },
-          { num: '06', name: 'Supinated KB Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '10–12', repRange: [10,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Full supination throughout. Targets bicep short head / peak.',
+          { num: '06', name: 'Supinated KB Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Full supination throughout. Targets bicep short head / peak.',
           desc: 'Standard curl with full supination (palms facing up) maintained throughout the entire movement. Do not rotate at the top. Targets the short head of the bicep for peak width. One arm at a time.' },
         ]
       },
@@ -1159,15 +1185,15 @@ const PROGRAMMES = {
         rest: 120,
         note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Nordic curl closes as the eccentric finisher — always last.',
         exercises: [
-          { num: '01', name: 'Goblet Squat', tags: ['compound'], type: 'compound', sets: '3–5', reps: '10–12', repRange: [10,12], load: '28 kg (two KBs)', prog: 'Add set → 32 kg', notes: 'Upright torso. Full depth. Knees out.',
+          { num: '01', name: 'Goblet Squat', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '28 kg (two KBs)', prog: 'Add set → 32 kg', notes: 'Upright torso. Full depth. Knees out.',
           desc: 'Hold KB at chest, elbows inside knees. Squat to full depth — the KB counterbalance helps maintain an upright torso. Drive knees out, push floor away to stand. Primary bilateral quad compound.' },
-          { num: '02', name: 'Lateral Band Walk', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '20 steps/side', repRange: [20,20], load: 'Red band', prog: 'Red → Blue band', notes: 'Mini-squat throughout. Constant band tension. Genuine quad buffer.',
+          { num: '02', name: 'Lateral Band Walk', kind: 'prehab', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '20 steps/side', repRange: [20,20], load: 'Red band', prog: 'Red → Blue band', notes: 'Mini-squat throughout. Constant band tension. Genuine quad buffer.',
           desc: 'Band around ankles or just above knees. Maintain a quarter-squat throughout. Step laterally with constant tension — never let feet come fully together. Targets glute medius. Genuine quad rest between squat variations.' },
-          { num: '03', name: 'Sissy Squat', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'BW → 4 kg held at chest → 8 kg', notes: 'Heels elevated. Full knee flexion. Rectus femoris fully lengthened.',
+          { num: '03', name: 'Sissy Squat', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW', prog: 'BW → 4 kg held at chest → 8 kg', notes: 'Heels elevated. Full knee flexion. Rectus femoris fully lengthened.',
           desc: 'Heels elevated on a step or plate. Lean back slightly as you bend the knees, lowering the body as a unit. The knee travels far forward over the toe. Targets the rectus femoris in its most lengthened position — the part of the quad most neglected by standard squats.' },
-          { num: '04', name: 'ATG Split Squat', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–10', repRange: [8,10], load: '16 kg goblet hold', prog: '20 kg → dual KB hold', notes: 'Deep knee flexion. Touch wall for balance if needed.',
+          { num: '04', name: 'ATG Split Squat', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg goblet hold', prog: '20 kg → dual KB hold', notes: 'Deep knee flexion. Touch wall for balance if needed.',
           desc: 'Rear foot flat or elevated. Front shin as vertical or as forward as mobility allows — the goal is full knee flexion. KB held goblet-style or at sides. ATG = Ass To Grass. Unilateral quad development with full ROM.' },
-          { num: '05', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
+          { num: '05', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
           desc: 'Kneel with feet anchored. Lean forward as a unit — body stays straight from knee to shoulder — resisting the descent with the quads. Extremely demanding eccentric. Lower as slowly as possible. Always the last exercise.' },
         ]
       },
@@ -1182,17 +1208,17 @@ const PROGRAMMES = {
         rest: 60,
         note: 'Single-arm press leads strict. Banded overhead press from low anchor adds lengthened-position shoulder stimulus. Lateral raise isolates medial delt. Upright row hits medial and upper trap. Skullcrusher provides direct tricep isolation. Rotator cuff ER is prehab — always last, never skipped.',
         exercises: [
-          { num: '01', name: 'Single-Arm KB Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–10', repRange: [8,10], load: '12 kg / arm', prog: '3s eccentric → 16 kg', notes: 'Strict. Wrist over elbow. Form consolidation before load jump.',
+          { num: '01', name: 'Single-Arm KB Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12 kg / arm', prog: '3s eccentric → 16 kg', notes: 'Strict. Wrist over elbow. Form consolidation before load jump.',
           desc: 'Strict overhead press, one arm. KB in rack position (resting on forearm, elbow under wrist). Press straight up without leaning. Wrist stays neutral. The contralateral core demand is significant — brace hard.' },
-          { num: '02', name: 'Banded Overhead Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '10–12', repRange: [10,12], load: 'Blue band (low anchor)', prog: 'Blue → Black band', notes: 'Band under feet. Lengthened start position. Targets anterior delt.',
+          { num: '02', name: 'Banded Overhead Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (low anchor)', prog: 'Blue → Black band', notes: 'Band under feet. Lengthened start position. Targets anterior delt.',
           desc: 'Band anchored under your foot, pressing overhead. The low anchor means the shoulder starts in a lengthened, loaded position — unlike a rack-start press. Targets the anterior delt through a longer range than standard overhead pressing.' },
-          { num: '03', name: 'Banded Lateral Raise', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12–15', repRange: [12,15], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
+          { num: '03', name: 'Banded Lateral Raise', superset: 'A', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
           desc: 'Band anchored low or under foot, one end in each hand. Raise arms to shoulder height leading with the elbows, not the hands. Stop at parallel. Primary medial delt isolation. The band provides ascending resistance — hardest at the top.' },
-          { num: '04', name: 'Banded Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3', maxSets: 3, reps: '12–15', repRange: [12,15], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'Superset with Banded Lateral Raise — pull during its rest. Lat volume without a pull-up bar. Fixed 3 sets to protect session time.',
+          { num: '04', name: 'Banded Straight-Arm Pulldown', superset: 'A', tags: ['accessory', 'superset'], type: 'accessory', sets: '3', maxSets: 3, reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'Superset with Banded Lateral Raise — pull during its rest. Lat volume without a pull-up bar. Fixed 3 sets to protect session time.',
           desc: 'Band on high door anchor. Arms straight, hinge slightly forward, pull the band down to your hips in a wide arc using the lats only. Full stretch overhead at the top, squeeze at the bottom. Balances the pressing volume of this session.' },
-          { num: '05', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '12', repRange: [12,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
+          { num: '05', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
           desc: 'Band under feet, both hands. Pull to chin with elbows leading wide and high. Hits medial delt and upper traps. Stop if you feel any shoulder impingement — reduce range of motion before reducing weight.' },
-          { num: '06', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–10', repRange: [8,10], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
+          { num: '06', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
           desc: 'Lie on back, upper arm vertical. Lower KB to temple by bending the elbow only. Upper arm stays completely still. Targets the lateral head of the tricep. Moved to Push B so triceps receive direct isolation twice weekly.' },
           { num: '07', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
           desc: 'Band at waist height, elbow pinned to side at 90°. Rotate forearm outward only — no movement at the shoulder or elbow. Prehab. Never skip, never increase load aggressively. Keeps the shoulder healthy for all pressing.' },
@@ -1211,15 +1237,15 @@ const PROGRAMMES = {
         rest: 120,
         note: 'KB deadlift leads as the primary bilateral hinge. Single-leg RDL follows immediately while the hinge pattern is warm. Hip thrust shifts to glute dominant. KB swing is ballistic hip extension. Banded hamstring curl closes as the eccentric finisher.',
         exercises: [
-          { num: '01', name: 'KB Deadlift', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–10', repRange: [8,10], load: '16 kg / arm', prog: '20 kg / arm', notes: 'Push floor away. Full lockout. Controlled descent.',
+          { num: '01', name: 'KB Deadlift', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12+16 = 28 kg (two KBs)', prog: 'Tempo at 28 kg, then heavier bells', notes: 'Push floor away. Full lockout. Controlled descent.',
           desc: 'One KB in each hand (or two KBs one hand). Push the floor away rather than pulling up. Full hip extension at the top — glutes squeeze. Control the descent — do not drop. Foundation of the hip hinge pattern.' },
-          { num: '02', name: 'Single-Leg RDL', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '10/side', repRange: [10,10], load: '12 kg / arm', prog: '16 kg / arm', notes: 'Hinge until hamstring stretch. Hip drive to stand.',
+          { num: '02', name: 'Single-Leg RDL', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: '8+16 = 24 kg (two KBs)', prog: '28 kg (12+16)', notes: 'Hinge until hamstring stretch. Hip drive to stand.',
           desc: 'Stand on one leg, hinge at the hip with the KB in the opposite or same-side hand. Lower until hamstring stretch, drive hip forward to stand. Balance and stability limit this more than strength initially. Keep hips square.' },
-          { num: '03', name: 'Hip Thrust', tags: ['compound'], type: 'compound', sets: '3–5', reps: '12–15', repRange: [12,15], load: '16 kg + Yellow band', prog: 'Add band resistance → heavier KB', notes: 'Shoulders on sofa. 1s hold at top. Feel in glute only.',
+          { num: '03', name: 'Hip Thrust', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg + Yellow band', prog: 'Add band resistance → heavier KB', notes: 'Shoulders on sofa. 1s hold at top. Feel in glute only.',
           desc: 'Shoulders on sofa or bench, feet flat on floor. Drive hips up until body is straight from shoulder to knee. 1s hold at the top. Primary glute exercise — if you feel it in the lower back, check foot placement and tuck the pelvis.' },
-          { num: '04', name: 'KB Swing', tags: ['compound'], type: 'compound', sets: '3–5', reps: '12–15', repRange: [12,15], load: '16 kg (two hands)', prog: '20 kg', notes: 'Hip snap only. Arms don\'t lift. Ballistic hip extension.',
+          { num: '04', name: 'KB Swing', kind: 'skill', tags: ['compound'], type: 'compound', sets: '3–5', reps: '12–15', repRange: [12,15], load: '16 kg (two hands)', prog: '20 kg', notes: 'Hip snap only. Arms don\'t lift. Ballistic hip extension.',
           desc: 'Hip hinge — not a squat. The KB is driven by a hip snap, not arm lift. Hike the KB back between the legs, then explosively extend the hips. The arms are just a lever. The bell should float at the top, not be lifted.' },
-          { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '12/side', repRange: [12,12], load: 'Yellow + Red bands (~18 kg)', prog: 'Add Red band → full Red + Blue', notes: '3s eccentric. Always last. One leg at a time.',
+          { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: 'Yellow + Red bands', prog: 'Next band combination', notes: '3s eccentric. Always last. One leg at a time.',
           desc: 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Always last — hamstrings are already fatigued from hinging.' },
         ]
       },
@@ -1468,102 +1494,85 @@ const GUIDE_SECTIONS = [
     content: `
       <div class="guide-rule">The golden rule: change one variable at a time. Never increase load and sets in the same session. Never increase reps and load simultaneously.</div>
 
-      <h4>Every Exercise Runs Its Own Rule</h4>
-      <p>The app picks a <strong>progression model</strong> for each exercise from its attributes — target muscles, movement pattern, equipment and role — and runs that model against the exercise's own history, the mesocycle week and your weekly volume per muscle. You see the model on the programme card and under “Today” in the tracker. New exercises get a model the moment they are added; nothing needs configuring unless you want to override it in Settings → Programme Editor.</p>
+      <h4>Every Exercise Has a Kind</h4>
+      <p>Each exercise is one of four <strong>kinds</strong>. The kind sets its rep range, its sets and the progression model the app runs against the exercise's own history, the mesocycle week and your weekly volume per muscle. Built-in and hand-added exercises follow exactly the same rules; pick the kind in Settings → Programme Editor.</p>
       <table class="guide-table">
-        <thead><tr><th>Model</th><th>Used for</th><th>How it moves</th></tr></thead>
+        <thead><tr><th>Kind</th><th>Reps · sets</th><th>How it moves</th></tr></thead>
         <tbody>
-          <tr><td>Double</td><td>Loaded work — KB, band, BW + band</td><td>Reps up through the range → sets up with the meso week → load up, sets reset to 3 (the steps below)</td></tr>
-          <tr><td>Variant ladder</td><td>Bodyweight and light-load patterns with a defined ladder</td><td>Next rung when the rep ceiling is hit twice at the current rung; support grip reduced after 3 clean sessions</td></tr>
-          <tr><td>Skill / power</td><td>Swings, cleans, snatches, get-ups, jumps</td><td>Sets follow the plan. Next bell only when every set is clean at RIR 2+ for two sessions — quality before load</td></tr>
-          <tr><td>Timed hold</td><td>Reps written as a time (30s)</td><td>+5s once every set reaches the target twice</td></tr>
-          <tr><td>Maintain</td><td>Prehab, transition sessions</td><td>Repeats last time. No automatic change</td></tr>
+          <tr><td>Hypertrophy</td><td>8–12, always · 3–5 (meso)</td><td>RP weekly progression: +1 set a week, reps climb every session, then the next load — through a tempo bridge when the jump is too big. Bodyweight exercises with a ladder climb rungs instead of load</td></tr>
+          <tr><td>Skill / power</td><td>You set (5 default) · fixed</td><td>Next load only when every set is clean at RIR 2+ for two sessions — quality before load</td></tr>
+          <tr><td>Prehab</td><td>Fixed (15 default) · fixed</td><td>Never below RIR 3. Next band after 3 easy sessions (every set at target, RIR 4+); reps drop back and rebuild. Not counted in muscle volume</td></tr>
+          <tr><td>Timed hold</td><td>Seconds (30s default) · fixed</td><td>+5s once every set reaches the target twice, up to 60s — then a harder variant or added load</td></tr>
         </tbody>
       </table>
+      <p>Every new exercise is <strong>calibrated</strong> first: for 2 sessions nothing is pre-selected and whatever you log becomes the baseline.</p>
+
+      <h4>Hypertrophy — Every Session</h4>
+      <table class="guide-table">
+        <thead><tr><th>What</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Sets</td><td>One more than last time, up to the week's target (W1 3 → W2 4 → W3–4 5 → deload 2). Held if a primary muscle is already at MRV this week. Sets never drop mid-mesocycle</td></tr>
+          <tr><td>Reps</td><td>Weakest set last time + 1</td></tr>
+          <tr><td>Reserve left over</td><td>If you logged more RIR than the week asks for, +1 rep for every rep of reserve on top. Overperforming moves you up faster</td></tr>
+          <tr><td>At 12 reps</td><td>The next load your kit makes (Settings → My equipment), if the estimated reps there are 8+</td></tr>
+          <tr><td>Jump too big</td><td><strong>Tempo bridge</strong>: same load, 3s eccentric + 1s pause at the stretch, reps back to 8 and climb to 12 again</td></tr>
+          <tr><td>Tempo at 12</td><td><strong>Volume-matched step</strong>: next load, reps may start at 6, sets rise to keep sets × reps × kg. No step-down while reps rebuild to 8</td></tr>
+          <tr><td>Nothing heavier owned</td><td><strong>Kit ceiling</strong>: hold 12 with tempo while sets climb; the card names the next piece of kit to buy</td></tr>
+          <tr><td>Under 8 reps</td><td>Hold. Twice in a row at the same load → one step lighter</td></tr>
+        </tbody>
+      </table>
+      <div class="guide-example"><strong>Example</strong>Floor Press 16 kg, week 2, logged 9 reps at RIR 4 (target 2–3). Next session: 4 sets, aim for 11+ — one rep for progress, one for the reserve left. At 12 reps there is no heavier single bell, so tempo starts: 16 kg, 3s down, 8 reps, climbing back to 12.</div>
+      <div class="guide-example"><strong>Example</strong>Chest Fly, Blue band, 4 × 12 with tempo. Black is a 25% jump — about 6 reps. Next session: Black at normal tempo, 6 × 6+ to keep the volume, then reps climb back up.</div>
+      <p>Tempo is saved with the session automatically whenever the card shows it — nothing to tap.</p>
+
+      <h4>Equipment</h4>
+      <p>Load steps only ever suggest what you own. Settings → <strong>My Equipment</strong> lists your bells and bands. Two-bell lifts (goblet squat, two-KB extensions) can pair any two different bells; band work can stack two bands. The tracker's band pills only show bands you own. Add new kit there the day it arrives and the next session uses it.</p>
 
       <h4>Muscle-Aware Volume</h4>
-      <p>Each exercise is tagged with the muscles it targets. The app counts <strong>hard sets per muscle per week</strong> (secondary muscles count half). When a Double exercise is due an extra set but its primary muscle is already past its weekly maximum (MRV — 20 sets for large muscles, less for calves, core and small hip muscles), the set is not added: the load moves instead, or the card says <em>Volume cap</em> and holds. The Programme Editor shows the planned sets per muscle so a new session can be balanced before it is ever trained.</p>
+      <p>Each exercise is tagged with the muscles it targets. The app counts <strong>hard sets per muscle per week</strong> (secondary muscles count half). When an exercise is due an extra set but its primary muscle is already past its weekly maximum (MRV — 20 sets for large muscles, less for calves, core and small hip muscles), the set is not added and the card says <em>Volume cap</em>. The dashboard's mesocycle blocks compare any week's hard sets per muscle with this week's.</p>
+
+      <h4>Supersets</h4>
+      <p>Linked exercises are done in <strong>rounds</strong>: set 1 of each back to back, rest, then set 2. The tracker draws them as one block labelled A1 / A2. Log a set and the block points you at the next movement — the partner's same set, or after the round, the first exercise's next set. Link or unlink exercises in the exercise form (“Superset with”).</p>
 
       <h4>Maintenance Mode</h4>
-      <p>The <strong>Goal</strong> toggle (Programme tab, or Settings → Profile) switches between <em>Build</em> and <em>Maintain</em>. In Maintain, every exercise opens at 2 sets on your current working load, RIR 2–3, with the rep target at the bottom-to-middle of the range — the minimum that holds strength. No sets, load or variants are queued and the dashboard shows no pending suggestions. A missed rep floor still steps the load down. Deload week behaves as usual. Switch back to Build and the mesocycle climb resumes from your working loads.</p>
+      <p>The <strong>Goal</strong> toggle (Programme tab, or Settings → Profile) switches between <em>Build</em> and <em>Maintain</em>. In Maintain, every exercise opens at 2 sets on your current working load, RIR 2–3, with the rep target at the bottom-to-middle of the range — the minimum that holds strength. No sets, load or variants are queued. A missed rep floor still steps the load down. Deload week behaves as usual.</p>
 
       <h4>Stalls</h4>
-      <p>Four sessions at the same load with the weakest set never improving, and still short of the ceiling, is a stall. The app steps the load down one notch for a rebuild — 3 sets, run the range back up, then retry the old load. With no lighter option it asks for a change of stimulus instead: a slower eccentric, a pause, or the next variant.</p>
-
-      <h4>Step 1 — Add a Rep</h4>
-      <p>If you finish a set with more capacity than expected, you may move through the rep range naturally. This happens organically — no formal action needed yet.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press target: 6–8 reps. Week 1 session 1: 6 reps at 3 RIR. Week 1 session 2: 7 reps at same RIR. Moving through the range naturally — no action needed yet.</div>
-
-      <h4>Step 2 — Add a Set</h4>
-      <p>When you consistently hit the top of the rep range across all sets at 3+ RIR, and your weekly set ceiling hasn’t been reached — add one set next session.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 3 sets, all sets at 3 RIR. Week 2 ceiling is 4 sets. Next session: 16 kg × 6–8 reps × 4 sets. Reps may drop back to 6 — that’s normal.</div>
-
-      <h4>Step 3 — Increase Load</h4>
-      <p>When the set ceiling for the current week is reached and you’re hitting the top of the rep range across all sets — increase load and reset sets to 3. The tracker pre-opens the next session with 3 sets and a blue note reminding you to increase the load before you start.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 16 kg × 8 reps × 5 sets, all at 3+ RIR. Set ceiling reached. Next session opens with 3 sets. Increase load to 20 kg before logging. Reps may drop back to 6 — that’s normal.</div>
-
-      <h4>Step 4 — Tempo Manipulation</h4>
-      <p>When the heaviest available KB is reached and the set ceiling is maxed, the app will suggest <strong>tempo manipulation</strong> instead of a load increase. Apply a 3-second eccentric (controlled lowering phase). The same weight becomes significantly harder.</p>
-      <p>After applying tempo in a session, tap <strong>“✓ Mark tempo applied this session”</strong> on the suggestion card. This is saved with the session so the app knows to escalate next time.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press at 28 kg × 8 reps × 5 sets — heaviest KB available. Suggestion card shows <em>tempo</em> in purple. Next session: 28 kg with 3s lowering phase. Mark tempo applied. If ceiling is still hit after 2 sessions, suggestion escalates to <em>equipment ceiling</em>.</div>
-
-      <h4>Step 5 — Equipment Ceiling</h4>
-      <p>Once tempo has been applied and you continue hitting the rep ceiling across 2 sessions, the app flags an <strong>equipment ceiling</strong> in red. This means you have genuinely outgrown the current kit for this exercise. No further automatic progression is possible.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press: 28 kg × 3s eccentric × 8 reps × 5 sets, still comfortable. Suggestion card shows <em>equipment ceiling</em> in red. Time to add a 32 kg KB, or find a heavier variation.</div>
-
-      <h4>Banded Exercises — Full Progression Ladder</h4>
-      <p>Progress by moving to the next band colour. Once you reach Black, combine it with a lighter band. Log combinations using the multi-select band pills in the tracker — tap two colours to log both simultaneously.</p>
-      <table class="guide-table">
-        <thead><tr><th>Step</th><th>Load</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>Yellow</td></tr>
-          <tr><td>2</td><td>Green</td></tr>
-          <tr><td>3</td><td>Red</td></tr>
-          <tr><td>4</td><td>Blue</td></tr>
-          <tr><td>5</td><td>Black</td></tr>
-          <tr><td>6</td><td>Black + Yellow</td></tr>
-          <tr><td>7</td><td>Black + Green</td></tr>
-          <tr><td>8</td><td>Black + Red</td></tr>
-          <tr><td>9</td><td>Black + Blue</td></tr>
-          <tr><td>10</td><td>Black + Black</td></tr>
-        </tbody>
-      </table>
-      <div class="guide-example"><strong>Example</strong>Chest Fly at Black band × 15 reps × 5 sets, 3+ RIR. Sets reset to 3. Next: tap Black + Yellow in the band pills. When that’s maxed: Black + Green. Sets reset on each load jump.</div>
+      <p>Four sessions at the same load with the weakest set never improving, and still short of 12, is a stall (tempo sessions don't count — holding the load is the point there). The app steps the load down one notch for a rebuild — 3 sets, run the range back up, then retry the old load. With no lighter option it asks for a change of stimulus instead.</p>
 
       <h4>Bodyweight Exercises</h4>
-      <p>Progress by reducing support, increasing ROM, or adding load — not by adding reps indefinitely.</p>
-      <div class="guide-example"><strong>Example</strong>Archer Push-up at BW × 10 × 5 sets comfortably. Next: feet elevated. Once mastered: band across back for resistance.</div>
+      <p>Bodyweight hypertrophy work climbs reps to 12, then a variant ladder when one is set (feet elevated, deficit, band across the back) or a band on top (BW + band).</p>
 
       <h4>How the Suggestion Card Works</h4>
-      <p>Before each session starts, a coloured card appears showing any progression actions due. It only fires when conditions are genuinely met across the last 2 complete sessions of that type.</p>
+      <p>Before each session a card lists the structural changes due today; rep targets sit on each exercise card.</p>
       <table class="guide-table">
         <thead><tr><th>Colour</th><th>Meaning</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td style="color:var(--green)">Green</td><td>Add a set</td><td>Start with one more set than last time</td></tr>
-          <tr><td style="color:var(--pull)">Blue</td><td>Increase load</td><td>Session opens with 3 sets — increase load before starting</td></tr>
-          <tr><td style="color:var(--push-b)">Purple</td><td>Tempo</td><td>Apply 3s eccentric. Tap “Mark tempo applied” on the card</td></tr>
-          <tr><td style="color:var(--red)">Red</td><td>Equipment ceiling</td><td>No automatic progression — new kit needed</td></tr>
+          <tr><td style="color:var(--green)">Green</td><td>Add a set</td><td>One more set than last time</td></tr>
+          <tr><td style="color:var(--pull)">Blue</td><td>Increase load</td><td>Next load — the card gives the rep and set target</td></tr>
+          <tr><td style="color:var(--push-b)">Purple</td><td>Tempo</td><td>3s eccentric + 1s pause, same load, reps from 8</td></tr>
+          <tr><td style="color:var(--red)">Red</td><td>Kit ceiling</td><td>Hold 12 with tempo — new kit needed to go further</td></tr>
           <tr><td style="color:var(--amber)">Amber</td><td>Support reduction / Volume cap</td><td>Reduce the support grip (ladder exercises), or hold sets because the muscle is at its weekly maximum</td></tr>
           <tr><td style="color:var(--red)">Red</td><td>Stall / Load down</td><td>Session opens on a lighter load for a rebuild</td></tr>
         </tbody>
       </table>
-      <p>No card appears in week 1 or during deload. Those weeks are intentionally suppressed.</p>
 
       <h4>Deload Week — Week 5</h4>
       <p>No progression during deload. 2 sets, ~50% load, 5+ RIR. Treat every rep as a technique session. When week 1 of the new mesocycle begins, return to working weights and restart the set climb from 3.</p>
-      <div class="guide-example"><strong>Example</strong>Floor Press working weight: 20 kg × 6–8 reps × 5 sets by end of week 4. Deload: 10 kg × 6–8 reps × 2 sets. New mesocycle week 1: 20 kg × 6 reps × 3 sets.</div>
 
       <h4>RIR Across the Mesocycle</h4>
-      <p>Your RIR will naturally decrease as weeks progress even at the same load, because volume is increasing. A weight at 3 RIR in week 1 (3 sets) may feel like 1–2 RIR in week 4 (5 sets). This is correct and expected. Do not reduce load to chase a higher RIR.</p>
+      <p>The RIR target falls each week: 3–4, 2–3, 2, then 0–1 in the last build week. Log RIR honestly — it drives how fast reps and load move. A set logged at RIR 4 when the week asks for 2 tells the app you had more in you, and the next session asks for more.</p>
 
       <h4>Summary</h4>
       <table class="guide-table">
         <thead><tr><th>Situation</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td>Top of rep range, sets below ceiling</td><td>Add a set</td></tr>
-          <tr><td>Top of rep range, set ceiling reached</td><td>Increase load, reset to 3 sets</td></tr>
-          <tr><td>At equipment ceiling, no tempo yet</td><td>Apply 3s eccentric tempo, mark it on the card</td></tr>
-          <tr><td>Tempo applied, ceiling still hit after 2 sessions</td><td>Equipment ceiling — new kit needed</td></tr>
+          <tr><td>Sets below the week's target</td><td>+1 set (unless the muscle is at MRV)</td></tr>
+          <tr><td>Inside 8–12</td><td>+1 rep, plus 1 per rep of reserve above target</td></tr>
+          <tr><td>At 12, next load reachable (8+ reps)</td><td>Next load</td></tr>
+          <tr><td>At 12, jump too big</td><td>Tempo bridge at the same load</td></tr>
+          <tr><td>At 12 with tempo</td><td>Volume-matched step to the next load</td></tr>
+          <tr><td>At 12 with tempo, nothing heavier owned</td><td>Kit ceiling — new kit needed</td></tr>
           <tr><td>Week 5</td><td>Deload — no progression</td></tr>
         </tbody>
       </table>
@@ -1583,13 +1592,13 @@ const GUIDE_SECTIONS = [
       </div>
       <div class="guide-example"><strong>Example</strong>Week 3 — Floor Press 16 kg × 4 sets planned. You complete 3 sets cleanly but fail to hit 6 reps on set 4. Hold at 4 sets next session. Do not move to 5 sets in week 4 until all 4 sets are completed cleanly.</div>
 
-      <h4>Scenario B — Failing immediately after a load increase</h4>
-      <p>The load jump was too large. KB size increments are significant jumps — this is common.</p>
+      <h4>Scenario B — Low reps straight after a load increase</h4>
+      <p>Expected: bells and bands jump 20–30% at a time. After a step the floor is 6 reps, not 8, and the app won't step the load back down while reps rebuild.</p>
       <div class="guide-example">
         <strong>What to do</strong>
-        Drop back to the previous load for that session. Apply tempo manipulation at the old load — 3s eccentric. Attempt the new load again after 1–2 sessions of tempo work. If still unmanageable, continue tempo work at current load until ready.
+        Log what you get. If you can't reach 6 reps on most sets two sessions running, the app drops back one load step and you rebuild from there.
       </div>
-      <div class="guide-example"><strong>Example</strong>Floor Press jumps from 16 kg to 20 kg. You fail to hit 6 reps on set 2. Drop back to 16 kg for today. Apply 3s eccentric. Attempt 20 kg again next session.</div>
+      <div class="guide-example"><strong>Example</strong>Chest Fly moves from Blue to Black and you log 7, 6, 6, 6. Next session: aim for 7+ at Black. No step-down while reps climb back to 8.</div>
 
       <div class="guide-rule">A simple rule: if you can't complete a set cleanly, the session has told you something. Listen to it, hold your position, and progress when the signal changes.</div>
     `
@@ -1658,11 +1667,13 @@ const GUIDE_SECTIONS = [
       <table class="guide-table">
         <thead><tr><th>Field</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>Primary / secondary muscles</td><td>Weekly volume per muscle, the MRV cap on adding sets, the volume plan. Inferred from the name when not set — tap the chips to fix it</td></tr>
-          <tr><td>Pattern</td><td>Ballistic, carry and mobility patterns run the Skill model; everything else runs Double or a ladder</td></tr>
-          <tr><td>Equipment</td><td>Which load ladder steps are available: KB sizes, band colours, BW + band, or none</td></tr>
-          <tr><td>Sets</td><td>“3” is fixed; “3–5” follows the meso week. Max sets caps a superset addition</td></tr>
-          <tr><td>Rep range</td><td>Floor and ceiling for every trigger. Write “30s” for a timed hold</td></tr>
+          <tr><td>Kind</td><td>Hypertrophy, Skill / power, Prehab or Timed hold — sets the rep range, sets and progression. Hypertrophy is always 8–12. Each option in the menu shows its range and logic</td></tr>
+          <tr><td>Superset with</td><td>Links the exercise to another in the session; they're done in rounds and sit next to each other</td></tr>
+          <tr><td>Primary / secondary muscles</td><td>Weekly volume per muscle, the MRV cap on adding sets, the volume plan. Required (inferred from the name when it's recognised)</td></tr>
+          <tr><td>Pattern</td><td>Used for muscle inference and the volume plan</td></tr>
+          <tr><td>Equipment</td><td>Which load steps are available from your kit: one bell, two bells, bands, BW + band, or none</td></tr>
+          <tr><td>Sets</td><td>“3” is fixed; “3–5” follows the meso week. Max sets caps the climb</td></tr>
+          <tr><td>Rep range</td><td>Floor and ceiling for every trigger. Fixed at 8–12 for hypertrophy; “30s” for a timed hold</td></tr>
           <tr><td>Progression</td><td>Auto picks the model; set it explicitly to pin one</td></tr>
           <tr><td>Ladder</td><td>Variant rungs, easiest first. Present → the exercise runs the ladder model</td></tr>
         </tbody>
@@ -1690,6 +1701,7 @@ const INITIAL_STATE = {
   mesoStartDate:        null,   // ISO date string 'YYYY-MM-DD'
   mesoWeekOverride:     null,   // integer 1–5, or null for auto
   trainingGoal:         'build', // 'build' | 'maintain'
+  inventory:            null,   // { kb: [kg], bands: [colour] } — null = programme default
 
   // Programme edits: sessionId → exNum → { sets, reps, rir, load, repRange }
   exOverrides:          {},
@@ -1728,6 +1740,7 @@ const STATE_EFFECTS = {
   mesoStartDate:    ['saveSettings', 'updateMesoDisplay'],
   mesoWeekOverride: ['saveSettings', 'updateMesoDisplay'],
   trainingGoal:     ['saveSettings', 'updateMesoDisplay'],
+  inventory:        ['saveSettings'],
   bodyweight:       ['saveSettings'],
   weightLog:        ['saveSettings'],
   jeLadderKeyMap:   ['saveSettings'],
@@ -1880,6 +1893,7 @@ async function loadLocalState() {
   state.mesoStartDate    = data.mesoStartDate    || null;
   state.mesoWeekOverride = data.mesoWeekOverride || null;
   state.trainingGoal     = data.trainingGoal === 'maintain' ? 'maintain' : 'build';
+  state.inventory        = data.inventory || null;
   state.jeLadderKeyMap   = data.jeLadderKeyMap   || {};
   state.weightLog        = weightLog;
   state.bodyweight       = bodyweight;
@@ -1932,6 +1946,36 @@ function serializeSessions() {
   return JSON.parse(JSON.stringify(state.programme.sessions));
 }
 
+// Built-in lifts moved to the 8–12 hypertrophy range. A saved programme
+// still holding the old default range takes the new one; a range edited
+// by hand is left alone.
+const LEGACY_REP_RANGES = {
+  'KB Floor Press': [6,8], 'Banded Incline Press': [10,12], 'Archer Push-up': [8,10],
+  'Banded Chest Fly': [12,15], 'KB Gorilla Row': [8,10], 'Overhead Tricep Extension': [10,12],
+  'Bent-Over Row': [8,10], 'Face Pull': [12,15], 'Banded Overhead Pull → Straight-Arm Pulldown': [12,12],
+  'Zottman Curl': [10,12], 'Supinated KB Curl': [10,12], 'Goblet Squat': [10,12], 'Sissy Squat': [8,10],
+  'ATG Split Squat': [8,10], 'Quad Nordic Curl': [8,10], 'Single-Arm KB Press': [8,10],
+  'Banded Overhead Press': [10,12], 'Banded Lateral Raise': [12,15], 'Banded Straight-Arm Pulldown': [12,15],
+  'Banded Upright Row': [12,12], 'Skullcrusher': [8,10], 'KB Deadlift': [8,10], 'Single-Leg RDL': [10,10],
+  'Hip Thrust': [12,15], 'Banded Hamstring Curl': [12,12],
+};
+const LEGACY_LOADS = {
+  'KB Deadlift': '16 kg / arm', 'Single-Leg RDL': '12 kg / arm',
+  'Banded Hamstring Curl': 'Yellow + Red bands (~18 kg)',
+};
+function migrateRepRange(ex, d) {
+  let out = ex;
+  const oldRange = LEGACY_REP_RANGES[ex.name];
+  if (oldRange && String(ex.repRange) === String(oldRange) && String(d.repRange) !== String(oldRange)) {
+    out = { ...out, reps: d.reps, repRange: [...d.repRange] };
+  }
+  const oldLoad = LEGACY_LOADS[ex.name];
+  if (oldLoad && ex.load === oldLoad && d.load !== oldLoad) {
+    out = { ...out, load: d.load, prog: d.prog };
+  }
+  return out;
+}
+
 // Replace the working programme with a saved one. Built-in sessions and
 // exercises fill any field the saved copy lacks from the defaults, so the
 // long descriptions and coaching text keep coming from code.
@@ -1943,7 +1987,7 @@ function applySessionsConfig(cfgSessions) {
       || defaults.flatMap(d => d.exercises).find(e => e.name === name);
     const exercises = (cs.exercises || []).map(cex => {
       const d = baseEx(cex.name);
-      return d ? { ...JSON.parse(JSON.stringify(d)), ...cex } : { ...cex };
+      return d ? migrateRepRange({ ...JSON.parse(JSON.stringify(d)), ...cex }, d) : { ...cex };
     });
     const merged = base ? { ...JSON.parse(JSON.stringify(base)), ...cs, exercises } : { ...cs, exercises };
     merged.exercises.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); });
@@ -1977,6 +2021,7 @@ function saveSettings(bumpVersion = true) {
     mesoStartDate:    state.mesoStartDate,
     mesoWeekOverride: state.mesoWeekOverride,
     trainingGoal:     state.trainingGoal || 'build',
+    inventory:        state.inventory || null,
     restPeriods,
     exOverrides:      state.exOverrides       || {},
     sessionsConfig:   serializeSessions(),
@@ -2069,7 +2114,7 @@ function getMesoSetTarget(week) {
 
 function getMesoRIRTarget(week) {
   if (isMaintenanceMode() && !(getMesoPlanWeek(week)?.deload)) return [2, 3];
-  const DEFAULT = { 1: [3,4], 2: [2,3], 3: [2,2], 4: [1,2], 5: [5,9] };
+  const DEFAULT = { 1: [3,4], 2: [2,3], 3: [2,2], 4: [0,1], 5: [5,9] };
   const w = getMesoPlanWeek(week);
   return w ? parseRIRSpec(w.rir, DEFAULT[week] || [1,4]) : (DEFAULT[week] || [1,4]);
 }
@@ -2173,7 +2218,11 @@ function buildSessionCard(session) {
   const restInputId = `rest-input-${session.id}`;
   const editBtnId = `edit-btn-${session.id}`;
 
-  const exRows = session.exercises.map(ex => {
+  const exRows = session.exercises.map((ex, exIdx) => {
+    const ssInfo = getSupersetInfo(session, exIdx);
+    const ssTag = ssInfo
+      ? `<span class="ex-tag sup">⇄ ${ssInfo.key}${ssInfo.pos} · with ${ssInfo.members.filter(m => m !== exIdx).map(m => esc(session.exercises[m].name)).join(', ')}</span>`
+      : '';
     // Dot colour = session accent colour, grey for optional only
     const sessionDotStyle = ex.type === 'optional' 
       ? 'background:var(--text-muted)' 
@@ -2182,7 +2231,7 @@ function buildSessionCard(session) {
     const tags = ex.tags.filter(t => t !== 'compound' && t !== 'accessory' && t !== 'prehab' && t !== 'optional').map(t => {
       if (t === 'unilateral') return `<span class="ex-tag uni">🔄 Unilateral</span>`;
       if (t === 'bw') return `<span class="ex-tag">BW</span>`;
-      if (t === 'superset') return `<span class="ex-tag sup">Superset</span>`;
+      if (t === 'superset') return '';
       if (t === 'core') return `<span class="ex-tag opt">Core</span>`;
       return `<span class="ex-tag">${t}</span>`;
     }).join('');
@@ -2203,7 +2252,7 @@ function buildSessionCard(session) {
               ${ex.name}
               ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
             </div>
-            <div class="ex-tags">${musTags}${tags}${optTag}${preTag}${ruleTag}</div>
+            <div class="ex-tags">${ssTag}${musTags}${tags}${optTag}${preTag}${ruleTag}</div>
           </div>
         </div>
       </td>
@@ -2477,10 +2526,100 @@ function selectTrackerSession(sessionId) {  const session = state.programme.sess
   syncAtSessionBoundary('start').then(res => refreshTrackerAfterSync(sessionId, res));
 }
 
+/* ═══════════════════════════════════════════
+   SUPERSETS
+   Exercises in a session sharing a `superset` key ('A', 'B', …) are done
+   as rounds: set 1 of each, rest, set 2 of each. The tracker draws them as
+   one block, labels them A1 / A2 and walks you to the next movement as each
+   set is logged. An empty key means "no superset" (and overrides a
+   built-in link on a saved programme).
+═══════════════════════════════════════════ */
+function getSupersetGroups(session) {
+  const groups = {};
+  session.exercises.forEach((ex, idx) => {
+    if (!ex.superset || ex.type === 'optional') return;
+    (groups[ex.superset] = groups[ex.superset] || []).push(idx);
+  });
+  Object.keys(groups).forEach(k => { if (groups[k].length < 2) delete groups[k]; });
+  return groups;
+}
+
+// { key, pos (1-based), members: [idx] } for one exercise, or null
+function getSupersetInfo(session, idx) {
+  const key = session.exercises[idx]?.superset;
+  const members = key ? getSupersetGroups(session)[key] : null;
+  return members ? { key, pos: members.indexOf(idx) + 1, members } : null;
+}
+
+function nextFreeSupersetKey(session) {
+  const used = new Set(session.exercises.map(e => e.superset).filter(Boolean));
+  return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find(c => !used.has(c)) || 'Z';
+}
+
+// Drop keys left with a single member
+function cleanupSupersets(session) {
+  const counts = {};
+  session.exercises.forEach(e => { if (e.superset) counts[e.superset] = (counts[e.superset] || 0) + 1; });
+  session.exercises.forEach(e => { if (e.superset && counts[e.superset] < 2) e.superset = ''; });
+}
+
+// Link ex to partnerName (or unlink with ''), keeping the pair adjacent
+function applySupersetLink(session, ex, partnerName) {
+  const partner = partnerName && session.exercises.find(e => e.name === partnerName && e !== ex);
+  if (partner && partner.superset && partner.superset === ex.superset) return;   // already linked
+  ex.superset = '';
+  if (!partner) { cleanupSupersets(session); return; }
+  const key = partner.superset || nextFreeSupersetKey(session);
+  ex.superset = key;
+  partner.superset = key;
+  // Move ex right after the last other member of its group
+  const arr = session.exercises;
+  arr.splice(arr.indexOf(ex), 1);
+  let lastIdx = -1;
+  arr.forEach((e, i) => { if (e.superset === key) lastIdx = i; });
+  arr.splice(lastIdx + 1, 0, ex);
+  cleanupSupersets(session);
+}
+
+// After a set is logged inside a superset, point at the next movement:
+// the partner's same set, or — after the last member — the first member's
+// next set once the rest is over.
+function advanceSuperset(row) {
+  const card  = row.closest('.tracker-ex-card');
+  const group = card?.closest('.superset-group');
+  if (!group) return;
+  const cards  = [...group.querySelectorAll('.tracker-ex-card')];
+  const rows   = [...row.closest('.set-rows').querySelectorAll('.set-row')];
+  const setIdx = rows.indexOf(row);
+  const pos    = cards.indexOf(card);
+  const lastOfRound = pos === cards.length - 1;
+  const targetCard  = lastOfRound ? cards[0] : cards[pos + 1];
+  const targetSet   = lastOfRound ? setIdx + 1 : setIdx;
+  const targetRow   = targetCard.querySelectorAll('.set-rows .set-row')[targetSet];
+  const cue = group.querySelector('.superset-cue');
+  const label = targetCard.dataset.ssLabel;
+
+  group.querySelectorAll('.set-row.ss-next').forEach(r => r.classList.remove('ss-next'));
+  if (!targetRow || isSetComplete(targetRow)) {
+    const allDone = cards.every(c => [...c.querySelectorAll('.set-rows .set-row')].every(isSetComplete));
+    if (cue) cue.textContent = allDone ? 'Superset done' : lastOfRound ? 'Round done — rest' : '';
+    return;
+  }
+  if (cue) cue.textContent = lastOfRound
+    ? `Round ${setIdx + 1} done — rest, then ${label} · set ${targetSet + 1}`
+    : `Now ${label} · set ${targetSet + 1} — no rest`;
+  targetCard.classList.remove('collapsed');
+  targetRow.classList.remove('set-collapsed');
+  targetRow.classList.add('ss-next');
+  if (!lastOfRound) setTimeout(() => targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 380);
+}
+
 function buildTrackerExercises(session) {
   const container = document.getElementById('tracker-ex-list');
+  const groups = getSupersetGroups(session);
+  const cardHtml = [];
 
-  container.innerHTML = session.exercises.map((ex, idx) => {
+  session.exercises.forEach((ex, idx) => { cardHtml[idx] = (() => {
     if (ex.type === 'optional') {
       return `<div class="tracker-ex-card" style="border-style:dashed;opacity:0.5">
         <div class="tracker-ex-head">
@@ -2495,13 +2634,15 @@ function buildTrackerExercises(session) {
     }
 
     const { rx, html: bodyHtml } = buildExerciseBody(session, idx);
+    const ss = getSupersetInfo(session, idx);
+    const ssLabel = ss ? `${ss.key}${ss.pos}` : '';
 
-    return `<div class="tracker-ex-card" id="tex-${session.id}-${idx}" draggable="true">
+    return `<div class="tracker-ex-card${ss ? ' in-superset' : ''}" id="tex-${session.id}-${idx}" draggable="${ss ? 'false' : 'true'}"${ss ? ` data-ss-label="${ssLabel}"` : ''}>
       <div class="tracker-ex-head" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" style="cursor:pointer">
         <span class="drag-handle" onclick="event.stopPropagation()">⋮⋮</span>
         <div style="flex:1">
           <div class="tracker-ex-name">
-            ${ex.name}
+            ${ss ? `<span class="ss-badge">${ssLabel}</span>` : ''}${ex.name}
             ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
           </div>
           ${ex.tags.includes('unilateral') ? '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(61,171,255,0.5);margin-top:2px">🔄 Unilateral</div>' : ''}
@@ -2521,7 +2662,27 @@ function buildTrackerExercises(session) {
         ${bodyHtml}
       </div><!-- end tracker-ex-body -->
     </div>`;
-  }).join('');
+  })(); });
+
+  // Superset members render as one block at the first member's position
+  const out = [];
+  session.exercises.forEach((ex, idx) => {
+    const members = ex.superset && groups[ex.superset];
+    if (!members) { out.push(cardHtml[idx]); return; }
+    if (members[0] !== idx) return;
+    const names = members.map((m, i) => `${ex.superset}${i + 1} ${esc(session.exercises[m].name)}`).join(' ↔ ');
+    out.push(`<div class="superset-group" draggable="true" style="--ss-color:${session.color}">
+      <div class="superset-head">
+        <span class="drag-handle">⋮⋮</span>
+        <span class="superset-title">⇄ Superset ${ex.superset}</span>
+        <span class="superset-how">${names}</span>
+        <span class="superset-rule">Set 1 of each back to back, rest after the round, then set 2.</span>
+        <span class="superset-cue" aria-live="polite"></span>
+      </div>
+      <div class="superset-cards">${members.map(m => cardHtml[m]).join('')}</div>
+    </div>`);
+  });
+  container.innerHTML = out.join('');
 }
 
 // The exercise a tracker card is currently logging: the programme entry, or
@@ -2544,7 +2705,7 @@ function buildExerciseBody(session, idx) {
 
   const CHIP = {
     add_set: 'up', increase_load: 'up', add_reps: 'up', support_reduce: 'up',
-    'variant advancement': 'up', 'band progression': 'up', skill_load: 'up', extend_hold: 'up',
+    'variant advancement': 'up', 'band progression': 'up', skill_load: 'up', extend_hold: 'up', repeat: 'info',
     decrease_load: 'down', decrease_set: 'down', stall: 'down',
     hold: 'hold', tempo: 'hold', equipment_ceiling: 'hold', hold_volume: 'hold', maintain: 'info',
   };
@@ -2561,6 +2722,7 @@ function buildExerciseBody(session, idx) {
       <span class="ex-rx-sep">·</span><span>${fmtLoad(rx.load) || (deload ? '~50% load' : '—')}</span>
       <span class="ex-rx-sep">·</span><span>RIR ${fmtRIRBand(rx.rir)}</span>
       ${rx.change ? `<span class="ex-rx-chip ${CHIP[rx.change.type] || 'info'}">${rx.change.label}</span>` : ''}
+      ${rx.tempo && !/Tempo/.test(rx.change?.label || '') ? '<span class="ex-rx-chip hold">3s eccentric + pause</span>' : ''}
     </div>
     ${why.length ? `<div class="ex-rx-why">${why.join(' ')}</div>` : ''}`;
 
@@ -2622,7 +2784,9 @@ function parseBandLoad(loadStr) {
 function buildBandPills(setIdx, exIdx, sessionId, isBWContext, preselectedLoad) {
   // isBWContext: pills are an add-on to a BW exercise (single-select, None clears)
   // !isBWContext: pure band exercise — multi-select, combinations allowed (e.g. Black+Yellow)
-  const bands = ['None','Yellow','Green','Red','Blue','Black'];
+  const owned = getInventory().bands;
+  const held  = (preselectedLoad || '').toLowerCase();
+  const bands = ['None', ...BAND_ORDER.filter(b => owned.includes(b) || held.includes(b)).map(b => b.charAt(0).toUpperCase() + b.slice(1))];
   const ctx   = isBWContext ? 'bw' : 'band';
 
   // Parse preselectedLoad to determine which pills to activate
@@ -3305,7 +3469,9 @@ function endSession() {
       });
     });
     const hasData = sets.some(s => s.reps || s.load);
-    const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name]);
+    // Tempo bridge: flagged by hand, or in force in today's prescription
+    const tempoApplied = !!(state._tempoFlags && state._tempoFlags[ex.name])
+      || (hasData && getExercisePrescription(session.id, ex).tempo);
     // Ladder exercises store the rung index explicitly so future reads don't need string matching
     let ladderRungIndex = undefined;
     if (getJeLadder(ex.name, state.activeSessionId)) {
@@ -3738,6 +3904,7 @@ const patternLabel = id => (PATTERNS.find(p => p.id === id) || { label: id }).la
 
 const EQUIPMENT = [
   { id: 'kb',      label: 'Kettlebell / weight' },
+  { id: 'kb2',     label: 'Two kettlebells' },
   { id: 'band',    label: 'Band' },
   { id: 'bw',      label: 'Bodyweight' },
   { id: 'bw+band', label: 'Bodyweight + band' },
@@ -3753,8 +3920,108 @@ const PROGRESSION_MODELS = {
   ladder:   { label: 'Variant ladder', desc: 'Step through a list of variants, easiest to hardest, when the rep ceiling is hit at the current rung.' },
   skill:    { label: 'Skill / power',  desc: 'Sets follow the plan. Load steps up only when every set is clean at RIR 2+ for two sessions — quality before load.' },
   timed:    { label: 'Timed hold',     desc: 'Extend the hold once every set reaches the target time.' },
-  maintain: { label: 'Maintain',       desc: 'Repeat what was done last time. No automatic change (prehab, transition work).' },
+  prehab:   { label: 'Prehab',         desc: 'Fixed reps and sets, never below RIR 3. Next band after 3 easy sessions; reps drop back and rebuild.' },
+  maintain: { label: 'Maintain',       desc: 'Repeat what was done last time. No automatic change (transition work).' },
 };
+
+// What an exercise is for. The kind sets the default rep range, sets and the
+// progression model the rule engine runs, so an exercise added by hand
+// behaves like the built-in ones the moment it is saved.
+const EXERCISE_KINDS = {
+  hypertrophy: {
+    label: 'Hypertrophy', reps: '8–12', repRange: [8, 12], sets: '3–5', model: 'double',
+    summary: '8–12 reps · sets +1/week · reps, then load (tempo bridge)',
+    desc: 'Reps 8–12, always. Sets climb one a week with the mesocycle and stop at the muscle\'s MRV. Reps climb every session — faster when you log more RIR than the week asks for. At 12 reps the next load from your equipment; when that jump is too big, 3s-eccentric tempo first, then a volume-matched step.',
+  },
+  skill: {
+    label: 'Skill / power', reps: '5', repRange: [5, 5], sets: '3', model: 'skill',
+    summary: 'your reps (5 default) · fixed sets · load when clean at RIR 2+',
+    desc: 'Rep target you set (default 5), fixed sets. Next load only when every set is clean at RIR 2+ for two sessions — quality before load.',
+  },
+  prehab: {
+    label: 'Prehab', reps: '15', repRange: [15, 15], sets: '2', model: 'prehab',
+    summary: 'fixed reps (15 default) · RIR 3+ · next band after 3 easy sessions',
+    desc: 'Fixed reps (default 15) and sets. Never pushed below RIR 3. After 3 sessions with every set at target and RIR 4+, the next band — reps drop back and rebuild. Not counted in muscle volume.',
+  },
+  timed: {
+    label: 'Timed hold', reps: '30s', repRange: [1, 1], sets: '3', model: 'timed',
+    summary: '30s default · +5s when held twice · harder variant at 60s',
+    desc: 'Hold time in seconds. +5s once every set reaches the target twice. At 60s, move to a harder variant or add load.',
+  },
+};
+const TIMED_HOLD_CAP_S = 60;
+
+function getExerciseKind(ex) {
+  if (!ex) return 'hypertrophy';
+  if (EXERCISE_KINDS[ex.kind]) return ex.kind;
+  if (isTimedExercise(ex)) return 'timed';
+  if (ex.type === 'prehab') return 'prehab';
+  const pattern = PATTERNS.some(p => p.id === ex.pattern) ? ex.pattern : inferExerciseAttrs(ex).pattern;
+  if (['ballistic', 'carry', 'mobility'].includes(pattern)) return 'skill';
+  return 'hypertrophy';
+}
+
+/* ── Equipment inventory ─────────────────────
+   Load steps only ever suggest kit you own. Two-bell lifts use any
+   pair of different bells; band work stacks up to two bands. */
+const BAND_ORDER = ['yellow', 'green', 'red', 'blue', 'black'];
+const DEFAULT_INVENTORY = { kb: [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32], bands: BAND_ORDER.slice() };
+
+function getInventory() {
+  return state.inventory || state.programme?.inventory || DEFAULT_INVENTORY;
+}
+
+// Every load the owned kit makes for this equipment, lightest first,
+// as { value (as the set rows store it), kg }
+function getLoadOptions(equipment) {
+  const inv = getInventory();
+  const kb  = (inv.kb || []).slice().sort((a, b) => a - b);
+  // One option per weight; within 0.25 kg the one with fewer pieces wins
+  const byKg = opts => {
+    const out = [];
+    opts.sort((a, b) => a.kg - b.kg || a.parts - b.parts).forEach(o => {
+      const prev = out[out.length - 1];
+      if (!prev || o.kg - prev.kg > 0.25) out.push(o);
+      else if (o.parts < prev.parts) out[out.length - 1] = o;
+    });
+    return out.map(({ value, kg }) => ({ value, kg }));
+  };
+  if (equipment === 'kb') return kb.map(k => ({ value: String(k), kg: k }));
+  if (equipment === 'kb2') {
+    const opts = kb.map(k => ({ value: String(k), kg: k, parts: 1 }));
+    kb.forEach((a, i) => kb.slice(i + 1).forEach(b => opts.push({ value: String(a + b), kg: a + b, parts: 2 })));
+    return byKg(opts);
+  }
+  const bands = BAND_ORDER.filter(b => (inv.bands || []).includes(b));
+  const cap = b => b.charAt(0).toUpperCase() + b.slice(1);
+  const combos = [];
+  bands.forEach((a, i) => {
+    combos.push({ value: cap(a), kg: BAND_KG[a], parts: 1 });
+    bands.slice(i + 1).forEach(b => combos.push({ value: `${cap(a)}+${cap(b)}`, kg: BAND_KG[a] + BAND_KG[b], parts: 2 }));
+  });
+  if (equipment === 'band') return byKg(combos);
+  if (equipment === 'bw+band') return [{ value: 'BW', kg: 0 }, ...byKg(combos).map(c => ({ value: `BW+${c.value}`, kg: c.kg }))];
+  return [];
+}
+
+// The equipment a stored load value belongs to, when the exercise doesn't say
+function loadEquipment(load) {
+  const low = (load || '').toString().toLowerCase();
+  if (low.startsWith('bw')) return 'bw+band';
+  if (BAND_ORDER.some(b => low.includes(b))) return 'band';
+  return 'kb';
+}
+
+// Weight moved, in kg: band ratings summed, bodyweight added for BW work
+function effectiveLoadKg(load) {
+  const low = (load || '').toString().toLowerCase();
+  const kg = parseBandLoad(load);
+  return low.startsWith('bw') ? kg + (state.bodyweight || 75) : kg;
+}
+
+// Epley, counting the reps left in reserve
+const estimate1RM = (kg, reps, rir) => kg * (1 + (reps + rir) / 30);
+const predictReps = (e1rm, kg, rir) => Math.floor(30 * (e1rm / kg - 1) - rir);
 
 // Attributes for the built-in exercises, by exact name.
 const KNOWN_EXERCISE_ATTRS = {
@@ -3930,6 +4197,7 @@ function inferEquipment(ex) {
   if (bw && hasBand) return 'bw+band';
   if (bw && !hasKg)  return 'bw';
   if (hasBand && !hasKg) return 'band';
+  if (/two kbs|two kettlebells|\d+\s*\+\s*\d+/.test(load)) return 'kb2';
   return 'kb';
 }
 
@@ -3995,6 +4263,11 @@ function getWeeklyHardSets(days = 7, offsetDays = 0, primaryOnly = false) {
   end.setDate(end.getDate() - offsetDays);
   const cutoff = new Date(end);
   cutoff.setDate(end.getDate() - days);
+  return countHardSets(cutoff, end, primaryOnly);
+}
+
+// Hard sets per muscle for complete sessions dated in [cutoff, end)
+function countHardSets(cutoff, end, primaryOnly = false) {
   const counts = {};
   const allConfigs = state.programme.sessions.flatMap(s => s.exercises);
   state.sessions.forEach(sess => {
@@ -5350,6 +5623,7 @@ async function saveProgrammeToDrive() {
       mesoStartDate: state.mesoStartDate,
       mesoWeekOverride: state.mesoWeekOverride,
       trainingGoal: state.trainingGoal || 'build',
+      inventory: state.inventory || null,
       weightLog: state.weightLog || [],
       // The whole programme: custom sessions, added exercises, muscles,
       // progression models. `full` tells older readers to take it as-is.
@@ -5430,6 +5704,9 @@ async function loadProgrammeFromDrive() {
     if (config.trainingGoal && remoteNewer) {
       state.trainingGoal = config.trainingGoal === 'maintain' ? 'maintain' : 'build';
       updateMesoDisplay();
+    }
+    if (config.inventory && remoteNewer) {
+      state.inventory = Validator.inventory(config.inventory);
     }
 
     // ── Restore rest periods and exercise customisations ────────
@@ -6412,9 +6689,66 @@ function setNextSessionOverride(sessionId) {
 }
 
 function selectMesoWeek(w) {
-  state._selectedMesoWeek = (state._selectedMesoWeek === w) ? null : w;
-  // Only rebuild the right column (volume/stats), not the full dashboard
-  _renderDashboardRightCol();
+  const current = getCurrentMesoWeek();
+  state._selectedMesoWeek = (state._selectedMesoWeek === w || w === current) ? null : w;
+  // The week blocks and the comparison both live in the left column
+  renderDashboard();
+}
+
+// One week of the current block: sessions, volume, average RIR and hard
+// sets per muscle
+function getMesoWeekSummary(weekNum) {
+  const blockStart = getCurrentBlockStart();
+  if (!blockStart) return null;
+  const start = new Date(blockStart);
+  start.setDate(blockStart.getDate() + (weekNum - 1) * 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  const inWeek = state.sessions.filter(s => s.status === 'complete' && s.date
+    && new Date(s.date) >= start && new Date(s.date) < end);
+  const rirs = inWeek.flatMap(s => (s.exercises || []).flatMap(e => (e.sets || [])
+    .map(st => parseFloat(st.rir)).filter(n => !isNaN(n))));
+  return {
+    start, future: start > new Date(),
+    sessions: inWeek.length,
+    vol: calcWeekVolume(weekNum),
+    avgRIR: rirs.length ? rirs.reduce((a, b) => a + b, 0) / rirs.length : null,
+    sets: countHardSets(start, end),
+  };
+}
+
+function buildMesoCompareHtml(selWeek, curWeek) {
+  const a = getMesoWeekSummary(selWeek), b = getMesoWeekSummary(curWeek);
+  if (!a || !b) return '<div class="meso-compare-empty">Set a mesocycle start date to compare weeks.</div>';
+  if (a.future) return `<div class="meso-compare-empty">Week ${selWeek} hasn't started yet.</div>`;
+  const vol = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${v} kg`;
+  const rir = v => v === null ? '—' : v.toFixed(1);
+  const delta = (x, y, fmt = v => v) => {
+    if (x === null || y === null) return '';
+    const dlt = y - x;
+    if (Math.abs(dlt) < 0.05) return '<span class="mc-delta">·</span>';
+    return `<span class="mc-delta ${dlt > 0 ? 'up' : 'down'}">${dlt > 0 ? '+' : '−'}${fmt(Math.abs(dlt))}</span>`;
+  };
+  const row = (label, x, y, fmt, dfmt) =>
+    `<tr><td>${label}</td><td>${fmt(x)}</td><td>${fmt(y)}</td><td>${delta(x, y, dfmt)}</td></tr>`;
+  const muscles = MUSCLE_IDS.filter(m => (a.sets[m] || 0) + (b.sets[m] || 0) > 0);
+  return `<div class="meso-compare">
+    <table>
+      <thead><tr><th></th><th>W${selWeek}</th><th>W${curWeek} · now</th><th></th></tr></thead>
+      <tbody>
+        ${row('Sessions', a.sessions, b.sessions, v => v, v => v)}
+        ${row('Volume', a.vol, b.vol, vol, vol)}
+        ${row('Avg RIR', a.avgRIR, b.avgRIR, rir, v => v.toFixed(1))}
+        ${muscles.map(m => {
+          const lm = volumeLandmark(m);
+          const cls = n => n > lm.mrv ? ' class="mc-over"' : n < lm.mev ? ' class="mc-under"' : '';
+          const x = a.sets[m] || 0, y = b.sets[m] || 0;
+          return `<tr><td>${muscleLabel(m)} <span class="mc-lm">${lm.mev}–${lm.mrv}</span></td><td${cls(x)}>${x}</td><td${cls(y)}>${y}</td><td>${delta(x, y, v => v)}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div class="mc-note">Hard sets per muscle (MEV–MRV). Week ${curWeek} is still in progress.</div>
+  </div>`;
 }
 
 // Rebuild only the right column of the dashboard (volume / Je ladder)
@@ -6427,7 +6761,7 @@ function getMesoWeeksForDashboard() {
     { w:1, sets:'3',   rir:'3–4' },
     { w:2, sets:'4',   rir:'2–3' },
     { w:3, sets:'4–5', rir:'2'   },
-    { w:4, sets:'5',   rir:'1–2' },
+    { w:4, sets:'5',   rir:'0–1' },
     { w:5, sets:'2',   rir:'5+', deload: true },
   ];
 }
@@ -6783,11 +7117,13 @@ function renderDashboard() {
       <div class="dash-section-label">Mesocycle</div>
       <div class="dash-meso-blocks">
         ${MESO_WEEKS.map(wk => {
-          const isSelected = (state._selectedMesoWeek || week) === wk.w;
-          const cls = isSelected ? 'current' : wk.w < week ? 'past' : wk.w > week ? 'future' : '';
+          const sel = state._selectedMesoWeek;
+          const cls = wk.w === week ? 'current' : wk.w < week ? 'past' : 'future';
+          const selCls = sel === wk.w ? ' selected' : '';
           const deloadCls = wk.deload ? ' deload' : '';
-          return `<div class="dash-meso-block ${cls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
-            style="cursor:pointer" title="View week ${wk.w} data">
+          return `<div class="dash-meso-block ${cls}${selCls}${deloadCls}" onclick="selectMesoWeek(${wk.w})"
+            role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectMesoWeek(${wk.w})}"
+            style="cursor:pointer" title="${wk.w === week ? 'Current week' : `Compare week ${wk.w} with this week`}">
             <div class="dash-meso-block-week">W${wk.w}</div>
             <div class="dash-meso-block-sets">${wk.sets}</div>
             <div class="dash-meso-block-rir">${wk.rir}</div>
@@ -6796,8 +7132,9 @@ function renderDashboard() {
       </div>
       <div style="font-size:8px;color:var(--text-muted);font-family:'DM Mono',monospace;
         letter-spacing:0.05em;margin-top:4px;text-align:right">
-        ${state._selectedMesoWeek && state._selectedMesoWeek !== week ? `Viewing W${state._selectedMesoWeek} · ` : ''}Tap a week to compare
+        ${state._selectedMesoWeek ? `Comparing W${state._selectedMesoWeek} with W${week} · tap again to close` : 'Tap a week to compare it with this week'}
       </div>
+      ${state._selectedMesoWeek ? buildMesoCompareHtml(state._selectedMesoWeek, week) : ''}
     </div>
 
     <!-- This week -->
@@ -7034,6 +7371,8 @@ function checkSetCompletion(row) {
   setTimeout(() => {
     row.classList.add('set-collapsed');
   }, 320);
+  row.classList.remove('ss-next');
+  advanceSuperset(row);
 
   // Check if ALL sets in the card are now complete (same three-point rule)
   const allComplete = allRows.every(isSetComplete);
@@ -7730,8 +8069,11 @@ function initDragAndDrop() {
   const list = document.getElementById('tracker-ex-list');
   if (!list) return;
 
+  // Top-level unit under a node: a superset block or a lone card
+  const unitOf = el => el && (el.closest('.superset-group') || el.closest('.tracker-ex-card'));
+
   list.addEventListener('dragstart', e => {
-    dragSrc = e.target.closest('.tracker-ex-card');
+    dragSrc = unitOf(e.target);
     if (!dragSrc) return;
     dragSrc.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
@@ -7739,8 +8081,8 @@ function initDragAndDrop() {
 
   list.addEventListener('dragover', e => {
     e.preventDefault();
-    const target = e.target.closest('.tracker-ex-card');
-    if (!target || target === dragSrc) return;
+    const target = unitOf(e.target);
+    if (!dragSrc || !target || target === dragSrc || target.parentNode !== list) return;
     e.dataTransfer.dropEffect = 'move';
     const rect = target.getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
@@ -7765,7 +8107,7 @@ function initDragAndDrop() {
   list.addEventListener('touchstart', e => {
     const handle = e.target.closest('.drag-handle');
     if (!handle) return;
-    touchDragCard = handle.closest('.tracker-ex-card');
+    touchDragCard = unitOf(handle);
     touchStartY = e.touches[0].clientY;
     touchDragCard.style.opacity = '0.5';
   }, { passive: true });
@@ -7774,7 +8116,7 @@ function initDragAndDrop() {
     if (!touchDragCard) return;
     e.preventDefault();
     const y = e.touches[0].clientY;
-    const cards = [...list.querySelectorAll('.tracker-ex-card')];
+    const cards = [...list.children];
     for (const card of cards) {
       if (card === touchDragCard) continue;
       const rect = card.getBoundingClientRect();
@@ -8120,20 +8462,15 @@ function getLadderSuggestion(exerciseName, sessionId, repRange) {
    instead, or holds.
    Future home: /js/logic/progression.js
 ═══════════════════════════════════════════ */
-const KB_SIZES_KG = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 // Sessions an exercise is logged blank before targets kick in
 const CALIBRATION_SESSIONS = 2;
 // Same load, no rep gain across this many logs → reset one step
 const STALL_SESSIONS = 4;
-const BAND_STEP_LADDER = [
-  'yellow', 'green', 'red', 'blue', 'black',
-  'black+yellow', 'black+green', 'black+red', 'black+blue', 'black+black'
-];
-
 function resolveProgressionRule(sessionId, ex) {
   const sess   = state.programme.sessions.find(s => s.id === sessionId);
   const attrs  = getExerciseAttrs(ex);
-  const rr     = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : [8, 12];
+  const kind   = getExerciseKind(ex);
+  const rr     = Array.isArray(ex.repRange) && ex.repRange.length === 2 ? ex.repRange : EXERCISE_KINDS[kind].repRange.slice();
   const fixed  = /^\s*\d+\s*$/.test(String(ex.sets || '')) ? parseInt(ex.sets, 10) : null;
   const ladder = getExerciseLadder(ex, sessionId);
   const pinned = ex.progression && ex.progression !== 'auto' && PROGRESSION_MODELS[ex.progression] ? ex.progression : null;
@@ -8141,13 +8478,13 @@ function resolveProgressionRule(sessionId, ex) {
   let model, why;
   if (pinned)                                   { model = pinned;     why = 'set in programme'; }
   else if (sess?.sessionType === 'transition')  { model = 'maintain'; why = 'transition session'; }
-  else if (ex.type === 'prehab')                { model = 'maintain'; why = 'prehab'; }
-  else if (attrs.equipment === 'timed')         { model = 'timed';    why = 'timed hold'; }
+  else if (kind === 'prehab')                   { model = 'prehab';   why = 'prehab'; }
+  else if (kind === 'timed')                    { model = 'timed';    why = 'timed hold'; }
+  else if (kind === 'skill')                    { model = 'skill';    why = patternLabel(attrs.pattern).toLowerCase(); }
   else if (ladder)                              { model = 'ladder';   why = 'variant ladder'; }
-  else if (['ballistic', 'carry', 'mobility'].includes(attrs.pattern)) { model = 'skill'; why = patternLabel(attrs.pattern).toLowerCase(); }
-  else                                          { model = 'double';   why = equipmentLabel(attrs.equipment).toLowerCase(); }
+  else                                          { model = 'double';   why = `hypertrophy · ${equipmentLabel(attrs.equipment).toLowerCase()}`; }
 
-  const canStepLoad = ['kb', 'band', 'bw+band'].includes(attrs.equipment);
+  const canStepLoad = ['kb', 'kb2', 'band', 'bw+band'].includes(attrs.equipment);
   const setsForWeek = week => {
     const deload = getMesoPlanWeek(week)?.deload || week === 5;
     if (deload) return Math.min(2, fixed || 2);
@@ -8156,7 +8493,7 @@ function resolveProgressionRule(sessionId, ex) {
   };
 
   return {
-    model, label: PROGRESSION_MODELS[model].label, why, attrs,
+    model, label: PROGRESSION_MODELS[model].label, why, attrs, kind,
     repRange: rr, fixedSets: fixed, maxSets: ex.maxSets || null,
     ladder: model === 'ladder' ? ladder : null,
     canStepLoad, setsForWeek,
@@ -8203,29 +8540,17 @@ function planLoadValue(ex) {
   return isFinite(kg) ? String(kg) : '';
 }
 
-// One step up (dir 1) or down (dir -1) the KB, band or BW+band ladder.
-// Returns null when there is no further step.
-function stepLoad(load, dir) {
+// One step up (dir 1) or down (dir -1) through the loads the owned kit
+// makes for this equipment. Returns null when there is no further step.
+function stepLoad(load, dir, equipment) {
   const raw = (load || '').toString().trim();
   if (!raw) return null;
-  const low = raw.toLowerCase();
-  const cap = s => s.split('+').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('+');
-  if (low.startsWith('bw')) {
-    const BW_LADDER = ['', 'yellow', 'green', 'red', 'blue', 'black'];
-    const i = BW_LADDER.indexOf(low.replace(/^bw\+?/, '').trim());
-    const next = i === -1 ? undefined : BW_LADDER[i + dir];
-    if (next === undefined) return null;
-    return next ? `BW+${cap(next)}` : 'BW';
-  }
-  const bi = BAND_STEP_LADDER.indexOf(low.split('+').map(p => p.trim()).sort().join('+'));
-  if (bi !== -1) {
-    const next = BAND_STEP_LADDER[bi + dir];
-    return next ? cap(next) : null;
-  }
-  const kg = parseFloat(raw);
-  if (!isFinite(kg)) return null;
-  const next = dir > 0 ? KB_SIZES_KG.find(s => s > kg) : [...KB_SIZES_KG].reverse().find(s => s < kg);
-  return next ? String(next) : null;
+  const opts = getLoadOptions(equipment || loadEquipment(raw));
+  const kg = parseBandLoad(raw);
+  const hit = dir > 0
+    ? opts.find(o => o.kg > kg + 0.25)
+    : [...opts].reverse().find(o => o.kg < kg - 0.25);
+  return hit ? hit.value : null;
 }
 
 // The load most sets of a logged exercise were done at
@@ -8262,15 +8587,8 @@ function getExerciseLogs(sessionId, exName, limit = 3) {
   return same.length ? same : collect(() => true);
 }
 
-// Has tempo already been flagged for this exercise in this session type
-function hasTempoApplied(sessionId, exerciseName) {
-  return state.sessions
-    .filter(s => s.sessionId === sessionId && s.status === 'complete')
-    .some(s => {
-      const ex = s.exercises.find(e => e.name === exerciseName);
-      return ex && ex.tempoApplied === true;
-    });
-}
+const repsOf = log => log.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n));
+const rirOf  = set => { const n = parseFloat(set.rir); return isNaN(n) ? null : n; };
 
 const setsAtCeiling = (log, rr) => log.ex.sets.length > 0 && log.ex.sets.every(s => {
   const n = parseInt(s.reps, 10);
@@ -8281,51 +8599,8 @@ const setsCleanRIR = (log, minRIR) => log.ex.sets.every(s => {
   return isNaN(r) || r >= minRIR;
 });
 
-/* ── Step-up checks per model ─────────────────────────────────
-   Each returns { type, message, sets?, load? } or null. They only
-   say "go up"; step-downs and rep nudges live in the prescription. */
-
-// double: rep ceiling × 2 complete logs → add set → load up (sets reset)
-//         → tempo → equipment ceiling. Volume-aware on the add-set step.
-function getDoubleStepUp(sessionId, ex, rule, logs) {
-  const week = getCurrentMesoWeek();
-  if (week === 1 || isDeloadWeek()) return null;
-  const rr = rule.repRange;
-  const complete = logs.filter(l => l.session.status === 'complete').slice(0, 2);
-  if (complete.length < 2 || !complete.every(l => setsAtCeiling(l, rr))) return null;
-
-  const last        = complete[0];
-  const lastLoad    = getLogLoad(last.ex) || planLoadValue(ex);
-  const currentSets = last.ex.sets.length;
-  const targetSets  = rule.setsForWeek(week);
-  const nextLoad    = rule.canStepLoad ? stepLoad(lastLoad, 1) : null;
-
-  if (currentSets < targetSets) {
-    const hit = rule.volumeAware ? getVolumeCeilingHit(rule.attrs, currentSets + 1) : null;
-    if (!hit) {
-      return { type: 'add_set', sets: currentSets + 1,
-        message: `Add a set (${currentSets} → ${currentSets + 1}). Rep ceiling hit in last 2 sessions.` };
-    }
-    const mus = muscleLabel(hit.muscle);
-    if (nextLoad) {
-      return { type: 'increase_load', load: nextLoad, sets: Math.min(3, targetSets),
-        message: `${mus} already at ${hit.sets} hard sets this week (MRV ${hit.mrv}) — no extra set. Move to ${fmtLoad(nextLoad)} instead, sets back to ${Math.min(3, targetSets)}.` };
-    }
-    return { type: 'hold_volume',
-      message: `Rep ceiling hit, but ${mus} is already at ${hit.sets} hard sets this week (MRV ${hit.mrv}). Hold ${currentSets} sets and this load — extra volume here won't pay back.` };
-  }
-
-  if (nextLoad) {
-    return { type: 'increase_load', load: nextLoad, sets: Math.min(3, targetSets),
-      message: `Rep ceiling hit — move to ${fmtLoad(nextLoad)}, ${Math.min(3, targetSets)} sets, start at the bottom of the range.` };
-  }
-  if (hasTempoApplied(sessionId, ex.name)) {
-    return { type: 'equipment_ceiling',
-      message: `Tempo already applied and rep ceiling still hit. Equipment ceiling reached — new kit needed to progress further.` };
-  }
-  return { type: 'tempo',
-    message: `Equipment ceiling reached. Apply 3s eccentric tempo — same load, significantly harder. Flag session with tempo once applied.` };
-}
+/* ── Step-up checks for the non-hypertrophy models ────────────
+   Each returns { type, message, sets?, load? } or null. */
 
 // skill: fixed sets; load steps up only when every set is clean at RIR 2+
 // for two complete sessions. Quality first, never a set climb.
@@ -8336,13 +8611,13 @@ function getSkillStepUp(sessionId, ex, rule, logs) {
   const clean = complete.every(l => setsAtCeiling(l, rule.repRange) && setsCleanRIR(l, 2));
   if (!clean) return null;
   const lastLoad = getLogLoad(complete[0].ex) || planLoadValue(ex);
-  const next = rule.canStepLoad ? stepLoad(lastLoad, 1) : null;
+  const next = rule.canStepLoad ? stepLoad(lastLoad, 1, rule.attrs.equipment) : null;
   if (!next) return null;
   return { type: 'skill_load', load: next,
-    message: `Every set clean at RIR 2+ for 2 sessions — next bell: ${fmtLoad(next)}. Same sets, speed and form first.` };
+    message: `Every set clean at RIR 2+ for 2 sessions — next load: ${fmtLoad(next)}. Same sets, speed and form first.` };
 }
 
-// timed: every set at the target time twice → extend the hold
+// timed: every set at the target time twice → extend the hold, up to the cap
 function getTimedStepUp(sessionId, ex, rule, logs) {
   if (isDeloadWeek()) return null;
   const target = parseInt(ex.reps, 10);
@@ -8351,7 +8626,12 @@ function getTimedStepUp(sessionId, ex, rule, logs) {
   if (complete.length < 2) return null;
   const hit = complete.every(l => l.ex.sets.length && l.ex.sets.every(s => parseInt(s.reps, 10) >= target));
   if (!hit) return null;
-  return { type: 'extend_hold', message: `Target hold reached twice — extend to ${target + 5}s per set.` };
+  if (target >= TIMED_HOLD_CAP_S) {
+    return { type: 'variant advancement',
+      message: `${target}s held on every set twice — holds are capped at ${TIMED_HOLD_CAP_S}s. Move to a harder variant or add load, and reset the hold.` };
+  }
+  const next = Math.min(TIMED_HOLD_CAP_S, target + 5);
+  return { type: 'extend_hold', message: `Target hold reached twice — extend to ${next}s per set.` };
 }
 
 // Stall: STALL_SESSIONS complete logs at the same load, weakest set never
@@ -8362,21 +8642,237 @@ function getStallReset(sessionId, ex, rule, logs) {
   if (complete.length < STALL_SESSIONS) return null;
   const load = getLogLoad(complete[0].ex);
   if (!load || !complete.every(l => getLogLoad(l.ex) === load)) return null;
+  // A tempo bridge holds the load on purpose — that is not a stall
+  if (complete.some(l => l.ex.tempoApplied)) return null;
   const floors = complete.map(l => {
-    const r = l.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n));
+    const r = repsOf(l);
     return r.length ? Math.min(...r) : null;
   });
   if (floors.some(f => f === null)) return null;
   // newest first: no log's floor beats the one before it, none at ceiling
   const noGain = floors.every((f, i) => i === floors.length - 1 || f <= floors[i + 1]);
   if (!noGain || floors[0] >= rule.repRange[1]) return null;
-  const lower = rule.canStepLoad ? stepLoad(load, -1) : null;
+  const lower = rule.canStepLoad ? stepLoad(load, -1, rule.attrs.equipment) : null;
   if (lower) {
     return { type: 'stall', load: lower, sets: 3,
       message: `Stalled — ${STALL_SESSIONS} sessions at ${fmtLoad(load)} with no rep gain. Drop to ${fmtLoad(lower)} for a rebuild: 3 sets, run the range back up, then retry ${fmtLoad(load)}.` };
   }
   return { type: 'stall',
     message: `Stalled — ${STALL_SESSIONS} sessions at ${fmtLoad(load) || 'this load'} with no rep gain. Change the stimulus: slower eccentric, a pause, or the next variant.` };
+}
+
+// Several changes in one session (a set and reps, say) read as one line:
+// the weightiest type leads, labels and messages join.
+const CHANGE_PRIORITY = ['stall', 'decrease_load', 'increase_load', 'tempo', 'equipment_ceiling',
+  'decrease_set', 'hold', 'add_set', 'hold_volume', 'add_reps', 'repeat'];
+function mergeChanges(changes) {
+  if (!changes.length) return null;
+  const rank = c => { const i = CHANGE_PRIORITY.indexOf(c.type); return i === -1 ? 99 : i; };
+  const lead = [...changes].sort((a, b) => rank(a) - rank(b))[0];
+  return { type: lead.type, label: changes.map(c => c.label).join(' · '), message: changes.map(c => c.message).join(' ') };
+}
+
+// What a kit ceiling needs next, in words
+function nextKitHint(equipment, load) {
+  if (equipment === 'bw') return 'a harder variant or a band on top (edit the exercise)';
+  if (equipment === 'band' || equipment === 'bw+band') return 'a heavier band';
+  const kg = parseBandLoad(load);
+  if (equipment === 'kb2') return `a heavier bell to pair past ${kg} kg`;
+  const next = [4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 40].find(k => k > kg);
+  return next ? `${next} kg bell` : 'heavier kit';
+}
+
+/* ── Hypertrophy: RP-style weekly progression ─────────────────
+   Runs every session once calibration is done.
+   Sets   one more than last time, up to the meso week's target; held when
+          a primary muscle is already at MRV this week.
+   Reps   weakest set + 1, plus one for every rep of reserve logged above
+          the week's RIR band — overperforming moves faster.
+   Load   at 12 reps (or pushed past it): the next load the kit makes, if
+          the estimated reps there reach the floor. Otherwise a tempo
+          bridge (3s eccentric + pause, same load, reps back to 8), then a
+          volume-matched step: reps may start at 6, sets rise to keep
+          sets × reps × kg, and no step-down fires while reps rebuild. */
+function prescribeHypertrophy(rx, sessionId, ex, rule, logs, week) {
+  const rr   = rule.repRange;
+  const eq   = rule.attrs.equipment;
+  const complete = logs.filter(l => l.session.status === 'complete');
+  const last = complete[0] || logs[0];
+  const prev = complete[1] || null;
+  const lastLoad = getLogLoad(last.ex) || planLoadValue(ex);
+  const done = last.ex.sets.filter(s => !isNaN(parseInt(s.reps, 10)));
+  if (!done.length) return rx;
+
+  const reps     = done.map(s => parseInt(s.reps, 10));
+  const floor    = Math.min(...reps);
+  const rirs     = done.map(rirOf).filter(n => n !== null);
+  const avgRIR   = rirs.length ? rirs.reduce((a, b) => a + b, 0) / rirs.length : null;
+  const rirT     = rx.rir;
+  const surplus  = avgRIR === null ? 0 : Math.max(0, Math.round(avgRIR - rirT[1]));
+  const tempoOn  = !!last.ex.tempoApplied;
+  const target   = rule.setsForWeek(week);
+  const lastSets = done.length;
+  const changes  = [];
+  rx.load  = lastLoad;
+  rx.tempo = tempoOn;
+
+  // ── Sets: RP ramp, one a week toward the meso target ──
+  let sets = rule.fixedSets ? target : Math.min(lastSets, target);
+  let setChange = null;
+  if (!rule.fixedSets && lastSets < target) {
+    const hit = rule.volumeAware ? getVolumeCeilingHit(rule.attrs, lastSets + 1) : null;
+    if (hit) {
+      setChange = { type: 'hold_volume', label: 'Volume cap',
+        message: `${muscleLabel(hit.muscle)} already at ${hit.sets} hard sets this week (MRV ${hit.mrv}) — sets held at ${sets}.` };
+    } else {
+      sets = lastSets + 1;
+      setChange = { type: 'add_set', label: '+1 set', message: `Week ${week}: ${lastSets} → ${sets} sets.` };
+    }
+  }
+  rx.sets = sets;
+
+  // ── Missed the floor: hold, then step down (not while a new load rebuilds) ──
+  const justStepped = prev && effectiveLoadKg(getLogLoad(prev.ex)) < effectiveLoadKg(lastLoad) - 0.25;
+  const floorMin = justStepped ? Math.min(6, rr[0]) : rr[0];
+  const missed = l => { const r = repsOf(l); return r.length > 0 && r.filter(n => n < floorMin).length * 2 > r.length; };
+  if (missed(last)) {
+    rx.sets = Math.min(sets, lastSets);
+    rx.reps = [floorMin, rr[1]];
+    if (prev && getLogLoad(prev.ex) === lastLoad && missed(prev)) {
+      const lower = rule.canStepLoad ? stepLoad(lastLoad, -1, eq) : null;
+      if (lower) {
+        rx.load = lower; rx.tempo = false;
+        rx.change = { type: 'decrease_load', label: `↓ ${fmtLoad(lower)}`,
+          message: `Under ${floorMin} reps at ${fmtLoad(lastLoad)} two sessions running — drop to ${fmtLoad(lower)} and rebuild into the range.` };
+        return rx;
+      }
+      if (rx.sets > 2 && !rule.fixedSets) {
+        rx.sets -= 1;
+        rx.change = { type: 'decrease_set', label: '−1 set',
+          message: `Under ${floorMin} reps two sessions running with no lighter option — one set fewer until every set reaches ${floorMin}.` };
+        return rx;
+      }
+    }
+    rx.change = { type: 'hold', label: 'Hold',
+      message: `Missed ${floorMin} reps last time at ${fmtLoad(lastLoad) || 'this load'} — same load and sets, get every set to ${floorMin}+.` };
+    return rx;
+  }
+
+  // ── Stall: same load, no rep gain for STALL_SESSIONS logs ──
+  const stall = getStallReset(sessionId, ex, rule, logs);
+  if (stall) {
+    if (stall.load) { rx.load = stall.load; rx.tempo = false; }
+    if (stall.sets) rx.sets = Math.min(stall.sets, target);
+    rx.change = { type: 'stall', label: stall.load ? `↓ ${fmtLoad(stall.load)}` : 'Stalled', message: stall.message };
+    return rx;
+  }
+
+  const effort = surplus > 0
+    ? ` Logged RIR ~${avgRIR.toFixed(1).replace(/\.0$/, '')} against a target of ${fmtRIRBand(rirT)} — ${surplus} extra rep${surplus > 1 ? 's' : ''} for the reserve left.`
+    : '';
+  const nextReps = floor + 1 + surplus;
+
+  if (nextReps <= rr[1]) {
+    // ── Inside the range: reps climb at the same load ──
+    rx.reps = [nextReps, rr[1]];
+    if (setChange) changes.push(setChange);
+    changes.push({ type: 'add_reps', label: `+${1 + surplus} rep${surplus ? 's' : ''}`,
+      message: `Weakest set last time: ${floor}. Aim for ${nextReps}+ on every set.${effort}${tempoOn ? ' Keep the 3s eccentric and pause.' : ''}` });
+    rx.change = mergeChanges(changes);
+    return rx;
+  }
+
+  // ── At the ceiling (or pushed past it by reserve): the next load ──
+  const next    = rule.canStepLoad ? stepLoad(lastLoad, 1, eq) : null;
+  const best    = Math.max(...done.map(s => parseInt(s.reps, 10) + (rirOf(s) ?? 0)));
+  const e1rm    = estimate1RM(effectiveLoadKg(lastLoad), best, 0) * (tempoOn ? 1.1 : 1);
+  const rirMid  = (rirT[0] + Math.min(rirT[1], 4)) / 2;
+  const nextKg  = next ? effectiveLoadKg(next) : 0;
+  const pred    = next ? Math.max(0, predictReps(e1rm, nextKg, rirMid)) : 0;
+  const lastVol = done.reduce((sum, s) => sum + parseInt(s.reps, 10) * effectiveLoadKg(s.load || lastLoad), 0);
+
+  if (next && pred >= rr[0]) {
+    rx.load = next; rx.tempo = false;
+    rx.reps = [Math.min(pred, rr[1]), rr[1]];
+    if (setChange) changes.push(setChange);
+    changes.push({ type: 'increase_load', label: `↑ ${fmtLoad(next)}`,
+      message: `Top of the range at ${fmtLoad(lastLoad)} — move to ${fmtLoad(next)}, about ${Math.min(pred, rr[1])} reps at RIR ${fmtRIRBand(rirT)}.${effort} What you log there becomes the new baseline.` });
+  } else if (next && tempoOn) {
+    const repT = Math.max(6, Math.min(rr[0], pred));
+    const cap  = Math.min(rule.maxSets || 6, sets + 2);
+    let bSets  = Math.min(cap, Math.max(sets, Math.ceil(lastVol / (repT * nextKg))));
+    if (bSets > sets && rule.volumeAware && getVolumeCeilingHit(rule.attrs, bSets)) bSets = sets;
+    rx.load = next; rx.tempo = false; rx.sets = bSets;
+    rx.reps = [repT, rr[1]];
+    changes.push({ type: 'increase_load', label: `↑ ${fmtLoad(next)} · bridge`,
+      message: `Tempo phase done — step to ${fmtLoad(next)} at normal tempo. Expect about ${Math.max(pred, 1)} reps, so ${bSets} × ${repT}+ to keep volume (${Math.round(lastVol)} kg → ~${Math.round(bSets * repT * nextKg)} kg). Reps rebuild from ${repT} to ${rr[1]}; no step-down while they climb back to ${rr[0]}.` });
+  } else if (!tempoOn) {
+    rx.reps = [rr[0], rr[1]]; rx.tempo = true;
+    if (setChange) changes.push(setChange);
+    const pct = next ? Math.round((nextKg / effectiveLoadKg(lastLoad) - 1) * 100) : 0;
+    changes.push({ type: 'tempo', label: 'Tempo 3s',
+      message: (next
+        ? `Top of the range, but ${fmtLoad(next)} is a ${pct}% jump — about ${pred} reps there.`
+        : `Top of the range and ${rule.canStepLoad ? 'nothing heavier in your kit' : 'no load to add on bodyweight'}.`)
+        + ` Bridge first: same load, 3s eccentric + 1s pause at the stretch, reps back to ${rr[0]} and climb to ${rr[1]}.${effort}` });
+  } else {
+    rx.reps = [rr[1], rr[1]]; rx.tempo = true;
+    if (setChange) changes.push(setChange);
+    changes.push({ type: 'equipment_ceiling', label: 'Kit ceiling',
+      message: rule.canStepLoad
+        ? `${rr[1]} reps with tempo at ${fmtLoad(lastLoad)} and nothing heavier in your kit — hold ${rr[1]} with the 3s eccentric while sets climb with the meso. Next purchase: ${nextKitHint(eq, lastLoad)} (add it under Settings → My equipment).`
+        : `${rr[1]} reps with tempo on bodyweight — hold ${rr[1]} with the 3s eccentric while sets climb with the meso. Next: ${nextKitHint(eq, lastLoad)}.` });
+  }
+  rx.change = mergeChanges(changes);
+  return rx;
+}
+
+/* ── Prehab: fixed work, never ground out ─────────────────────
+   Reps climb to the target at RIR 3+. Three complete sessions in a row
+   with every set at target and RIR 4+ → next band, reps back down. */
+function prescribePrehab(rx, ex, rule, logs) {
+  const rr   = rule.repRange;
+  const top  = rr[1];
+  const low  = rr[0] < rr[1] ? rr[0] : Math.max(8, top - 3);
+  rx.rir  = [3, 4];
+  rx.sets = rule.fixedSets || rx.sets;
+  const complete = logs.filter(l => l.session.status === 'complete');
+  const last = complete[0];
+  if (!last) return rx;
+  const lastLoad = getLogLoad(last.ex) || planLoadValue(ex);
+  rx.load = lastLoad;
+  const easy = l => l.ex.sets.length > 0 && l.ex.sets.every(s => parseInt(s.reps, 10) >= top && (rirOf(s) ?? 0) >= 4);
+  let n = 0;
+  for (const l of complete.slice(0, 3)) {
+    if (getLogLoad(l.ex) === lastLoad && easy(l)) n++; else break;
+  }
+  const r = repsOf(last);
+  const floor = r.length ? Math.min(...r) : 0;
+
+  if (n >= 3) {
+    const next = rule.canStepLoad ? stepLoad(lastLoad, 1, rule.attrs.equipment) : null;
+    if (next) {
+      rx.load = next; rx.reps = [low, top];
+      rx.change = { type: 'increase_load', label: `↑ ${fmtLoad(next)}`,
+        message: `3 easy sessions (every set ${top}, RIR 4+) — next band: ${fmtLoad(next)}. Start at ${low} reps and build back to ${top}. Never below RIR 3.` };
+    } else {
+      rx.reps = [top, top];
+      rx.change = { type: 'equipment_ceiling', label: 'Kit ceiling',
+        message: `Easy at ${fmtLoad(lastLoad)} and nothing heavier in your kit — slow the tempo until a heavier band is added under Settings → My equipment.` };
+    }
+    return rx;
+  }
+  if (floor < top) {
+    const t = Math.min(top, floor + 1);
+    rx.reps = [t, top];
+    rx.change = { type: 'add_reps', label: '+1 rep',
+      message: `Prehab — build to ${top} reps at ${fmtLoad(lastLoad)}, never below RIR 3.` };
+  } else {
+    rx.reps = [top, top];
+    rx.change = { type: 'maintain', label: `Prehab ${n}/3`,
+      message: `Prehab — ${n} of 3 easy sessions (every set ${top} at RIR 4+) toward the next band. Never below RIR 3.` };
+  }
+  return rx;
 }
 
 /* ═══════════════════════════════════════════
@@ -8398,7 +8894,7 @@ function getExercisePrescription(sessionId, ex) {
   const last = logs[0] || null;
   const lastComplete = logs.find(l => l.session.status === 'complete') || null;
   const lastLoad = last ? getLogLoad(last.ex) : '';
-  const lastReps = last ? last.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n)) : [];
+  const lastReps = last ? repsOf(last) : [];
   // Set count carries over from the last complete log, never a cut-short partial
   const baseSets = lastComplete
     ? (lastComplete.ex.sets.filter(s => s.reps).length || lastComplete.ex.sets.length)
@@ -8409,6 +8905,7 @@ function getExercisePrescription(sessionId, ex) {
     load:   deload ? '' : (lastLoad || planLoadValue(ex)),
     reps:   rr.slice(),
     rir:    getMesoRIRTarget(week),
+    tempo:  false,  // 3s eccentric + pause bridge in force
     change: null,   // { type, label, message } — what moved vs last time
     last,
     rule,
@@ -8444,15 +8941,18 @@ function getExercisePrescription(sessionId, ex) {
     rx.change = { type: 'maintain', label: rule.why === 'transition session' ? 'Transition' : 'Maintain',
       message: rule.why === 'transition session'
         ? 'Transition work — not counted in mesocycle progression. Same as last time, quality over load.'
-        : 'Prehab — no automatic progression. Same load and sets, never rushed.' };
+        : 'No automatic progression. Same load and sets, never rushed.' };
     return rx;
   }
+
+  if (rule.model === 'prehab') return prescribePrehab(rx, ex, rule, logs);
 
   // ── Maintenance: hold the working load on minimum volume ──────
   // Sets and RIR already come from the rule / meso helpers. Reps aim at
   // the bottom-to-middle of the range; no step-up runs. A missed floor
   // still steps down (below), so the held load stays one you can lift.
   const maintaining = isMaintenanceMode();
+  if (!maintaining && rule.model === 'double') return prescribeHypertrophy(rx, sessionId, ex, rule, logs, week);
   if (maintaining) {
     rx.sets = rule.setsForWeek(week);
     rx.reps = [rr[0], Math.max(rr[0], Math.round((rr[0] + rr[1]) / 2))];
@@ -8464,7 +8964,6 @@ function getExercisePrescription(sessionId, ex) {
   else if (rule.model === 'ladder') sug = getLadderSuggestion(ex.name, sessionId, rr);
   else if (rule.model === 'skill')  sug = getSkillStepUp(sessionId, ex, rule, logs);
   else if (rule.model === 'timed')  sug = getTimedStepUp(sessionId, ex, rule, logs);
-  else                              sug = getDoubleStepUp(sessionId, ex, rule, logs);
 
   if (sug) {
     const LABELS = {
@@ -8481,13 +8980,13 @@ function getExercisePrescription(sessionId, ex) {
 
   // ── Step down: most sets under the rep floor ──────────────────
   const missedFloor = l => {
-    const r = l.ex.sets.map(s => parseInt(s.reps, 10)).filter(n => !isNaN(n));
+    const r = repsOf(l);
     return r.length > 0 && r.filter(n => n < rr[0]).length * 2 > r.length;
   };
   if (lastReps.length && missedFloor(last)) {
     const prev = logs[1];
     if (prev && getLogLoad(prev.ex) === lastLoad && missedFloor(prev)) {
-      const lower = rule.canStepLoad ? stepLoad(lastLoad, -1) : null;
+      const lower = rule.canStepLoad ? stepLoad(lastLoad, -1, rule.attrs.equipment) : null;
       if (lower) {
         rx.load = lower;
         rx.change = { type: 'decrease_load', label: `↓ ${fmtLoad(lower)}`,
@@ -8511,16 +9010,7 @@ function getExercisePrescription(sessionId, ex) {
     return rx;
   }
 
-  // ── Stall: same load, no rep gain for STALL_SESSIONS logs ─────
-  const stall = getStallReset(sessionId, ex, rule, logs);
-  if (stall) {
-    if (stall.load) rx.load = stall.load;
-    if (stall.sets) rx.sets = Math.min(stall.sets, target);
-    rx.change = { type: 'stall', label: stall.load ? `↓ ${fmtLoad(stall.load)}` : 'Stalled', message: stall.message };
-    return rx;
-  }
-
-  // ── Same load: double progression ─────────────────────────────
+  // ── Same load: reps climb (ladder / skill / timed) ────────────
   if (lastReps.length && rx.load === lastLoad) {
     const floor = Math.min(...lastReps);
     if (floor < rr[1]) {
@@ -8531,7 +9021,7 @@ function getExercisePrescription(sessionId, ex) {
     } else {
       rx.change = { type: 'repeat', label: 'Repeat',
         message: rule.model === 'skill'
-          ? `Every set at target — repeat it clean at RIR 2+ to unlock the next bell.`
+          ? `Every set at target — repeat it clean at RIR 2+ to unlock the next load.`
           : `Top of the range last time — match it again to unlock the next step.` };
     }
   }
@@ -8609,9 +9099,8 @@ function renderProgressionSuggestions(session) {
         'extend_hold':         'var(--green)',
       };
       const col = typeColors[s.type] || 'var(--text-dim)';
-      const tempoBtn = s.type === 'tempo'
-        ? `<br><button onclick="markTempoApplied('${s.exercise.replace(/'/g,"\\'")}')" style="margin-top:5px;font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid ${col}44;background:${col}15;color:${col};cursor:pointer">✓ Mark tempo applied this session</button>`
-        : '';
+      // Tempo is saved with the session automatically when the card prescribes it
+      const tempoBtn = '';
       return `<div style="margin-bottom:6px;padding:6px 8px;border-radius:5px;border:1px solid ${col}22;background:${col}0d">
         <span style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:${col};margin-right:6px">${s.type.replace(/_/g,' ')}</span>
         <strong>${s.exercise}</strong> — ${s.message}${tempoBtn}
@@ -9219,9 +9708,10 @@ function computeNextProgression(ex, sessionId) {
   }
   const logs = getExerciseLogs(sid, ex.name, 1);
   const cur  = logs[0] ? getLogLoad(logs[0].ex) : '';
-  const next = rule.canStepLoad ? stepLoad(cur || planLoadValue(ex), 1) : null;
-  if (next) return `→ ${fmtLoad(next)}${rule.model === 'skill' ? ' (when clean at RIR 2+)' : ''}`;
-  if (rule.canStepLoad) return '→ Top of load ladder — tempo next';
+  const next = rule.canStepLoad ? stepLoad(cur || planLoadValue(ex), 1, rule.attrs.equipment) : null;
+  const when = rule.model === 'skill' ? ' (when clean at RIR 2+)' : rule.model === 'prehab' ? ' (after 3 easy sessions)' : ' (at 12 reps)';
+  if (next) return `→ ${fmtLoad(next)}${when}`;
+  if (rule.canStepLoad) return '→ Kit ceiling — tempo, then new kit';
   return computeNextProgressionLegacy(ex);
 }
 
@@ -9405,7 +9895,8 @@ function openSettings() {
     clientIdDisplay.style.color = saved ? 'var(--text-dim)' : 'var(--text-muted)';
   }
 
-  // Band config
+  // Equipment + band config
+  renderInventoryConfig();
   renderBandConfig();
 
   // Programme editor
@@ -9421,6 +9912,33 @@ function toggleSettingsSection(id) {
 }
 
 /* ── PROFILE SETTINGS ──────────────────────────────────────────── */
+function renderInventoryConfig() {
+  const el = document.getElementById('inventory-config');
+  if (!el) return;
+  const inv = getInventory();
+  const KB_CHOICES = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40];
+  const cap = b => b.charAt(0).toUpperCase() + b.slice(1);
+  el.innerHTML = `
+    <div class="settings-field"><label>Kettlebells (kg)</label>
+      <div class="chip-row">${KB_CHOICES.map(k => `<span class="pick-chip${inv.kb.includes(k) ? ' on' : ''}" onclick="toggleInventoryItem('kb', ${k})">${k}</span>`).join('')}</div>
+    </div>
+    <div class="settings-field"><label>Bands</label>
+      <div class="chip-row">${BAND_ORDER.map(b => `<span class="pick-chip${inv.bands.includes(b) ? ' on' : ''}" onclick="toggleInventoryItem('bands', '${b}')">${cap(b)} · ${BAND_KG[b]} kg</span>`).join('')}</div>
+    </div>`;
+}
+
+function toggleInventoryItem(type, value) {
+  const inv = getInventory();
+  const next = { kb: inv.kb.slice(), bands: inv.bands.slice() };
+  const list = next[type];
+  const i = list.indexOf(value);
+  if (i === -1) list.push(value); else list.splice(i, 1);
+  setState({ inventory: Validator.inventory(next) });
+  saveProgrammeToDrive().catch(e => console.warn('[Drive] Settings push failed:', e));
+  renderInventoryConfig();
+  renderProgramme();
+}
+
 function renderBandConfig() {
   const container = document.getElementById('band-config-list');
   if (!container) return;
@@ -9740,12 +10258,14 @@ function sessionFocusLabel(session) {
 function buildProgExRow(session, ex, idx) {
   const dotStyle = ex.type === 'optional' ? 'background:var(--text-muted)' : `background:${session.color}`;
   const rule = resolveProgressionRule(session.id, ex);
+  const ss = getSupersetInfo(session, idx);
   return `<div class="prog-ex-row" id="prog-row-${session.id}-${idx}">
     <div class="prog-ex-dot" style="${dotStyle}"></div>
     <div style="flex:1;min-width:0">
       <div class="prog-ex-name">${ex.name}
         <span class="prog-ex-type">${ex.type}</span>
         <span class="prog-ex-rule" title="${rule.why}">${rule.label}</span>
+        ${ss ? `<span class="ex-tag sup">⇄ ${ss.key}${ss.pos}</span>` : ''}
       </div>
       <div class="ex-tags" style="margin-top:2px">${muscleChips(rule.attrs)}${rule.attrs.inferred ? '<span class="ex-tag auto" title="Muscles inferred from the name — set them explicitly in Edit">auto</span>' : ''}</div>
     </div>
@@ -10051,7 +10571,7 @@ function showAddExerciseForm(sessionId) {
   if (!form) return;
   if (!form.classList.contains('hidden')) { form.innerHTML = ''; form.classList.add('hidden'); return; }
   closeAllBuilderForms(formId);
-  const newEx = { num: '00', name: '', type: 'accessory', tags: [], sets: '3–5', reps: '8–12', repRange: [8,12], load: '', notes: '', desc: '', substitutions: [] };
+  const newEx = { num: '00', name: '', kind: 'hypertrophy', type: 'accessory', tags: [], sets: '3–5', reps: '8–12', repRange: [8,12], load: '', notes: '', desc: '', substitutions: [] };
   form.innerHTML = buildExerciseEditForm(newEx, sessionId, 'new');
   form.classList.remove('hidden');
   refreshRulePreview(sessionId, 'new');
@@ -10072,6 +10592,17 @@ function buildExerciseEditForm(ex, sessionId, idx) {
   const progOpts = Object.entries(PROGRESSION_MODELS).map(([id, m]) => `<option value="${id}"${(ex.progression || 'auto') === id ? ' selected' : ''}>${m.label}</option>`).join('');
   const hasLadder = Array.isArray(ex.ladder) && ex.ladder.length > 0;
   const defaultLadder = !hasLadder && getJeLadder(ex.name, sessionId);
+  const kind = getExerciseKind(ex);
+  const kindOpts = Object.entries(EXERCISE_KINDS).map(([id, kd]) =>
+    `<option value="${id}"${kind === id ? ' selected' : ''}>${kd.label} — ${kd.summary}</option>`).join('');
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const exIdx = idx === 'new' ? -1 : parseInt(idx, 10);
+  const ssInfo = session && exIdx >= 0 ? getSupersetInfo(session, exIdx) : null;
+  const partnerNow = ssInfo ? session.exercises[ssInfo.members.find(m => m !== exIdx)]?.name : '';
+  const ssOpts = (session?.exercises || [])
+    .filter((e, i) => i !== exIdx && e.type !== 'optional')
+    .map(e => `<option value="${esc(e.name)}"${e.name === partnerNow ? ' selected' : ''}>${esc(e.name)}${e.superset && e.name !== partnerNow ? ` (in superset ${e.superset})` : ''}</option>`).join('');
+  const hyper = kind === 'hypertrophy';
 
   return `<div class="ex-edit-form">
     <div class="builder-form-title">${idx === 'new' ? 'New exercise' : 'Editing: ' + esc(ex.name)}</div>
@@ -10086,9 +10617,23 @@ function buildExerciseEditForm(ex, sessionId, idx) {
       </div>
     </div>
     <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Exercise kind * — sets the rep range and how it progresses</label>
+        <select id="ef-kind-${k}" onchange="onExerciseKindChange('${sessionId}','${idx}')">${kindOpts}</select>
+        <div class="kind-card" id="ef-kind-card-${k}">${kindCardHtml(kind)}</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field" style="flex:1">
+        <label>Superset with</label>
+        <select id="ef-ss-${k}"><option value="">None — done on its own</option>${ssOpts}</select>
+        <div class="builder-hint">Linked exercises are done in rounds: set 1 of each back to back, rest, then set 2. They sit next to each other in the session.</div>
+      </div>
+    </div>
+    <div class="form-row">
       <div class="form-field">
-        <label>Rep Range (e.g. 8–12, or 30s)</label>
-        <input id="ef-reps-${k}" value="${esc(ex.reps || '')}" placeholder="8–12" oninput="refreshRulePreview('${sessionId}','${idx}')">
+        <label id="ef-reps-label-${k}">${hyper ? 'Rep Range (fixed 8–12 for hypertrophy)' : 'Rep Range (e.g. 15, 5, or 30s)'}</label>
+        <input id="ef-reps-${k}" value="${esc(hyper ? (/^\s*8\s*[–-]\s*12/.test(ex.reps || '') ? ex.reps : '8–12') : (ex.reps || ''))}" placeholder="8–12" ${hyper ? 'readonly' : ''} oninput="refreshRulePreview('${sessionId}','${idx}')">
       </div>
       <div class="form-field">
         <label>Sets (3 fixed · 3–5 meso)</label>
@@ -10164,6 +10709,36 @@ function buildExerciseEditForm(ex, sessionId, idx) {
   </div>`;
 }
 
+function kindCardHtml(kind) {
+  const kd = EXERCISE_KINDS[kind] || EXERCISE_KINDS.hypertrophy;
+  return `<strong>${kd.label}</strong> · reps ${kd.reps} · sets ${kd.sets}<br>${kd.desc}`;
+}
+
+// Picking a kind fills in its rep range, sets and role
+function onExerciseKindChange(sessionId, idx) {
+  const k = `${sessionId}-${idx}`;
+  const g = id => document.getElementById(`${id}-${k}`);
+  const kind = g('ef-kind')?.value || 'hypertrophy';
+  const kd = EXERCISE_KINDS[kind];
+  const repsEl = g('ef-reps');
+  if (repsEl) {
+    repsEl.value = kd.reps;
+    repsEl.readOnly = kind === 'hypertrophy';
+  }
+  const lbl = g('ef-reps-label');
+  if (lbl) lbl.textContent = kind === 'hypertrophy' ? 'Rep Range (fixed 8–12 for hypertrophy)' : 'Rep Range (e.g. 15, 5, or 30s)';
+  if (g('ef-sets')) g('ef-sets').value = kd.sets;
+  const typeEl = g('ef-type');
+  if (typeEl) {
+    if (kind === 'prehab') typeEl.value = 'prehab';
+    else if (typeEl.value === 'prehab') typeEl.value = 'accessory';
+  }
+  if (g('ef-prog')) g('ef-prog').value = 'auto';
+  const card = g('ef-kind-card');
+  if (card) card.innerHTML = kindCardHtml(kind);
+  refreshRulePreview(sessionId, idx);
+}
+
 // Read the form into a candidate exercise object (no save)
 function readExerciseForm(sessionId, idx, base) {
   const k = `${sessionId}-${idx}`;
@@ -10171,7 +10746,10 @@ function readExerciseForm(sessionId, idx, base) {
   const chipsOn = id => [...(g(id)?.querySelectorAll('.pick-chip.on') || [])].map(c => c.dataset.v);
   const name = g('ef-name')?.value.trim() || '';
   const type = g('ef-type')?.value || 'accessory';
-  const reps = g('ef-reps')?.value.trim() || '';
+  const kind = g('ef-kind')?.value || getExerciseKind(base);
+  let reps = g('ef-reps')?.value.trim() || '';
+  // Hypertrophy work is always 8–12 (a per-side note survives)
+  if (kind === 'hypertrophy') reps = `8–12${/\/\s*side/i.test(reps) ? '/side' : ''}`;
   const sets = g('ef-sets')?.value.trim() || '';
   const load = g('ef-load')?.value.trim() || '';
   const tags = (g('ef-tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean)
@@ -10190,7 +10768,7 @@ function readExerciseForm(sessionId, idx, base) {
   const ladderText = g('ef-ladder')?.value.trim() || '';
   const out = {
     ...(base || {}),
-    name, type, tags, sets, reps, repRange, load,
+    name, kind, type, tags, sets, reps, repRange, load,
     notes: g('ef-notes')?.value.trim() || '',
     desc:  g('ef-desc')?.value.trim() || '',
     substitutions: (g('ef-subs')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
@@ -10202,6 +10780,8 @@ function readExerciseForm(sessionId, idx, base) {
   if (progression && progression !== 'auto') out.progression = progression; else delete out.progression;
   const ladder = ladderText ? parseLadderText(ladderText) : [];
   if (ladder.length > 1) out.ladder = ladder; else delete out.ladder;
+  // Superset partner is applied on save, not stored on the exercise
+  Object.defineProperty(out, '_supersetWith', { value: g('ef-ss') ? g('ef-ss').value : null, enumerable: false });
   return out;
 }
 
@@ -10216,7 +10796,7 @@ function refreshRulePreview(sessionId, idx) {
   if (!cand.name) { el.innerHTML = '<span>Name the exercise to see its rule.</span>'; return; }
   const rule = resolveProgressionRule(sessionId, cand);
   const a = rule.attrs;
-  el.innerHTML = `<span class="rule-preview-model">${rule.label}</span>
+  el.innerHTML = `<span class="rule-preview-model">${EXERCISE_KINDS[rule.kind]?.label || ''} → ${rule.label}</span>
     <span>${PROGRESSION_MODELS[rule.model].desc}</span>
     <div class="ex-tags" style="margin-top:4px">${muscleChips(a)}<span class="ex-tag">${patternLabel(a.pattern)}</span><span class="ex-tag">${equipmentLabel(a.equipment)}</span>${a.inferred ? '<span class="ex-tag auto">muscles inferred</span>' : ''}</div>
     <div class="builder-hint">Why: ${rule.why}${rule.fixedSets ? ` · fixed ${rule.fixedSets} sets` : ' · sets follow the meso week'}${rule.canStepLoad ? '' : ' · no load ladder for this equipment'}</div>`;
@@ -10233,12 +10813,17 @@ function saveExerciseEdit(sessionId, idx) {
   const oldName = ex?.name;
 
   const next = readExerciseForm(sessionId, idx, ex);
+  const supersetWith = next._supersetWith;
   if (!next.name) { toast('Exercise name required', 'error'); return; }
+  if (next.kind !== 'timed' && !getExerciseAttrs(next).primary.length) {
+    toast('Pick at least one primary muscle — volume and MRV tracking need it', 'error'); return;
+  }
   if (session.exercises.some((e, j) => e.name === next.name && j !== i)) { toast('That name is already in this session', 'error'); return; }
 
   if (isNew) {
     if (!next.prog) next.prog = '';
     session.exercises.push(next);
+    if (supersetWith !== null) applySupersetLink(session, next, supersetWith);
     renumberSession(session);
     toast(`Exercise "${next.name}" added`, 'success');
   } else {
@@ -10272,6 +10857,10 @@ function saveExerciseEdit(sessionId, idx) {
     // Replace in place so removed optional fields really go away
     Object.keys(ex).forEach(key => { if (!(key in next)) delete ex[key]; });
     Object.assign(ex, next);
+    if (supersetWith !== null) {
+      applySupersetLink(session, ex, supersetWith);
+      renumberSession(session);
+    }
   }
 
   saveProgrammeEdits();
@@ -10293,6 +10882,7 @@ function confirmRemoveExercise(sessionId, idx) {
       { label: 'Cancel', cls: 'cancel', action: closeModal },
       { label: 'Remove', cls: 'confirm', action: () => {
         session.exercises.splice(idx, 1);
+        cleanupSupersets(session);
         renumberSession(session);
         closeModal();
         saveProgrammeEdits(`${ex.name} removed from ${session.name}`);
