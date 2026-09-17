@@ -3,7 +3,7 @@
    Version is injected by the app on registration
    via the SW_VERSION query parameter.
 
-   Strategy: cache-first for the app shell,
+   Strategy: network-first for the app shell (cache = offline),
    pass-through for all external APIs.
    Cache is named per-version so deploys bust
    stale caches automatically.
@@ -57,7 +57,10 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// ── Fetch: cache-first with network fallback ─────────────────────
+// ── Fetch: network-first, cache as the offline fallback ──────────
+// Serving the cache first kept phones on the previous build until a
+// second reload, so a deploy looked broken. Online always gets the
+// deployed files; offline still opens from the cache.
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
@@ -65,21 +68,15 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || isPassthrough(url)) return;
 
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      // Stale-while-revalidate: serve cache instantly,
-      // update cache in background for next visit
-      const networkFetch = fetch(e.request)
-        .then(res => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-          }
-          return res;
-        })
-        .catch(() => null);
-
-      return cached || networkFetch;
-    })
+    fetch(e.request, { cache: 'no-cache' })
+      .then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request).then(cached => cached || Response.error()))
   );
 });
 
