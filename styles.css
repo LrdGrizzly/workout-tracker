@@ -1324,10 +1324,17 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 /* ═══════════════════════════════════════════
    PILL INPUT SYSTEM
 ═══════════════════════════════════════════ */
-.pill-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
-.pill-group.load-pills { max-width: 180px; }
-.pill-group.rep-pills  { max-width: 220px; }
-.pill-group.rir-pills  { max-width: 180px; }
+.pill-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; min-width: 0; }
+/* Reps and RIR share one equal-width column grid, so their values line up
+   under each other and spread across the row instead of bunching left */
+.pill-group.rep-pills,
+.pill-group.rir-pills {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  gap: 4px;
+}
+.pill-group.rep-pills .input-pill,
+.pill-group.rir-pills .input-pill { text-align: center; }
 
 .input-pill {
   font-family: var(--font-mono);
@@ -1432,22 +1439,21 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
   width: 100%;
 }
 
+/* Load / Reps / RIR as aligned rows: labels in one column, pills in the
+   other, each row using the full card width before it wraps */
 .set-row-pills {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  column-gap: 10px;
+  row-gap: 6px;
   padding-left: 22px;
-  margin-top: 2px;
+  margin-top: 4px;
   width: 100%;
+  box-sizing: border-box;
 }
 
-.pill-labeled-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-}
+.pill-labeled-group { display: contents; }
 
 .pill-section-label {
   font-family: var(--font-mono);
