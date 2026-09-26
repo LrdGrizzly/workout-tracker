@@ -452,7 +452,7 @@
    from it, so old caches are busted
    automatically on the next load.
 ═══════════════════════════════════════════ */
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 
 /* ═══════════════════════════════════════════
    STORAGE MANAGER
@@ -851,6 +851,8 @@ const Validator = (() => {
       ...(ex.tempoApplied  ? { tempoApplied: true }               : {}),
       ...(typeof ex.ladderRungIndex === 'number'
                            ? { ladderRungIndex: ex.ladderRungIndex } : {}),
+      ...(Number.isInteger(ex.powerStage) && ex.powerStage >= 0
+                           ? { powerStage: ex.powerStage }           : {}),
     };
   }
 
@@ -907,6 +909,7 @@ const Validator = (() => {
       ...(session._imported ? { _imported: true } : {}),
       ...(session._manual   ? { _manual:   true } : {}),
       ...(session._conflict ? { _conflict: true } : {}),
+      ...(session.power     ? { power:     true } : {}),
     };
   }
 
@@ -955,6 +958,7 @@ const Validator = (() => {
       const focus = strArr(s.focus);
       if (focus) o.focus = focus;
       if (s.custom) o.custom = true;
+      if (s.power === true) o.power = true;
       o.exercises = (Array.isArray(s.exercises) ? s.exercises : []).map(validateExerciseConfig).filter(Boolean);
       out.push(o);
     });
@@ -1018,6 +1022,7 @@ const Validator = (() => {
     // sessionsConfig: the full programme — array of sessions, each with
     // an exercises array. Only known fields survive, with type checks.
     clean.sessionsConfig = validateSessionsConfig(data.sessionsConfig);
+    clean.programmePatches = strArr(data.programmePatches) || [];
 
     // jeLadderKeyMap: object of string → string
     clean.jeLadderKeyMap = {};
@@ -1104,11 +1109,11 @@ const PROGRAMMES = {
     // Kit the load steps are built from (editable in Settings → My equipment)
     inventory: { kb: [4, 8, 12, 16], bands: ['yellow', 'red', 'blue', 'black'] },
     schedule: [
-      { day: 'Mon', session: 'Push A', color: 'var(--push-a)' },
-      { day: 'Tue', session: 'Pull',   color: 'var(--pull)' },
+      { day: 'Mon', session: 'Legs B', color: 'var(--legs-b)' },
+      { day: 'Tue', session: 'Push A', color: 'var(--push-a)' },
       { day: 'Wed', session: 'Legs A', color: 'var(--legs-a)' },
-      { day: 'Thu', session: 'Push B', color: 'var(--push-b)' },
-      { day: 'Fri', session: 'Legs B', color: 'var(--legs-b)' },
+      { day: 'Thu', session: 'Pull',   color: 'var(--pull)' },
+      { day: 'Fri', session: 'Push B', color: 'var(--push-b)' },
       { day: 'Sat', session: 'KB Flow (opt)', color: 'var(--kb-flow)' },
       { day: 'Sun', session: 'Rest / Run', color: null },
     ],
@@ -1121,15 +1126,38 @@ const PROGRAMMES = {
     ],
     sessions: [
       {
-        id: 'push-a',
+        id: 'legs-b',
         days: ['Mon'],
+        name: 'Legs B',
+        subtitle: 'Hip Hinge, Hamstrings & Glutes',
+        class: 's-legs-b',
+        color: 'var(--legs-b)',
+        colorRgb: '255,92,122',
+        rest: 120,
+        note: 'KB swing opens while you are fresh — ballistic work goes before anything fatiguing (Galpin), and it grooves the hinge for the deadlift. KB deadlift is the primary bilateral hinge. Single-leg RDL follows while the hinge pattern is warm. Hip thrust shifts to glute dominant. Bayesian curl closes with the first biceps hit of the week; Pull on Thursday brings the second, three days later.',
+        exercises: [
+          { num: '01', name: 'KB Swing', kind: 'skill', tags: ['compound'], type: 'compound', sets: '3–5', reps: '12–15', repRange: [12,15], load: '16 kg (two hands)', prog: '20 kg', notes: 'Hip snap only. Arms don\'t lift. Ballistic hip extension.',
+          desc: 'Hip hinge — not a squat. The KB is driven by a hip snap, not arm lift. Hike the KB back between the legs, then explosively extend the hips. The arms are just a lever. The bell should float at the top, not be lifted.' },
+          { num: '02', name: 'KB Deadlift', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12+16 = 28 kg (two KBs)', prog: 'Tempo at 28 kg, then heavier bells', notes: 'Push floor away. Full lockout. Controlled descent.',
+          desc: 'One KB in each hand (or two KBs one hand). Push the floor away rather than pulling up. Full hip extension at the top — glutes squeeze. Control the descent — do not drop. Foundation of the hip hinge pattern.' },
+          { num: '03', name: 'Single-Leg RDL', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: '8+16 = 24 kg (two KBs)', prog: '28 kg (12+16)', notes: 'Hinge until hamstring stretch. Hip drive to stand.',
+          desc: 'Stand on one leg, hinge at the hip with the KB in the opposite or same-side hand. Lower until hamstring stretch, drive hip forward to stand. Balance and stability limit this more than strength initially. Keep hips square.' },
+          { num: '04', name: 'Hip Thrust', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg + Yellow band', prog: 'Add band resistance → heavier KB', notes: 'Shoulders on sofa. 1s hold at top. Feel in glute only.',
+          desc: 'Shoulders on sofa or bench, feet flat on floor. Drive hips up until body is straight from shoulder to knee. 1s hold at the top. Primary glute exercise — if you feel it in the lower back, check foot placement and tuck the pelvis.' },
+          { num: '05', name: 'Banded Bayesian Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Yellow band', prog: 'Yellow → Red band', notes: 'First biceps hit of the week (Pull on Thu brings the second). Elbow stays behind the torso — long head fully stretched.',
+          desc: 'Band anchored low behind you (door anchor at ankle height, or under the back foot). Face away in a staggered stance and let the working arm hang slightly behind the torso. Curl without letting the elbow drift forward, then lower slowly back into the full stretch. The band keeps tension at the bottom, where a kettlebell curl has almost none — biasing the long head in its lengthened position.' },
+        ]
+      },
+      {
+        id: 'push-a',
+        days: ['Tue'],
         name: 'Push A',
         subtitle: 'Chest & Triceps',
         class: 's-push-a',
         color: 'var(--push-a)',
         colorRgb: '0,212,160',
         rest: 60,
-        note: 'Floor press leads as the heaviest compound. Incline press adds upper chest stimulus. Archer push-up bridges chest compounds before isolation. Fly pre-fatigues the pec for the tricep finisher.',
+        note: 'Floor press leads as the heaviest compound. Incline press adds upper chest stimulus. Archer push-up bridges chest compounds before isolation. Fly isolates the pec after the presses (superset with the gorilla row); overhead extension finishes the triceps.',
         exercises: [
           { num: '01', name: 'KB Floor Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: 'Tempo: 3s eccentric → jump to 20 kg', notes: 'Full pause at chest. Elbow 45°. One side at a time.',
           desc: 'Lie on your back, KB in one hand, elbow at 45°. Press straight up to full extension then lower with control. Eliminates the shoulder instability of a full bench press by limiting the range of motion at the bottom.' },
@@ -1150,31 +1178,6 @@ const PROGRAMMES = {
         ]
       },
       {
-        id: 'pull',
-        days: ['Tue'],
-        name: 'Pull',
-        subtitle: 'Back, Biceps & Rear Delt',
-        class: 's-pull',
-        color: 'var(--pull)',
-        colorRgb: '77,184,255',
-        rest: 60,
-        note: 'Bent-over row leads as the primary horizontal compound. Face pull hits rear delt as a mass movement while back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Zottman targets brachialis. Rear delt fly is a prehab buffer. Supinated curl finishes with short head emphasis.',
-        exercises: [
-          { num: '01', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
-          desc: 'Hinge at the hip to roughly 45°. Row the KB to your hip crease, not your chest. Full stretch at the bottom — let the shoulder blade protract. One arm at a time for full ROM and to prevent compensation.' },
-          { num: '02', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
-          desc: 'Band anchored high at a door anchor. Pull to face level with external rotation — elbows flaring wide, hands ending beside your ears. Primary rear delt and mid-trap movement, not a bicep exercise.' },
-          { num: '03', name: 'Banded Overhead Pull → Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3–5', reps: '8–12 / 8–12', repRange: [8,12], load: 'Blue band (superset)', prog: 'Blue → Black band', notes: 'Superset. Overhead pull from high anchor → immediately straight-arm pulldown. Full lat range.',
-          desc: 'Superset. First: band from high anchor, arms start overhead, pull down to thighs with straight arms — hits lat in lengthened position. Immediately: standard straight-arm pulldown from same anchor. No rest between the two movements.' },
-          { num: '04', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
-          desc: 'Curl up with a supinated grip (palms up), rotate to pronated at the top (palms down), lower slowly in the pronated position. Combines bicep peak stimulus on the way up with brachialis and brachioradialis eccentric on the way down.' },
-          { num: '05', name: 'Banded Rear Delt Fly', tags: ['prehab'], type: 'prehab', sets: '3', reps: '12–15', repRange: [12,15], load: 'Yellow band', prog: 'Yellow → Red band', notes: 'Prehab buffer. Zero bicep involvement. Horizontal abduction.',
-          desc: 'Band at chest height, one end in each hand. Arms slightly bent, pull outward in a wide arc until arms are parallel. Horizontal abduction — isolates rear delt with zero bicep involvement. Used here as a prehab buffer between curl variations.' },
-          { num: '06', name: 'Supinated KB Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Full supination throughout. Targets bicep short head / peak.',
-          desc: 'Standard curl with full supination (palms facing up) maintained throughout the entire movement. Do not rotate at the top. Targets the short head of the bicep for peak width. One arm at a time.' },
-        ]
-      },
-      {
         id: 'legs-a',
         days: ['Wed'],
         name: 'Legs A',
@@ -1183,7 +1186,7 @@ const PROGRAMMES = {
         color: 'var(--legs-a)',
         colorRgb: '245,184,48',
         rest: 120,
-        note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Nordic curl closes as the eccentric finisher — always last.',
+        note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Banded hamstring curl is the second hamstring hit of the week, two days after the Monday hinges — knee flexion rather than another hinge. Nordic curl closes as the eccentric finisher — always last.',
         exercises: [
           { num: '01', name: 'Goblet Squat', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '28 kg (two KBs)', prog: 'Add set → 32 kg', notes: 'Upright torso. Full depth. Knees out.',
           desc: 'Hold KB at chest, elbows inside knees. Squat to full depth — the KB counterbalance helps maintain an upright torso. Drive knees out, push floor away to stand. Primary bilateral quad compound.' },
@@ -1193,13 +1196,40 @@ const PROGRAMMES = {
           desc: 'Heels elevated on a step or plate. Lean back slightly as you bend the knees, lowering the body as a unit. The knee travels far forward over the toe. Targets the rectus femoris in its most lengthened position — the part of the quad most neglected by standard squats.' },
           { num: '04', name: 'ATG Split Squat', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg goblet hold', prog: '20 kg → dual KB hold', notes: 'Deep knee flexion. Touch wall for balance if needed.',
           desc: 'Rear foot flat or elevated. Front shin as vertical or as forward as mobility allows — the goal is full knee flexion. KB held goblet-style or at sides. ATG = Ass To Grass. Unilateral quad development with full ROM.' },
-          { num: '05', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
+          { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: 'Yellow + Red bands', prog: 'Next band combination', notes: '3s eccentric. One leg at a time. Wednesday hit — the hinges are on Monday.',
+          desc: 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Hip hinges on Monday, knee flexion on Wednesday — two hamstring hits a week without stacking them in one session.' },
+          { num: '06', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
           desc: 'Kneel with feet anchored. Lean forward as a unit — body stays straight from knee to shoulder — resisting the descent with the quads. Extremely demanding eccentric. Lower as slowly as possible. Always the last exercise.' },
         ]
       },
       {
-        id: 'push-b',
+        id: 'pull',
         days: ['Thu'],
+        name: 'Pull',
+        subtitle: 'Back, Biceps & Rear Delt',
+        class: 's-pull',
+        color: 'var(--pull)',
+        colorRgb: '77,184,255',
+        rest: 60,
+        note: 'Curls open the session — biceps are the priority, so they are trained fresh and arrive pre-fatigued for the rows (pre-fatigue, per Galpin). Supinated curl for the short head, then Zottman for the brachialis. Bent-over row is the primary horizontal compound — expect a few fewer reps than before with tired arms. Face pull hits rear delt while the back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Rear delt fly closes as prehab.',
+        exercises: [
+          { num: '01', name: 'Supinated KB Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Full supination throughout. Targets bicep short head / peak.',
+          desc: 'Standard curl with full supination (palms facing up) maintained throughout the entire movement. Do not rotate at the top. Targets the short head of the bicep for peak width. One arm at a time.' },
+          { num: '02', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
+          desc: 'Curl up with a supinated grip (palms up), rotate to pronated at the top (palms down), lower slowly in the pronated position. Combines bicep peak stimulus on the way up with brachialis and brachioradialis eccentric on the way down.' },
+          { num: '03', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
+          desc: 'Hinge at the hip to roughly 45°. Row the KB to your hip crease, not your chest. Full stretch at the bottom — let the shoulder blade protract. One arm at a time for full ROM and to prevent compensation.' },
+          { num: '04', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
+          desc: 'Band anchored high at a door anchor. Pull to face level with external rotation — elbows flaring wide, hands ending beside your ears. Primary rear delt and mid-trap movement, not a bicep exercise.' },
+          { num: '05', name: 'Banded Overhead Pull → Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3–5', reps: '8–12 / 8–12', repRange: [8,12], load: 'Blue band (superset)', prog: 'Blue → Black band', notes: 'Superset. Overhead pull from high anchor → immediately straight-arm pulldown. Full lat range.',
+          desc: 'Superset. First: band from high anchor, arms start overhead, pull down to thighs with straight arms — hits lat in lengthened position. Immediately: standard straight-arm pulldown from same anchor. No rest between the two movements.' },
+          { num: '06', name: 'Banded Rear Delt Fly', tags: ['prehab'], type: 'prehab', sets: '3', reps: '12–15', repRange: [12,15], load: 'Yellow band', prog: 'Yellow → Red band', notes: 'Prehab finisher. Zero bicep involvement. Horizontal abduction.',
+          desc: 'Band at chest height, one end in each hand. Arms slightly bent, pull outward in a wide arc until arms are parallel. Horizontal abduction — isolates rear delt with zero bicep involvement. Closes the session as prehab — it still works with arms already tired from the curls.' },
+        ]
+      },
+      {
+        id: 'push-b',
+        days: ['Fri'],
         name: 'Push B',
         subtitle: 'Shoulders & Triceps',
         class: 's-push-b',
@@ -1227,29 +1257,6 @@ const PROGRAMMES = {
         ]
       },
       {
-        id: 'legs-b',
-        days: ['Fri'],
-        name: 'Legs B',
-        subtitle: 'Hip Hinge, Hamstrings & Glutes',
-        class: 's-legs-b',
-        color: 'var(--legs-b)',
-        colorRgb: '255,92,122',
-        rest: 120,
-        note: 'KB deadlift leads as the primary bilateral hinge. Single-leg RDL follows immediately while the hinge pattern is warm. Hip thrust shifts to glute dominant. KB swing is ballistic hip extension. Banded hamstring curl closes as the eccentric finisher.',
-        exercises: [
-          { num: '01', name: 'KB Deadlift', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12+16 = 28 kg (two KBs)', prog: 'Tempo at 28 kg, then heavier bells', notes: 'Push floor away. Full lockout. Controlled descent.',
-          desc: 'One KB in each hand (or two KBs one hand). Push the floor away rather than pulling up. Full hip extension at the top — glutes squeeze. Control the descent — do not drop. Foundation of the hip hinge pattern.' },
-          { num: '02', name: 'Single-Leg RDL', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: '8+16 = 24 kg (two KBs)', prog: '28 kg (12+16)', notes: 'Hinge until hamstring stretch. Hip drive to stand.',
-          desc: 'Stand on one leg, hinge at the hip with the KB in the opposite or same-side hand. Lower until hamstring stretch, drive hip forward to stand. Balance and stability limit this more than strength initially. Keep hips square.' },
-          { num: '03', name: 'Hip Thrust', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg + Yellow band', prog: 'Add band resistance → heavier KB', notes: 'Shoulders on sofa. 1s hold at top. Feel in glute only.',
-          desc: 'Shoulders on sofa or bench, feet flat on floor. Drive hips up until body is straight from shoulder to knee. 1s hold at the top. Primary glute exercise — if you feel it in the lower back, check foot placement and tuck the pelvis.' },
-          { num: '04', name: 'KB Swing', kind: 'skill', tags: ['compound'], type: 'compound', sets: '3–5', reps: '12–15', repRange: [12,15], load: '16 kg (two hands)', prog: '20 kg', notes: 'Hip snap only. Arms don\'t lift. Ballistic hip extension.',
-          desc: 'Hip hinge — not a squat. The KB is driven by a hip snap, not arm lift. Hike the KB back between the legs, then explosively extend the hips. The arms are just a lever. The bell should float at the top, not be lifted.' },
-          { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: 'Yellow + Red bands', prog: 'Next band combination', notes: '3s eccentric. Always last. One leg at a time.',
-          desc: 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Always last — hamstrings are already fatigued from hinging.' },
-        ]
-      },
-      {
         id: 'kb-flow',
         name: 'KB Flow',
         subtitle: 'Full Body (Optional / Saturday)',
@@ -1258,6 +1265,7 @@ const PROGRAMMES = {
         colorRgb: '255,144,80',
         rest: 60,
         sessionType: 'optional',
+        powerCapable: true,
         note: 'Sporadic session — use as a Saturday bonus or replacement for any PPL session. Best substitution for Push B or Legs B. Not a substitute for Pull or Legs A. Quality over speed throughout.',
         exercises: [
           { num: '01', name: 'Two-Hand Swing', tags: ['compound'], type: 'compound', sets: '3', reps: '15', repRange: [15,15], load: '16 kg', prog: '20 kg', notes: 'Foundation ballistic. Hip snap drives the bell.',
@@ -1285,24 +1293,24 @@ const PROGRAMMES = {
         colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
-        note: 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. Explosive alternatives available per exercise if knees are uncomfortable.',
+        note: 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. The light hip-flexion drill warms up; jumps, bounds and pogos follow while fresh — power before anything fatiguing (Galpin) — then the Cossack squat and bridge. Explosive alternatives available per exercise if knees are uncomfortable.',
         exercises: [
           { num: '01', name: 'Standing Banded Hip Flexion', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'Light band', prog: 'Heavier band → pause at top', notes: 'Band anchored behind you at ankle height. Drive knee explosively to 90°.',
             desc: 'Light band anchored low behind you. Drive one knee up to hip height against band resistance. Concentric iliopsoas loading. Focus on speed and height of the drive. Pause briefly at the top before lowering.' },
           { num: '02', name: 'Tuck Jump', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Add pause at top of drive',
             altName: 'Standing Hip Drive to Knee Raise (Banded)', notes: 'Drive both knees to chest at the top of the jump. Soft landing.',
             desc: 'Jump explosively, driving both knees toward your chest at the peak. Land softly with bent knees. The hip flexors must work powerfully at the top of the movement.' },
-          { num: '03', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → add KB goblet hold', notes: 'Wide stance, deep lateral lunge. Start at 50–60% depth.',
-            desc: 'Wide stance, toes pointed out. Shift weight to one side into a deep lateral lunge while the other leg stays straight with heel on the floor. One of the most complete hip mobility exercises available with bodyweight only.' },
-          { num: '04', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band resistance',
+          { num: '03', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band resistance',
             altName: 'Lateral Step and Drive', notes: 'Jump laterally off one foot, land and hold 2s on the other.',
             desc: 'Jump as far as possible to the side off one foot. Land on the opposite foot and absorb the landing for a 2-second hold before the next rep. Frontal plane power and single-leg stability.' },
-          { num: '05', name: 'Single-Leg Glute Bridge with Knee Hold', tags: ['accessory', 'unilateral', 'bw'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'BW', prog: 'Add light band around knee → add KB on hip',
-            notes: '1s hold at top. Drive through heel of planted leg.',
-            desc: 'Bridge on one leg while holding the opposite knee at 90° with both hands. The hip flexor of the floating leg works isometrically while the glute of the planted leg drives the movement. Trains both simultaneously.' },
-          { num: '06', name: 'Single-Leg Pogo', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '15/side', repRange: [15,15], load: 'BW', prog: 'Increase duration → add KB hold',
+          { num: '04', name: 'Single-Leg Pogo', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '15/side', repRange: [15,15], load: 'BW', prog: 'Increase duration → add KB hold',
             altName: 'Single-Leg Calf Raise — Explosive Tempo', notes: 'Tiny rapid hops. Minimal knee bend. Elastic rebound.',
             desc: 'Small rapid hops on one foot with minimal knee bend. The energy comes from the ankle and Achilles, not the knee. Trains elastic tendon quality. Keep the hops small and fast rather than high.' },
+          { num: '05', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → add KB goblet hold', notes: 'Wide stance, deep lateral lunge. Start at 50–60% depth.',
+            desc: 'Wide stance, toes pointed out. Shift weight to one side into a deep lateral lunge while the other leg stays straight with heel on the floor. One of the most complete hip mobility exercises available with bodyweight only.' },
+          { num: '06', name: 'Single-Leg Glute Bridge with Knee Hold', tags: ['accessory', 'unilateral', 'bw'], type: 'accessory', sets: '3', reps: '12/side', repRange: [12,12], load: 'BW', prog: 'Add light band around knee → add KB on hip',
+            notes: '1s hold at top. Drive through heel of planted leg.',
+            desc: 'Bridge on one leg while holding the opposite knee at 90° with both hands. The hip flexor of the floating leg works isometrically while the glute of the planted leg drives the movement. Trains both simultaneously.' },
           { num: '07', name: 'Dead Bug with Hip Flexion Drive', tags: ['accessory', 'bw'], type: 'accessory', sets: '3', reps: '10/side', repRange: [10,10], load: 'BW → light band', prog: 'Add band resistance at knee',
             notes: 'As one leg extends, opposite knee drives into chest against band.',
             desc: 'Standard dead bug position. As one leg extends toward the floor, the opposite knee actively drives up into your chest — optionally against a light band for resistance. Combines deep core stability with hip flexor loading.' },
@@ -1346,7 +1354,7 @@ const PROGRAMMES = {
         colorRgb: '0,180,204',
         rest: 60,
         sessionType: 'transition',
-        note: 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
+        note: 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions. Every explosive lift comes before the Cossack squat — power work goes first while fresh (Galpin).',
         exercises: [
           { num: '01', name: 'KB Clean — Light and Fast', tags: ['compound', 'unilateral'], type: 'compound', sets: '4', reps: '6/side', repRange: [6,6], load: '12 kg', prog: '16 kg — focus is speed not load', notes: 'Lighter than working weight. Prioritise hip drive speed and clean rack catch.',
             desc: 'KB clean performed at lighter load with maximum hip drive speed. The goal is rate of force development — how fast you can produce power — not the load itself. Tight arc, fast snap, controlled catch in the rack position.' },
@@ -1355,13 +1363,13 @@ const PROGRAMMES = {
           { num: '03', name: 'Tuck Jump', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8', repRange: [8,8], load: 'BW', prog: 'Add pause at top',
             altName: 'Standing Hip Drive to Knee Raise (Banded)', notes: 'Drive both knees to chest. Soft landing.',
             desc: 'Jump explosively, driving both knees toward your chest at the peak. Land softly with bent knees. The hip flexors must work powerfully at the top of the movement.' },
-          { num: '04', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → KB goblet hold', notes: 'Wide lateral lunge. Manage depth to comfort.',
-            desc: 'Wide stance, deep lateral lunge to one side while the other leg stays straight. Targets adductors, hip flexors, and hip external rotators through a range most training never addresses.' },
-          { num: '05', name: 'Single-Arm Alternating KB Swing', tags: ['compound'], type: 'compound', sets: '3', reps: '12/side', repRange: [12,12], load: '12 kg', prog: '16 kg — focus on hip snap speed', notes: 'Lighter than working weight. Emphasise hip snap velocity.',
-            desc: 'Standard KB swing but one hand at a time, alternating at the top of each rep. Lighter than your working weight — the goal is explosive hip snap speed rather than load. The alternating catch adds a reactive element that bilateral swings lack.' },
-          { num: '06', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band',
+          { num: '04', name: 'Lateral Bound to Stick', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase distance → add band',
             altName: 'Lateral Step and Drive', notes: 'Jump laterally off one foot, hold landing for 2s.',
             desc: 'Jump as far as possible laterally off one foot. Land on the opposite foot and absorb the landing. 2-second hold before the next rep. Frontal plane power and landing stability.' },
+          { num: '05', name: 'Single-Arm Alternating KB Swing', tags: ['compound'], type: 'compound', sets: '3', reps: '12/side', repRange: [12,12], load: '12 kg', prog: '16 kg — focus on hip snap speed', notes: 'Lighter than working weight. Emphasise hip snap velocity.',
+            desc: 'Standard KB swing but one hand at a time, alternating at the top of each rep. Lighter than your working weight — the goal is explosive hip snap speed rather than load. The alternating catch adds a reactive element that bilateral swings lack.' },
+          { num: '06', name: 'Cossack Squat', tags: ['compound', 'bw'], type: 'compound', sets: '3', reps: '8/side', repRange: [8,8], load: 'BW', prog: 'Increase depth → KB goblet hold', notes: 'Wide lateral lunge. Manage depth to comfort.',
+            desc: 'Wide stance, deep lateral lunge to one side while the other leg stays straight. Targets adductors, hip flexors, and hip external rotators through a range most training never addresses.' },
           { num: '07', name: 'Single-Leg Calf Raise — Explosive Tempo', tags: ['accessory', 'unilateral', 'bw'], type: 'accessory', sets: '3', reps: '15/side', repRange: [15,15], load: 'BW → KB hold', prog: 'Add KB hold → increase speed',
             altName: 'Single-Leg Pogo', notes: 'Rise as fast as possible. Lower under control. No pause at bottom.',
             desc: 'Single-leg calf raise performed with maximum concentric speed — rise as fast as possible. Lower under control in 2 seconds. No pause at the bottom. Trains the same elastic Achilles quality as the pogo but without ground impact.' },
@@ -1727,6 +1735,7 @@ const INITIAL_STATE = {
 
   // Programme customisation
   jeLadderKeyMap:       {},
+  programmePatches:     [],     // ids of PROGRAMME_PATCHES already applied to the saved programme
 
   // Transient tracker flags (not persisted)
   _tempoFlags:          {},
@@ -1914,6 +1923,12 @@ async function loadLocalState() {
   // settings written before the programme was persisted in full.
   if (Array.isArray(data.sessionsConfig) && data.sessionsConfig.length) {
     applySessionsConfig(data.sessionsConfig);
+    state.programmePatches = data.programmePatches || [];
+    // Replay built-in changes the saved copy predates; bumps configVersion
+    // so the next Drive sync pushes the patched programme
+    if (applyProgrammePatches()) saveSettings();
+  } else {
+    state.programmePatches = PROGRAMME_PATCHES.map(p => p.id);
   }
 
   // Update date inputs
@@ -1996,6 +2011,151 @@ function applySessionsConfig(cfgSessions) {
   state.programme.sessions = sessions;
 }
 
+/* ── Built-in programme patches ────────────────
+   The saved programme wins over the built-in one, so a change to the
+   defaults never reaches a device that already holds a saved copy. Each
+   patch replays one such change onto the saved copy, once: its id goes
+   into `programmePatches`, which is saved and synced with the programme,
+   so a later hand edit is never overwritten. Every step checks the
+   current shape first, so replaying on an already-patched copy is a
+   no-op, and text is only swapped where it still reads the old default. */
+function builtInExercise(sessionId, name) {
+  const d = PROGRAMMES[state.profile]?.sessions.find(s => s.id === sessionId)?.exercises.find(e => e.name === name);
+  return d ? JSON.parse(JSON.stringify(d)) : null;
+}
+function builtInSession(sessionId) {
+  return PROGRAMMES[state.profile]?.sessions.find(s => s.id === sessionId) || null;
+}
+// Put the named exercises first, in this order; the rest keep theirs after
+function reorderExercises(session, names) {
+  const before = session.exercises.map(e => e.name).join('|');
+  const lead = names.map(n => session.exercises.find(e => e.name === n)).filter(Boolean);
+  session.exercises = [...lead, ...session.exercises.filter(e => !lead.includes(e))];
+  return session.exercises.map(e => e.name).join('|') !== before;
+}
+// obj[field] still holds one of the old built-in texts → take the new one
+function refreshBuiltInText(obj, field, oldTexts, newText) {
+  if (!obj || !newText || !oldTexts.includes(obj[field]) || obj[field] === newText) return false;
+  obj[field] = newText;
+  return true;
+}
+
+const PROGRAMME_PATCHES = [
+  {
+    // Biceps and hamstrings twice a week; power work before fatigue
+    // (Galpin): swing leads Legs B, explosive work leads T1 / T3.
+    id: 'alex-2026-09-galpin-frequency-order',
+    profile: 'alex',
+    apply(sessions) {
+      const get = id => sessions.find(s => s.id === id);
+      const legsA = get('legs-a'), legsB = get('legs-b');
+      let changed = false;
+
+      // Hamstring curl: Friday → Wednesday, before the Nordic finisher
+      if (legsA && legsB && !legsA.exercises.some(e => e.name === 'Banded Hamstring Curl')) {
+        const i = legsB.exercises.findIndex(e => e.name === 'Banded Hamstring Curl');
+        if (i !== -1) {
+          const [curl] = legsB.exercises.splice(i, 1);
+          const d = builtInExercise('legs-a', 'Banded Hamstring Curl');
+          refreshBuiltInText(curl, 'notes', ['3s eccentric. Always last. One leg at a time.'], d?.notes);
+          refreshBuiltInText(curl, 'desc', ['Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Always last — hamstrings are already fatigued from hinging.'], d?.desc);
+          const n = legsA.exercises.findIndex(e => e.name === 'Quad Nordic Curl');
+          legsA.exercises.splice(n === -1 ? legsA.exercises.length : n, 0, curl);
+          changed = true;
+        }
+      }
+      // Second biceps hit: Bayesian curl closes Legs B
+      if (legsB && !legsB.exercises.some(e => e.name === 'Banded Bayesian Curl')) {
+        const d = builtInExercise('legs-b', 'Banded Bayesian Curl');
+        if (d) { legsB.exercises.push(d); changed = true; }
+      }
+      // Power first
+      if (legsB) changed = reorderExercises(legsB, ['KB Swing']) || changed;
+      ['transition-1', 'transition-3'].forEach(id => {
+        const s = get(id), d = builtInSession(id);
+        if (s && d) changed = reorderExercises(s, d.exercises.map(e => e.name)) || changed;
+      });
+
+      // Session notes that still read the old defaults
+      const OLD_NOTES = {
+        'push-a': 'Floor press leads as the heaviest compound. Incline press adds upper chest stimulus. Archer push-up bridges chest compounds before isolation. Fly pre-fatigues the pec for the tricep finisher.',
+        'legs-a': 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Nordic curl closes as the eccentric finisher — always last.',
+        'legs-b': 'KB deadlift leads as the primary bilateral hinge. Single-leg RDL follows immediately while the hinge pattern is warm. Hip thrust shifts to glute dominant. KB swing is ballistic hip extension. Banded hamstring curl closes as the eccentric finisher.',
+        'transition-1': 'Between-mesocycle session. Lighter, faster, athletic focus. Not counted in mesocycle progression. Explosive alternatives available per exercise if knees are uncomfortable.',
+        'transition-3': 'Between-mesocycle session. Combines explosive power, hip flexor loading, and upper body stability. The most demanding of the three transition sessions.',
+      };
+      Object.entries(OLD_NOTES).forEach(([id, old]) => {
+        changed = refreshBuiltInText(get(id), 'note', [old], builtInSession(id)?.note) || changed;
+      });
+      return changed;
+    },
+  },
+  {
+    // Week re-ordered: hamstrings Monday, quads Wednesday, Pull on
+    // Thursday with curls first (biceps priority, pre-fatigue).
+    id: 'alex-2026-09-week-order-bicep-priority',
+    profile: 'alex',
+    apply(sessions) {
+      const get = id => sessions.find(s => s.id === id);
+      let changed = false;
+
+      // Rotation follows programme order
+      const ORDER = ['legs-b', 'push-a', 'legs-a', 'pull', 'push-b'];
+      const before = sessions.map(s => s.id).join('|');
+      const lead = ORDER.map(get).filter(Boolean);
+      const rest = sessions.filter(s => !lead.includes(s));
+      sessions.splice(0, sessions.length, ...lead, ...rest);
+      if (sessions.map(s => s.id).join('|') !== before) changed = true;
+
+      // Days, only where they still hold the old built-in day
+      [['push-a', 'Mon', 'Tue'], ['pull', 'Tue', 'Thu'], ['push-b', 'Thu', 'Fri'], ['legs-b', 'Fri', 'Mon']].forEach(([id, from, to]) => {
+        const s = get(id);
+        if (s && Array.isArray(s.days) && s.days.length === 1 && s.days[0] === from) { s.days = [to]; changed = true; }
+      });
+
+      const pull = get('pull');
+      if (pull) changed = reorderExercises(pull, ['Supinated KB Curl', 'Zottman Curl']) || changed;
+
+      // Texts that name a day or the old order (original and first-patch wording)
+      const NOTES = {
+        'pull': ['Bent-over row leads as the primary horizontal compound. Face pull hits rear delt as a mass movement while back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Zottman targets brachialis. Rear delt fly is a prehab buffer. Supinated curl finishes with short head emphasis.'],
+        'legs-a': ['Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Banded hamstring curl gives the hamstrings a second hit each week (the hinges stay on Friday) — knee flexion, so it does not pre-tire the Friday hinges. Nordic curl closes as the eccentric finisher — always last.'],
+        'legs-b': ['KB swing opens while you are fresh — ballistic work goes before anything fatiguing (Galpin), and it grooves the hinge for the deadlift. KB deadlift is the primary bilateral hinge. Single-leg RDL follows while the hinge pattern is warm. Hip thrust shifts to glute dominant. Bayesian curl closes with the second biceps hit of the week, three days after Pull.'],
+      };
+      Object.entries(NOTES).forEach(([id, olds]) => {
+        changed = refreshBuiltInText(get(id), 'note', olds, builtInSession(id)?.note) || changed;
+      });
+      const EX_TEXT = [
+        ['pull', 'Banded Rear Delt Fly', 'notes', 'Prehab buffer. Zero bicep involvement. Horizontal abduction.'],
+        ['pull', 'Banded Rear Delt Fly', 'desc', 'Band at chest height, one end in each hand. Arms slightly bent, pull outward in a wide arc until arms are parallel. Horizontal abduction — isolates rear delt with zero bicep involvement. Used here as a prehab buffer between curl variations.'],
+        ['legs-a', 'Banded Hamstring Curl', 'notes', '3s eccentric. One leg at a time. Wednesday hit — the hinges stay on Friday.'],
+        ['legs-a', 'Banded Hamstring Curl', 'desc', 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Knee flexion on Wednesday, hip hinges on Friday — two hamstring hits a week without stacking them in one session.'],
+        ['legs-b', 'Banded Bayesian Curl', 'notes', 'Second biceps hit of the week (Pull on Tue). Elbow stays behind the torso — long head fully stretched.'],
+      ];
+      EX_TEXT.forEach(([sid, name, field, old]) => {
+        const ex = get(sid)?.exercises.find(e => e.name === name);
+        changed = refreshBuiltInText(ex, field, [old], builtInExercise(sid, name)?.[field]) || changed;
+      });
+      return changed;
+    },
+  },
+];
+
+// Apply every patch this profile's saved programme hasn't had yet.
+// Returns true when the programme changed.
+function applyProgrammePatches() {
+  const done = new Set(state.programmePatches || []);
+  let changed = false;
+  PROGRAMME_PATCHES.forEach(p => {
+    if (p.profile !== state.profile || done.has(p.id)) return;
+    if (p.apply(state.programme.sessions)) changed = true;
+    done.add(p.id);
+  });
+  state.programmePatches = [...done];
+  if (changed) state.programme.sessions.forEach(s => s.exercises.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); }));
+  return changed;
+}
+
 // Re-apply stored programme exercise edits onto the default programme definition
 function applyExOverrides() {
   const ov = state.exOverrides;
@@ -2025,6 +2185,7 @@ function saveSettings(bumpVersion = true) {
     restPeriods,
     exOverrides:      state.exOverrides       || {},
     sessionsConfig:   serializeSessions(),
+    programmePatches: state.programmePatches || [],
     jeLadderKeyMap:   state.jeLadderKeyMap   || {},
     weightLog:        state.weightLog        || [],
     bodyweight:       state.bodyweight       || null,
@@ -2214,6 +2375,9 @@ function renderSessions() {
 }
 
 function buildSessionCard(session) {
+  // Power mode shows the session as it will be trained today
+  session = getTrainingSession(session);
+  const power = !!session.power && !!session.powerCapable;
   const restId = `rest-${session.id}`;
   const restInputId = `rest-input-${session.id}`;
   const editBtnId = `edit-btn-${session.id}`;
@@ -2258,10 +2422,14 @@ function buildSessionCard(session) {
       </td>
       <td class="ex-sets">
         <div class="ex-cell-view">
-          <span style="font-family:'DM Mono',monospace;font-size:13px;color:${ex.type==='optional'?'var(--text-muted)':'var(--text)'}">
+          ${ex.powerMode ? (() => {
+            const prx = getExercisePrescription(session.id, ex);
+            return `<span class="power-rx">${prx.sets} × ${fmtRepBand(prx.reps)}</span>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">today · all-out</div>`;
+          })() : `<span style="font-family:'DM Mono',monospace;font-size:13px;color:${ex.type==='optional'?'var(--text-muted)':'var(--text)'}">
             ${getCurrentMesoWeek() === 5 ? '2' : getMesoSetTarget(getCurrentMesoWeek())}
           </span>
-          <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">${ex.sets} meso</div>
+          <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);margin-top:1px">${ex.sets} meso</div>`}
           <div class="ex-sets-range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.7;margin-top:1px">${ex.reps} reps</div>
           ${ex.rir ? `<div class="ex-rir-view" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:1px">RIR ${ex.rir}</div>` : ''}
         </div>
@@ -2273,8 +2441,8 @@ function buildSessionCard(session) {
       </td>
       <td class="ex-load">
         <div class="ex-cell-view">
-          <span>${ex.load}</span>
-          <div class="ex-load-prog">${computeNextProgression(ex, session.id)}</div>
+          <span>${ex.powerMode ? (fmtLoad(getExercisePrescription(session.id, ex).load) || ex.load) : ex.load}</span>
+          <div class="ex-load-prog">${ex.powerMode ? '→ 3×3 → 5×5, then next bell' : computeNextProgression(ex, session.id)}</div>
         </div>
         <div class="ex-cell-edit" style="display:none">
           ${buildExEditField(session.id, ex.num, 'load', 'Load', ex.load)}
@@ -2287,27 +2455,40 @@ function buildSessionCard(session) {
   const focus = sessionFocusLabel(session);
   const rgb   = session.colorRgb || '0,212,160';
   const tagStyle = `color:${session.color};border-color:rgba(${rgb},0.4);background:rgba(${rgb},0.1)`;
-  return `<div class="session-card ${session.class || ''}" id="card-${session.id}" style="--sess-rgb:${rgb}">
+  const powerToggle = session.powerCapable
+    ? `<button class="power-toggle${power ? ' on' : ''}" role="switch" aria-checked="${power}"
+        title="${power ? 'Back to the normal session' : 'Switch to a Galpin power session'}"
+        onclick="togglePowerMode(event,'${session.id}')"><span class="power-toggle-knob"></span>⚡ Power</button>`
+    : '';
+  return `<div class="session-card ${session.class || ''}${power ? ' power-on' : ''}" id="card-${session.id}" style="--sess-rgb:${rgb}">
     <div class="session-head" onclick="toggleSession('${session.id}')">
       <div class="session-pip" style="background:${session.color}"></div>
       <span class="session-tag" style="${tagStyle}">${session.name}</span>
-      <span class="session-title">${session.subtitle}</span>
+      ${power ? '<span class="power-badge">Power Session</span>' : `<span class="session-title">${session.subtitle}</span>`}
       <div class="session-head-actions">
         <span class="session-meta">${session.exercises.filter(e=>e.type!=='optional').length} ex</span>
-        <button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit plan</button>
+        ${powerToggle}
+        ${power ? '' : `<button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit plan</button>`}
       </div>
       <span class="session-chevron">›</span>
     </div>
+    ${power ? `<div class="power-brief"><strong>Galpin's 3-to-5.</strong> ${POWER_BRIEF}
+      <span class="power-brief-prog">Progress one step a week: 3×3 → 3×4 → 3×5 → 4×5 → 5×5, then the next bell back at 3×3. Deload with the mesocycle.</span></div>` : ''}
     <div class="session-body">
       ${focus ? `<div class="session-focus"><strong>Targets:</strong> ${focus}${session.days?.length ? ` · <strong>Days:</strong> ${session.days.join(', ')}` : ''}</div>` : ''}
-      ${session.note ? `<div class="session-note"><strong>Order:</strong> ${session.note}</div>` : ''}
+      ${power
+        ? `<div class="session-note"><strong>Order:</strong> Ballistic lifts only, done fresh.${(() => {
+            const extras = session.exercises.filter(e => !e.powerMode).map(e => esc(e.name));
+            return extras.length ? ` ${extras.join(', ')} turn optional — do ${extras.length > 1 ? 'them' : 'it'} after, never before.` : '';
+          })()} Switch Power off to edit the plan.</div>`
+        : (session.note ? `<div class="session-note"><strong>Order:</strong> ${session.note}</div>` : '')}
       <div class="edit-plan-hint">Editing here changes the <strong>plan targets</strong> (set/rep ranges).
         To change the reps and RIR you actually performed, open the session in <strong>History</strong> and tap Edit.</div>
       <div class="rest-row">
         <span class="rest-label">Rest Period</span>
-        <span class="rest-value" id="${restId}">${session.rest}s</span>
+        <span class="rest-value" id="${restId}">${power ? `${POWER_REST_S}s (3–5 min)` : `${session.rest}s`}</span>
         <input class="rest-input" id="${restInputId}" type="number" min="30" max="300" value="${session.rest}" style="display:none">
-        <button class="rest-edit-btn" onclick="editRest(event,'${session.id}')">Edit</button>
+        ${power ? '' : `<button class="rest-edit-btn" onclick="editRest(event,'${session.id}')">Edit</button>`}
       </div>
       <table class="ex-table">
         <thead><tr>
@@ -2326,6 +2507,34 @@ function buildSessionCard(session) {
 function toggleSession(id) {
   const card = document.getElementById(`card-${id}`);
   card.classList.toggle('open');
+}
+
+// Switch a power-capable session between its normal and power form.
+// Stored on the session so it syncs with the rest of the programme.
+function togglePowerMode(e, sessionId) {
+  e.stopPropagation();
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session?.powerCapable) return;
+  if (state.activeSessionId === sessionId && state.startTime) {
+    toast('Finish or cancel this session before switching Power', 'info');
+    return;
+  }
+  session.power = !session.power;
+  saveSettings();
+  saveProgrammeToDrive().catch(err => console.warn('[Drive] Programme push failed:', err));
+  const openIds = [...document.querySelectorAll('.session-card.open')].map(c => c.id);
+  renderSessions();
+  openIds.forEach(id => document.getElementById(id)?.classList.add('open'));
+  // Charge up into pink (or drain back out) on the freshly drawn card
+  const card = document.getElementById(`card-${sessionId}`);
+  if (card) {
+    const cls = session.power ? 'power-charging' : 'power-discharging';
+    card.classList.add(cls);
+    card.addEventListener('animationend', e => { if (e.target === card) card.classList.remove(cls); });
+  }
+  renderTracker();
+  if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
+  toast(session.power ? `${session.name} → Power session (Galpin 3-to-5)` : `${session.name} → normal session`, 'success');
 }
 
 // One labelled input inside an exercise row's edit mode
@@ -2432,13 +2641,37 @@ function renderTracker() {
   if (selectView) { selectView.style.display = 'block'; }
 
   const grid = document.getElementById('tracker-select-grid');
-  grid.innerHTML = state.programme.sessions.map(session => `
+  grid.innerHTML = state.programme.sessions.map(getTrainingSession).map(session => session.power ? `
+    <div class="tracker-session-btn power-on" onclick="selectTrackerSession('${session.id}')">
+      <div class="tracker-session-name">${session.name} <span class="power-badge sm">Power Session</span></div>
+      <div class="tracker-session-detail">3–5 × 3–5 · all-out</div>
+      <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} lifts · 3–5 min rest</div>
+    </div>` : `
     <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" style="border-left: 3px solid ${session.color}">
       <div class="tracker-session-name" style="color:${session.color}">${session.name}</div>
       <div class="tracker-session-detail">${session.subtitle}</div>
       <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} exercises · ${session.rest}s rest</div>
     </div>
   `).join('');
+}
+
+// Pink power banner at the top of an active power session
+function renderPowerBanner(session) {
+  let el = document.getElementById('power-banner');
+  if (!el) {
+    const anchor = document.getElementById('prog-suggestion');
+    if (!anchor?.parentNode) return;
+    el = document.createElement('div');
+    el.id = 'power-banner';
+    anchor.parentNode.insertBefore(el, anchor);
+  }
+  if (!session?.power) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `<div class="power-brief standalone">
+    <span class="power-badge">Power Session</span>
+    <div><strong>Galpin's 3-to-5.</strong> ${POWER_BRIEF}
+    <span class="power-brief-prog">Log RIR 0–1 on any set where the bell slowed — that holds the step. Every rep fast moves you one step next week.</span></div>
+  </div>`;
 }
 
 // Show notes from the last 3 sessions of the same type so recurring
@@ -2467,7 +2700,7 @@ function renderRecentNotes(sessionId) {
     '</div>';
 }
 
-function selectTrackerSession(sessionId) {  const session = state.programme.sessions.find(s => s.id === sessionId);
+function selectTrackerSession(sessionId) {  const session = getSessionById(sessionId);
   if (!session) return;
 
   state.activeSessionId = sessionId;
@@ -2483,8 +2716,10 @@ function selectTrackerSession(sessionId) {  const session = state.programme.sess
   activeView.classList.add('visible');
 
   // Session name + pip
-  document.getElementById('active-session-name').textContent = `${session.name} — ${session.subtitle}`;
+  document.getElementById('active-session-name').textContent = session.power
+    ? `${session.name} — Power Session` : `${session.name} — ${session.subtitle}`;
   document.getElementById('active-session-pip').style.background = session.color;
+  renderPowerBanner(session);
 
   // Deload banner
   const deloadBanner = document.getElementById('deload-banner');
@@ -3215,7 +3450,7 @@ function evaluateSet(inputEl, repRange) {
 }
 
 function addSet(sessionId, exIdx) {
-  const session = state.programme.sessions.find(s => s.id === sessionId);
+  const session = getSessionById(sessionId);
   const ex = session && getTrackedExDef(session, exIdx);
   const container = document.getElementById(`sets-${sessionId}-${exIdx}`);
   if (!ex || !container) return;
@@ -3449,7 +3684,7 @@ function endSession() {
   state.endTime = new Date();
 
   // Collect set data
-  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  const session = getSessionById(state.activeSessionId);
   const exerciseData = [];
 
   session.exercises.forEach((cfgEx, idx) => {
@@ -3477,9 +3712,12 @@ function endSession() {
     if (getJeLadder(ex.name, state.activeSessionId)) {
       ladderRungIndex = getCurrentVariantIndex(ex.name, state.activeSessionId);
     }
+    // Power lifts store the stage they were prescribed at
+    const powerStage = ex.powerMode ? getExercisePrescription(session.id, ex).powerStage : undefined;
     exerciseData.push({
       name: ex.name, type: ex.type, repRange: ex.repRange,
       sets: hasData ? sets : [],
+      ...(Number.isInteger(powerStage) ? { powerStage } : {}),
       ...(tempoApplied ? { tempoApplied: true } : {}),
       ...(ladderRungIndex !== undefined ? { ladderRungIndex } : {})
     });
@@ -3503,10 +3741,12 @@ function saveSession(exerciseData, status) {
   closeModal();
   // Detect rep PRs against history BEFORE this session joins it
   const newPRs = status === 'complete' ? detectNewPRs(exerciseData) : [];
+  const trained = getSessionById(state.activeSessionId);
   const session = {
     id: Date.now().toString(),
     sessionId: state.activeSessionId,
-    sessionName: state.programme.sessions.find(s => s.id === state.activeSessionId)?.name,
+    sessionName: trained?.power ? `${trained.name} ⚡ Power` : trained?.name,
+    ...(trained?.power ? { power: true } : {}),
     date: localDateStr(new Date()),
     startTime: state.startTime?.toISOString(),
     endTime: state.endTime?.toISOString(),
@@ -3826,7 +4066,7 @@ function getE1RMComparison(days = 28) {
       seen.add(ec.name);
       let cur = null, prev = null;
       state.sessions.forEach(sess => {
-        if (sess.status !== 'complete' || !sess.date) return;
+        if (sess.status !== 'complete' || !sess.date || sess.power) return;
         const ex = (sess.exercises || []).find(e => e.name === ec.name);
         const v = getSessionBestE1RM(ex);
         if (v === null) return;
@@ -4039,6 +4279,7 @@ const KNOWN_EXERCISE_ATTRS = {
   'Zottman Curl':                   { primary: ['biceps'], secondary: ['forearms'], pattern: 'isolation' },
   'Banded Rear Delt Fly':           { primary: ['shoulders'], secondary: ['back'], pattern: 'isolation' },
   'Supinated KB Curl':              { primary: ['biceps'], secondary: [], pattern: 'isolation' },
+  'Banded Bayesian Curl':           { primary: ['biceps'], secondary: ['forearms'], pattern: 'isolation' },
   'Goblet Squat':                   { primary: ['quads'], secondary: ['glutes','core'], pattern: 'squat' },
   'Lateral Band Walk':              { primary: ['glutes'], secondary: [], pattern: 'isolation' },
   'Sissy Squat':                    { primary: ['quads'], secondary: [], pattern: 'squat' },
@@ -4271,7 +4512,8 @@ function countHardSets(cutoff, end, primaryOnly = false) {
   const counts = {};
   const allConfigs = state.programme.sessions.flatMap(s => s.exercises);
   state.sessions.forEach(sess => {
-    if (sess.status !== 'complete' || !sess.date) return;
+    // Power sets are speed work at RIR 2+, not hypertrophy volume
+    if (sess.status !== 'complete' || !sess.date || sess.power) return;
     const d = new Date(sess.date);
     if (d < cutoff || d >= end) return;
     (sess.exercises || []).forEach(ex => {
@@ -4306,7 +4548,7 @@ function getE1RMSeriesForExercise(exName, days = 84) {
   cutoff.setDate(cutoff.getDate() - days);
   const pts = [];
   state.sessions.forEach(sess => {
-    if (sess.status !== 'complete' || !sess.date) return;
+    if (sess.status !== 'complete' || !sess.date || sess.power) return;
     if (new Date(sess.date) < cutoff) return;
     const ex = (sess.exercises || []).find(e => e.name === exName);
     const v = getSessionBestE1RM(ex);
@@ -5628,6 +5870,7 @@ async function saveProgrammeToDrive() {
       // The whole programme: custom sessions, added exercises, muscles,
       // progression models. `full` tells older readers to take it as-is.
       full: true,
+      patches: state.programmePatches || [],
       sessions: serializeSessions()
     };
     const body = JSON.stringify(config);
@@ -5713,10 +5956,17 @@ async function loadProgrammeFromDrive() {
     // Skipped outright while a workout is live: rewriting the programme
     // under an in-progress session would throw away unsaved sets.
     const sessionLive = state.activeSessionId !== null;
+    let repatched = false;
     if (config.full && Array.isArray(config.sessions) && remoteNewer && !sessionLive) {
-      // Full programme from the other device — replace ours wholesale
+      // Full programme from the other device — replace ours wholesale.
+      // A copy written by an older build lacks later patches: replay them.
       const cfg = Validator.sessionsConfig(config.sessions);
-      if (cfg) { applySessionsConfig(cfg); state.exOverrides = {}; }
+      if (cfg) {
+        applySessionsConfig(cfg);
+        state.exOverrides = {};
+        state.programmePatches = Array.isArray(config.patches) ? config.patches.filter(p => typeof p === 'string') : [];
+        repatched = applyProgrammePatches();
+      }
     } else if (config.sessions && remoteNewer && !sessionLive) {
       config.sessions.forEach(remote => {
         const local = state.programme.sessions.find(s => s.id === remote.id);
@@ -5748,6 +5998,8 @@ async function loadProgrammeFromDrive() {
       renderProgramme();
       renderTracker();
     }
+    // Patched on top of the pulled copy: now newer than Drive, push it back
+    if (repatched) { saveSettings(); return true; }
 
     // Deferring the programme half above leaves us still behind, so keep
     // the local version stale and pick the edits up on a later sync.
@@ -6512,7 +6764,7 @@ function getPendingProgressions() {
   if (isDeloadWeek() || isMaintenanceMode()) return [];
   const SKIP = ['add_reps', 'repeat', 'deload', 'calibrating', 'maintain', 'hold'];
 
-  state.programme.sessions.forEach(sess => {
+  state.programme.sessions.map(getTrainingSession).forEach(sess => {
     if (sess.sessionType === 'transition') return;
     sess.exercises.forEach(ex => {
       if (ex.type === 'optional' || ex.type === 'prehab') return;
@@ -6537,7 +6789,7 @@ function getExerciseAlerts() {
   state.programme.sessions.forEach(sessConfig => {
     if (sessConfig.sessionType === 'transition') return;
     const history = state.sessions
-      .filter(s => s.sessionId === sessConfig.id && s.status === 'complete')
+      .filter(s => s.sessionId === sessConfig.id && s.status === 'complete' && !s.power)
       .sort((a,b) => new Date(a.date) - new Date(b.date));
     if (history.length < 2) return;
 
@@ -6856,6 +7108,47 @@ function getRollingStats(days, offsetDays = 0) {
   return { volume: Math.round(volume), sessions: sessions.length, avgRIR, avgQuality };
 }
 
+// Power session tracked like a lift: total work per power session
+// (sparkline, latest, change vs the first in the window) and each power
+// lift's step on the 3×3 → 5×5 ladder for next time.
+function buildPowerDashboardHtml() {
+  const sessions = state.programme.sessions.filter(s => s.powerCapable);
+  return sessions.map(raw => {
+    const series = getPowerSessionSeries(raw.id);
+    if (!raw.power && !series.length) return '';
+    const trained = getTrainingSession({ ...raw, power: true });
+    const lifts = trained.exercises.filter(e => e.powerMode);
+    const spark = buildSparklineSVG(series, POWER_PINK);
+    const cur = series.length ? series[series.length - 1].v : null;
+    let deltaHtml = '<span style="font-size:9px;color:var(--text-muted)">' + (series.length ? 'baseline' : 'no power session yet') + '</span>';
+    if (series.length > 1 && series[0].v > 0) {
+      const pct = Math.round((cur - series[0].v) / series[0].v * 100);
+      const col = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text-muted)';
+      deltaHtml = '<span style="font-size:9px;color:' + col + '">' + (pct > 0 ? '↑' : pct < 0 ? '↓' : '·') + ' ' + Math.abs(pct) + '% vs first</span>';
+    }
+    const rows = lifts.map(ex => {
+      const rx = getExercisePrescription(raw.id, ex);
+      const pct = Math.round(rx.powerStage / (POWER_STAGES.length - 1) * 100);
+      return '<div class="power-dash-row">' +
+        '<span class="power-dash-name">' + esc(ex.name) + '</span>' +
+        '<span class="power-dash-bar"><span style="width:' + pct + '%"></span></span>' +
+        '<span class="power-dash-rx">' + rx.sets + '×' + rx.reps[0] + (rx.load ? ' · ' + fmtLoad(rx.load) : '') + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="dash-section-label" style="margin-top:16px">Power Session &middot; ' + esc(raw.name) + ' &middot; Galpin 3-to-5</div>' +
+      '<div class="power-dash-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
+          '<span class="power-badge sm">Power Session</span>' + deltaHtml +
+        '</div>' +
+        (spark || '<div style="height:34px;font-size:9px;color:var(--text-muted);display:flex;align-items:center">Two power sessions draw the trend</div>') +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text);margin:2px 0 8px">' +
+          (cur !== null ? cur + ' kg moved <span style="font-size:9px;color:var(--text-muted)">(kg × reps, power lifts)</span>' : '—') + '</div>' +
+        '<div style="font-size:8px;color:var(--text-muted);font-family:\'DM Mono\',monospace;margin-bottom:4px">NEXT SESSION · STEP 3×3 → 5×5</div>' +
+        rows +
+      '</div>';
+  }).join('');
+}
+
 function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, pending) {
   // ── Rolling 7-day headline — hard sets (honest unit, no kg soup) ──
   const thisWeek  = getRollingStats(7);
@@ -7063,6 +7356,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
       '<div class="dash-stat-box"><div class="dash-stat-val" style="font-size:20px">' + (avgDur ? avgDur + '<span style="font-size:12px">m</span>' : '—') + '</div><div class="dash-stat-lbl">Avg Duration 28d</div></div>' +
     '</div>' +
     strengthHtml +
+    buildPowerDashboardHtml() +
     hardSetsHtml +
     progHtml +
     alertsHtml +
@@ -8570,12 +8864,13 @@ function getLogLoad(ex) {
 // Prefers the same session type and falls back to any session (exercises
 // shared across days, or first time on this day). Partial sessions count —
 // they still say what was lifted — but deload-week sessions don't, unless
-// this is a deload week.
-function getExerciseLogs(sessionId, exName, limit = 3) {
+// this is a deload week. Power-session logs (Galpin 3-to-5) are their own
+// history: `power` true reads only those, false leaves them out.
+function getExerciseLogs(sessionId, exName, limit = 3, power = false) {
   const allowDeload = isDeloadWeek();
   const hasData = e => e && Array.isArray(e.sets) && e.sets.some(s => s.reps || (s.load && s.load !== 'BW'));
   const collect = pred => state.sessions
-    .filter(s => s.status !== 'deload' && (allowDeload || s.mesoWeek !== 5) && pred(s))
+    .filter(s => s.status !== 'deload' && (allowDeload || s.mesoWeek !== 5) && !!s.power === power && pred(s))
     .map(s => ({ session: s, ex: (s.exercises || []).find(e => e.name === exName) }))
     .filter(r => hasData(r.ex))
     .sort((a, b) => a.session.date === b.session.date
@@ -8876,6 +9171,155 @@ function prescribePrehab(rx, ex, rule, logs) {
 }
 
 /* ═══════════════════════════════════════════
+   POWER SESSION — Galpin's "3 to 5"
+   A session marked `powerCapable` can be switched to power mode. Its
+   ballistic lifts then run 3–5 sets of 3–5 reps, 3–5 min rest, every
+   rep at maximal intent; everything else becomes optional work after
+   them (nothing fatiguing before power work).
+   Progression, at most one step a week:
+     volume first   3×3 → 3×4 → 3×5 → 4×5 → 5×5   (same bell)
+     then load      the next bell the kit makes, back to 3×3
+   Galpin's pace is ~3–5% more load a week; kettlebells jump 25–100%,
+   so volume carries the weekly step and load moves once 5×5 is fast.
+   Fast = every rep done at RIR 2+ — a grinding set (RIR 0–1) or a
+   missed rep means the speed went. One slow session holds the step,
+   two in a row step back one. Deload week: 2 × 3 at the same bell.
+═══════════════════════════════════════════ */
+const POWER_STAGES    = [[3, 3], [3, 4], [3, 5], [4, 5], [5, 5]];
+const POWER_REST_S    = 180;
+const POWER_PINK      = '#FF1F8E'; // matches --power-pink (SVG attributes can't read var())
+const POWER_STEP_DAYS = 6;
+const POWER_BRIEF     = '3–5 lifts · 3–5 sets · 3–5 reps · 3–5 min rest. Every rep all-out — move the bell as fast as you can and stop the set the moment it slows. Done first and fresh; nothing fatiguing before it.';
+
+function isPowerExercise(ex) {
+  return !!ex && ex.type !== 'optional' && getExerciseAttrs(ex).pattern === 'ballistic';
+}
+
+// The session as trained today. In power mode the ballistic lifts carry
+// the power prescription and the rest turn optional. Same order and
+// length as the programme session, so index lookups still line up.
+function getTrainingSession(session) {
+  if (!session || !session.power || !session.powerCapable) return session;
+  return {
+    ...session,
+    rest: POWER_REST_S,
+    exercises: session.exercises.map(ex => isPowerExercise(ex)
+      ? { ...ex, powerMode: true, sets: '3–5', reps: '3–5', repRange: [3, 5] }
+      : { ...ex, type: 'optional' }),
+  };
+}
+
+function getSessionById(id) {
+  return getTrainingSession(state.programme.sessions.find(s => s.id === id));
+}
+
+// Stage a power log was prescribed at (stored on save), else the
+// highest stage its sets actually cover
+function powerStageOf(log) {
+  if (Number.isInteger(log.ex.powerStage)) return Math.min(log.ex.powerStage, POWER_STAGES.length - 1);
+  const reps = repsOf(log);
+  let best = 0;
+  POWER_STAGES.forEach(([s, r], i) => { if (reps.filter(n => n >= r).length >= s) best = i; });
+  return best;
+}
+
+// Every prescribed set done in full and fast (RIR 2+; blank RIR counts)
+function powerLogFast(log, stage) {
+  const [s, r] = POWER_STAGES[stage];
+  const sets = log.ex.sets.filter(x => !isNaN(parseInt(x.reps, 10)));
+  return sets.length >= s && sets.slice(0, s).every(x => {
+    const rir = rirOf(x);
+    return parseInt(x.reps, 10) >= r && (rir === null || rir >= 2);
+  });
+}
+
+function prescribePower(sessionId, ex, rule) {
+  const eq   = rule.attrs.equipment;
+  const logs = getExerciseLogs(sessionId, ex.name, 8, true).filter(l => l.session.status === 'complete');
+  const last = logs[0] || null;
+  const flow = last ? null : getExerciseLogs(sessionId, ex.name, 1)[0];
+  const load = (last && getLogLoad(last.ex)) || (flow && getLogLoad(flow.ex)) || planLoadValue(ex);
+  const rx = { sets: 3, reps: [3, 3], load, rir: [2, 4], tempo: false, change: null, last, rule, power: true, powerStage: 0 };
+  const set = (stage, bell, change) => {
+    const [s, r] = POWER_STAGES[stage];
+    Object.assign(rx, { sets: s, reps: [r, r], load: bell, powerStage: stage, change });
+    return rx;
+  };
+  const sxr = st => `${POWER_STAGES[st][0]} × ${POWER_STAGES[st][1]}`;
+
+  if (!last) {
+    return set(0, load, { type: 'power', label: `⚡ ${sxr(0)}`,
+      message: `First power session — ${sxr(0)} at ${fmtLoad(load) || 'your usual bell'}. Every rep as fast as you can move the bell, 3–5 min rest. Log RIR 0–1 on any set that slowed down.` });
+  }
+  const lastLoad = getLogLoad(last.ex) || load;
+  let stage = powerStageOf(last);
+
+  if (isDeloadWeek()) {
+    return Object.assign(rx, { sets: 2, reps: [3, 3], load: lastLoad, powerStage: stage,
+      change: { type: 'deload', label: 'Deload', message: `Back-off week — 2 × 3 at ${fmtLoad(lastLoad)}, still all-out. Speed stays, volume drops.` } });
+  }
+
+  if (!powerLogFast(last, stage)) {
+    const prev = logs[1];
+    const slowTwice = prev && powerStageOf(prev) === stage && getLogLoad(prev.ex) === lastLoad && !powerLogFast(prev, stage);
+    if (slowTwice && stage > 0) {
+      return set(stage - 1, lastLoad, { type: 'decrease_set', label: `⚡ ${sxr(stage - 1)}`,
+        message: `Slowed at ${sxr(stage)} two sessions running — back to ${sxr(stage - 1)} at ${fmtLoad(lastLoad)}. Speed before volume.` });
+    }
+    if (slowTwice) {
+      const lower = rule.canStepLoad ? stepLoad(lastLoad, -1, eq) : null;
+      if (lower) {
+        return set(0, lower, { type: 'decrease_load', label: `↓ ${fmtLoad(lower)}`,
+          message: `Slowed at ${sxr(0)} with ${fmtLoad(lastLoad)} two sessions running — drop to ${fmtLoad(lower)} and own the speed first.` });
+      }
+    }
+    return set(stage, lastLoad, { type: 'hold', label: `Hold ${sxr(stage)}`,
+      message: `Not every rep was fast last time — repeat ${sxr(stage)} at ${fmtLoad(lastLoad)}. A set that grinds (RIR 0–1) doesn't build power.` });
+  }
+
+  // Weekly cadence: step only once this stage has stood for ~a week
+  let since = last.session.date;
+  for (const l of logs) {
+    if (powerStageOf(l) !== stage || getLogLoad(l.ex) !== lastLoad) break;
+    since = l.session.date;
+  }
+  const days = Math.floor((new Date(localDateStr()) - new Date(since)) / 86400000);
+  if (isMaintenanceMode() || days < POWER_STEP_DAYS) {
+    return set(stage, lastLoad, { type: 'repeat', label: `⚡ ${sxr(stage)}`,
+      message: isMaintenanceMode()
+        ? `Maintenance — hold ${sxr(stage)} at ${fmtLoad(lastLoad)}, every rep fast.`
+        : `Fast at ${sxr(stage)} — repeat it; the next step unlocks a week after this one started (Galpin: one step a week).` });
+  }
+  if (stage < POWER_STAGES.length - 1) {
+    return set(stage + 1, lastLoad, { type: 'add_set', label: `⚡ ${sxr(stage + 1)}`,
+      message: `Every rep fast at ${sxr(stage)} — step up to ${sxr(stage + 1)} at ${fmtLoad(lastLoad)}.` });
+  }
+  const next = rule.canStepLoad ? stepLoad(lastLoad, 1, eq) : null;
+  if (next) {
+    return set(0, next, { type: 'increase_load', label: `↑ ${fmtLoad(next)}`,
+      message: `5 × 5 fast at ${fmtLoad(lastLoad)} — next bell: ${fmtLoad(next)}, back to ${sxr(0)} and climb again.` });
+  }
+  return set(stage, lastLoad, { type: 'equipment_ceiling', label: 'Kit ceiling',
+    message: `5 × 5 fast at ${fmtLoad(lastLoad)} and nothing heavier in your kit — keep 5 × 5 and chase speed. Next purchase: ${nextKitHint(eq, lastLoad)}.` });
+}
+
+// Per complete power session: total work on the power lifts (kg × reps)
+function getPowerSessionSeries(sessionId) {
+  return state.sessions
+    .filter(s => s.power && s.status === 'complete' && (!sessionId || s.sessionId === sessionId))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(s => ({
+      date: s.date,
+      v: Math.round((s.exercises || []).reduce((sum, ex) => sum + (ex.sets || []).reduce((t, st) => {
+        const r = parseInt(st.reps, 10);
+        return t + (isNaN(r) ? 0 : r * effectiveLoadKg(st.load || ''));
+      }, 0), 0)),
+    }))
+    .filter(p => p.v > 0)
+    .slice(-CHART_WINDOW);
+}
+
+/* ═══════════════════════════════════════════
    EXERCISE PRESCRIPTION
    One answer per exercise to "what do I do today": sets, load, rep target
    and RIR band. Runs the exercise's resolved rule against its logs, the
@@ -8889,6 +9333,8 @@ function getExercisePrescription(sessionId, ex) {
   const rr     = rule.repRange;
   const fixed  = rule.fixedSets;
   const target = rule.setsForWeek(week);
+
+  if (ex.powerMode) return prescribePower(sessionId, ex, rule);
 
   const logs = getExerciseLogs(sessionId, ex.name, Math.max(3, STALL_SESSIONS));
   const last = logs[0] || null;
@@ -9051,7 +9497,7 @@ function markTempoApplied(exerciseName) {
   state._tempoFlags[exerciseName] = true;
   toast(`Tempo flagged for ${exerciseName} — will be saved with this session`, 'success');
   // Re-render so the button disappears and equipment_ceiling check can fire next time
-  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  const session = getSessionById(state.activeSessionId);
   if (session) renderProgressionSuggestions(session);
 }
 
@@ -9123,7 +9569,7 @@ selectTrackerSession = function(sessionId) {
     initDragAndDrop();
     renderConsecutivePartialWarning(sessionId);
     // Wire change events on dynamically built set inputs for card-level glow
-    const session = state.programme.sessions.find(s => s.id === sessionId);
+    const session = getSessionById(sessionId);
     if (!session) return;
     session.exercises.forEach((ex, idx) => {
       if (ex.type === 'optional') return;
@@ -10122,6 +10568,7 @@ function resetProgrammeToDefault() {
       { label: 'Reset', cls: 'confirm', action: () => {
         state.programme = buildProgramme(state.profile);
         state.exOverrides = {};
+        state.programmePatches = PROGRAMME_PATCHES.map(p => p.id); // defaults already carry them
         closeModal();
         saveProgrammeEdits('Programme reset to default');
       }}

@@ -4544,3 +4544,179 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
     align-items: start;
   }
 }
+/* ═══════════════════════════════════════════
+   POWER SESSION (Galpin 3-to-5) — hot pink, hard outlines.
+   The card sets its own ink tokens so text stays dark on pink in both
+   themes; the POWER SESSION badge is acid lime on near-black.
+═══════════════════════════════════════════ */
+:root {
+  --power-pink:  #FF1F8E;
+  --power-ink:   #14000A;
+  --power-lime:  #D4FF1A;
+}
+
+.session-card.power-on,
+.tracker-session-btn.power-on,
+.power-brief.standalone {
+  --text:        var(--power-ink);
+  --text-dim:    #3A0020;
+  --text-muted:  #5C0B33;
+  --border:      rgba(20,0,10,0.28);
+  --border-h:    rgba(20,0,10,0.5);
+  --bg-surface2: rgba(255,255,255,0.2);
+  background: var(--power-pink);
+  border: 3px solid var(--power-ink);
+  box-shadow: 5px 5px 0 var(--power-ink);
+  color: var(--power-ink);
+}
+.session-card.power-on:hover { border-color: var(--power-ink); box-shadow: 6px 6px 0 var(--power-ink); }
+.session-card.power-on .session-head:hover { background: rgba(255,255,255,0.12); }
+.session-card.power-on .session-tag {
+  color: var(--power-ink); border: 2px solid var(--power-ink); background: rgba(255,255,255,0.25);
+}
+.session-card.power-on .session-pip { background: var(--power-ink) !important; }
+.session-card.power-on .ex-table td,
+.session-card.power-on .ex-table th { border-color: rgba(20,0,10,0.2); }
+.session-card.power-on .ex-type-dot { background: var(--power-ink) !important; }
+.session-card.power-on .ex-tag { color: var(--power-ink); border-color: rgba(20,0,10,0.4); background: rgba(255,255,255,0.22); }
+
+.power-badge {
+  display: inline-block;
+  flex: 1 0 auto;
+  max-width: max-content;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--power-lime);
+  background: var(--power-ink);
+  padding: 3px 10px;
+  border-radius: 4px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.power-badge.sm { font-size: 10px; padding: 2px 7px; flex: none; vertical-align: middle; }
+.session-card.power-on .session-head .power-badge { margin-right: auto; }
+
+.power-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 9px 4px 4px;
+  border-radius: 20px;
+  border: 2px solid var(--text-dim);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.power-toggle-knob {
+  width: 22px; height: 12px; border-radius: 6px;
+  background: rgba(128,128,128,0.35);
+  position: relative;
+  transition: background var(--transition);
+}
+.power-toggle-knob::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bg-surface);
+  transition: transform var(--transition);
+}
+.power-toggle:hover { border-color: var(--power-pink); color: var(--power-pink); }
+.power-toggle.on { border-color: var(--power-ink); color: var(--power-lime); background: var(--power-ink); }
+.power-toggle.on .power-toggle-knob { background: var(--power-pink); }
+.power-toggle.on .power-toggle-knob::after { transform: translateX(10px); background: var(--power-lime); }
+.power-toggle:focus-visible { outline: 2px solid var(--power-lime); outline-offset: 2px; }
+
+.power-brief {
+  padding: 10px 16px 12px;
+  border-top: 2px solid var(--power-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--power-ink);
+}
+.power-brief strong { font-weight: 700; }
+.power-brief-prog { display: block; margin-top: 4px; font-size: 10px; opacity: 0.85; }
+.power-brief.standalone {
+  display: flex; flex-direction: column; gap: 8px;
+  border-radius: var(--radius);
+  margin: 0 0 14px;
+}
+.power-rx { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text); }
+
+.tracker-session-btn.power-on .tracker-session-name { color: var(--power-ink); }
+.tracker-session-btn.power-on:hover { background: var(--power-pink); box-shadow: 6px 6px 0 var(--power-ink); }
+
+/* Dashboard tile */
+.power-dash-card {
+  padding: 9px 11px;
+  border: 3px solid var(--power-pink);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 var(--power-pink);
+}
+.power-dash-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 9px; }
+.power-dash-name { flex: 0 0 38%; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.power-dash-bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(128,128,128,0.16); overflow: hidden; }
+.power-dash-bar > span { display: block; height: 100%; min-width: 4px; border-radius: 3px; background: var(--power-pink); }
+.power-dash-rx { flex: 0 0 auto; font-family: var(--font-mono); color: var(--text); }
+
+/* Inline session colours are unreadable on pink — force the power ink */
+.session-card.power-on .session-tag { color: var(--power-ink) !important; border-color: var(--power-ink) !important; background: rgba(255,255,255,0.25) !important; }
+.session-card.power-on .ex-sets-range,
+.session-card.power-on .ex-load-prog { color: var(--text-dim) !important; opacity: 1 !important; }
+.session-card.power-on .session-focus { background: rgba(255,255,255,0.22); border-color: rgba(20,0,10,0.3); color: var(--power-ink); }
+.session-card.power-on .session-note { border-left-color: var(--power-ink); }
+
+/* ── Power: charge-up / discharge / idle hum ──────────────────
+   Charging sweeps pink across the card left to right while the glow
+   builds, flashes once, then settles into a slow pulse. */
+.session-card.power-on {
+  background-image: linear-gradient(90deg, var(--power-pink) 0 50%, var(--bg-surface) 50% 100%);
+  background-size: 200% 100%;
+  background-position: 0 0;
+  animation: power-hum 2.8s ease-in-out infinite;
+}
+.session-card.power-on.power-charging {
+  animation: power-charge 1.3s cubic-bezier(.55,.05,.35,1) both;
+}
+.session-card.power-discharging {
+  animation: power-discharge 0.6s ease-out both;
+}
+@keyframes power-charge {
+  0%   { background-position: 100% 0; border-color: var(--border);
+         box-shadow: 0 0 0 0 rgba(255,31,142,0); }
+  25%  { box-shadow: 0 0 10px 1px rgba(255,31,142,0.35); }
+  60%  { border-color: var(--power-ink);
+         box-shadow: 0 0 26px 6px rgba(255,31,142,0.6); }
+  80%  { background-position: 0 0; filter: brightness(1.25) saturate(1.2);
+         box-shadow: 0 0 46px 14px rgba(255,31,142,0.85), 5px 5px 0 var(--power-ink); }
+  100% { background-position: 0 0; filter: none;
+         box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
+}
+@keyframes power-hum {
+  0%, 100% { box-shadow: 0 0 12px 1px rgba(255,31,142,0.35), 5px 5px 0 var(--power-ink); }
+  50%      { box-shadow: 0 0 26px 5px rgba(255,31,142,0.6),  5px 5px 0 var(--power-ink); }
+}
+@keyframes power-discharge {
+  0%   { box-shadow: 0 0 30px 8px rgba(255,31,142,0.7); border-color: var(--power-pink); }
+  100% { box-shadow: 0 0 0 0 rgba(255,31,142,0); }
+}
+.session-card.power-charging .power-badge { animation: power-badge-in 1.3s ease-out both; }
+@keyframes power-badge-in {
+  0%, 55% { opacity: 0; transform: scale(0.7); }
+  80%     { opacity: 1; transform: scale(1.12); }
+  100%    { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .session-card.power-on,
+  .session-card.power-on.power-charging,
+  .session-card.power-discharging,
+  .session-card.power-charging .power-badge { animation: none; }
+  .session-card.power-on { box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
+}
