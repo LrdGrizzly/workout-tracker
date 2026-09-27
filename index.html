@@ -1113,7 +1113,7 @@ const PROGRAMMES = {
       { day: 'Tue', session: 'Push A', color: 'var(--push-a)' },
       { day: 'Wed', session: 'Legs A', color: 'var(--legs-a)' },
       { day: 'Thu', session: 'Pull',   color: 'var(--pull)' },
-      { day: 'Fri', session: 'Push B', color: 'var(--push-b)' },
+      { day: 'Fri', session: 'Push B + Quads', color: 'var(--push-b)' },
       { day: 'Sat', session: 'KB Flow (opt)', color: 'var(--kb-flow)' },
       { day: 'Sun', session: 'Rest / Run', color: null },
     ],
@@ -1186,7 +1186,7 @@ const PROGRAMMES = {
         color: 'var(--legs-a)',
         colorRgb: '245,184,48',
         rest: 120,
-        note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Banded hamstring curl is the second hamstring hit of the week, two days after the Monday hinges — knee flexion rather than another hinge. Nordic curl closes as the eccentric finisher — always last.',
+        note: 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. The ATG split squat moved to Friday for a second quad hit each week. Banded hamstring curl is the second hamstring hit of the week, two days after the Monday hinges — knee flexion rather than another hinge. Nordic curl closes as the eccentric finisher — always last.',
         exercises: [
           { num: '01', name: 'Goblet Squat', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '28 kg (two KBs)', prog: 'Add set → 32 kg', notes: 'Upright torso. Full depth. Knees out.',
           desc: 'Hold KB at chest, elbows inside knees. Squat to full depth — the KB counterbalance helps maintain an upright torso. Drive knees out, push floor away to stand. Primary bilateral quad compound.' },
@@ -1194,11 +1194,9 @@ const PROGRAMMES = {
           desc: 'Band around ankles or just above knees. Maintain a quarter-squat throughout. Step laterally with constant tension — never let feet come fully together. Targets glute medius. Genuine quad rest between squat variations.' },
           { num: '03', name: 'Sissy Squat', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW', prog: 'BW → 4 kg held at chest → 8 kg', notes: 'Heels elevated. Full knee flexion. Rectus femoris fully lengthened.',
           desc: 'Heels elevated on a step or plate. Lean back slightly as you bend the knees, lowering the body as a unit. The knee travels far forward over the toe. Targets the rectus femoris in its most lengthened position — the part of the quad most neglected by standard squats.' },
-          { num: '04', name: 'ATG Split Squat', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg goblet hold', prog: '20 kg → dual KB hold', notes: 'Deep knee flexion. Touch wall for balance if needed.',
-          desc: 'Rear foot flat or elevated. Front shin as vertical or as forward as mobility allows — the goal is full knee flexion. KB held goblet-style or at sides. ATG = Ass To Grass. Unilateral quad development with full ROM.' },
-          { num: '05', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: 'Yellow + Red bands', prog: 'Next band combination', notes: '3s eccentric. One leg at a time. Wednesday hit — the hinges are on Monday.',
+          { num: '04', name: 'Banded Hamstring Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12/side', repRange: [8,12], load: 'Yellow + Red bands', prog: 'Next band combination', notes: '3s eccentric. One leg at a time. Wednesday hit — the hinges are on Monday.',
           desc: 'Lie prone, band around ankles. Curl heels toward glutes resisting throughout. 3-second eccentric on the way down. Stacked bands increase resistance. Hip hinges on Monday, knee flexion on Wednesday — two hamstring hits a week without stacking them in one session.' },
-          { num: '06', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
+          { num: '05', name: 'Quad Nordic Curl', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'BW · 3–4s descent', prog: 'Add band resistance', notes: 'Always last. Control entire descent. Never rush.',
           desc: 'Kneel with feet anchored. Lean forward as a unit — body stays straight from knee to shoulder — resisting the descent with the quads. Extremely demanding eccentric. Lower as slowly as possible. Always the last exercise.' },
         ]
       },
@@ -1211,16 +1209,16 @@ const PROGRAMMES = {
         color: 'var(--pull)',
         colorRgb: '77,184,255',
         rest: 60,
-        note: 'Curls open the session — biceps are the priority, so they are trained fresh and arrive pre-fatigued for the rows (pre-fatigue, per Galpin). Supinated curl for the short head, then Zottman for the brachialis. Bent-over row is the primary horizontal compound — expect a few fewer reps than before with tired arms. Face pull hits rear delt while the back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Rear delt fly closes as prehab.',
+        note: 'Curls open the session — biceps are the priority, so they are trained fresh and arrive pre-fatigued for the rows (pre-fatigue, per Galpin). Supinated curl for the short head; face pull hits the rear delt as a buffer before the Zottman works the brachialis. Bent-over row is the primary horizontal compound — expect a few fewer reps than before with tired arms. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Rear delt fly closes as prehab.',
         exercises: [
           { num: '01', name: 'Supinated KB Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Full supination throughout. Targets bicep short head / peak.',
           desc: 'Standard curl with full supination (palms facing up) maintained throughout the entire movement. Do not rotate at the top. Targets the short head of the bicep for peak width. One arm at a time.' },
-          { num: '02', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
-          desc: 'Curl up with a supinated grip (palms up), rotate to pronated at the top (palms down), lower slowly in the pronated position. Combines bicep peak stimulus on the way up with brachialis and brachioradialis eccentric on the way down.' },
-          { num: '03', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
-          desc: 'Hinge at the hip to roughly 45°. Row the KB to your hip crease, not your chest. Full stretch at the bottom — let the shoulder blade protract. One arm at a time for full ROM and to prevent compensation.' },
-          { num: '04', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
+          { num: '02', name: 'Face Pull', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'High door anchor. Pull to face with external rotation. Rear delt mass movement.',
           desc: 'Band anchored high at a door anchor. Pull to face level with external rotation — elbows flaring wide, hands ending beside your ears. Primary rear delt and mid-trap movement, not a bicep exercise.' },
+          { num: '03', name: 'Zottman Curl', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Supinate up, pronate at top, 3s eccentric hammer descent.',
+          desc: 'Curl up with a supinated grip (palms up), rotate to pronated at the top (palms down), lower slowly in the pronated position. Combines bicep peak stimulus on the way up with brachialis and brachioradialis eccentric on the way down.' },
+          { num: '04', name: 'Bent-Over Row', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg / arm', prog: '16 kg + 3s eccentric → 20 kg', notes: 'Hinge 45°. Row to hip crease. Full stretch at bottom.',
+          desc: 'Hinge at the hip to roughly 45°. Row the KB to your hip crease, not your chest. Full stretch at the bottom — let the shoulder blade protract. One arm at a time for full ROM and to prevent compensation.' },
           { num: '05', name: 'Banded Overhead Pull → Straight-Arm Pulldown', tags: ['accessory', 'superset'], type: 'accessory', sets: '3–5', reps: '8–12 / 8–12', repRange: [8,12], load: 'Blue band (superset)', prog: 'Blue → Black band', notes: 'Superset. Overhead pull from high anchor → immediately straight-arm pulldown. Full lat range.',
           desc: 'Superset. First: band from high anchor, arms start overhead, pull down to thighs with straight arms — hits lat in lengthened position. Immediately: standard straight-arm pulldown from same anchor. No rest between the two movements.' },
           { num: '06', name: 'Banded Rear Delt Fly', tags: ['prehab'], type: 'prehab', sets: '3', reps: '12–15', repRange: [12,15], load: 'Yellow band', prog: 'Yellow → Red band', notes: 'Prehab finisher. Zero bicep involvement. Horizontal abduction.',
@@ -1231,29 +1229,31 @@ const PROGRAMMES = {
         id: 'push-b',
         days: ['Fri'],
         name: 'Push B',
-        subtitle: 'Shoulders & Triceps',
+        subtitle: 'Shoulders, Triceps & Quads',
         class: 's-push-b',
         color: 'var(--push-b)',
         colorRgb: '184,127,255',
         rest: 60,
-        note: 'Single-arm press leads strict. Banded overhead press from low anchor adds lengthened-position shoulder stimulus. Lateral raise isolates medial delt. Upright row hits medial and upper trap. Skullcrusher provides direct tricep isolation. Rotator cuff ER is prehab — always last, never skipped.',
+        note: 'ATG split squat opens as the second quad hit of the week (Wednesday has the rest) — legs first, upper body after; the muscles do not overlap. Single-arm press leads the pressing, strict. Banded overhead press from low anchor adds lengthened-position shoulder stimulus. Lateral raise isolates medial delt. Upright row hits medial and upper trap. Skullcrusher provides direct tricep isolation. Rotator cuff ER is prehab — always last, never skipped.',
         exercises: [
-          { num: '01', name: 'Single-Arm KB Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12 kg / arm', prog: '3s eccentric → 16 kg', notes: 'Strict. Wrist over elbow. Form consolidation before load jump.',
+          { num: '01', name: 'ATG Split Squat', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '16 kg goblet hold', prog: '20 kg → dual KB hold', notes: 'Deep knee flexion. Touch wall for balance if needed. Friday quad hit — the rest of the quad work is on Wednesday.',
+          desc: 'Rear foot flat or elevated. Front shin as vertical or as forward as mobility allows — the goal is full knee flexion. KB held goblet-style or at sides. ATG = Ass To Grass. Unilateral quad development with full ROM. Opens Friday as the second quad hit of the week, two days after Wednesday.' },
+          { num: '02', name: 'Single-Arm KB Press', tags: ['compound', 'unilateral'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: '12 kg / arm', prog: '3s eccentric → 16 kg', notes: 'Strict. Wrist over elbow. Form consolidation before load jump.',
           desc: 'Strict overhead press, one arm. KB in rack position (resting on forearm, elbow under wrist). Press straight up without leaning. Wrist stays neutral. The contralateral core demand is significant — brace hard.' },
-          { num: '02', name: 'Banded Overhead Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (low anchor)', prog: 'Blue → Black band', notes: 'Band under feet. Lengthened start position. Targets anterior delt.',
+          { num: '03', name: 'Banded Overhead Press', tags: ['compound'], type: 'compound', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band (low anchor)', prog: 'Blue → Black band', notes: 'Band under feet. Lengthened start position. Targets anterior delt.',
           desc: 'Band anchored under your foot, pressing overhead. The low anchor means the shoulder starts in a lengthened, loaded position — unlike a rack-start press. Targets the anterior delt through a longer range than standard overhead pressing.' },
-          { num: '03', name: 'Banded Lateral Raise', superset: 'A', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
+          { num: '04', name: 'Banded Lateral Raise', superset: 'A', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Red band', prog: 'Red → Blue band', notes: 'Lead with elbows. Stop at shoulder height. Medial delt isolation.',
           desc: 'Band anchored low or under foot, one end in each hand. Raise arms to shoulder height leading with the elbows, not the hands. Stop at parallel. Primary medial delt isolation. The band provides ascending resistance — hardest at the top.' },
-          { num: '04', name: 'Banded Straight-Arm Pulldown', superset: 'A', tags: ['accessory', 'superset'], type: 'accessory', sets: '3', maxSets: 3, reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'Superset with Banded Lateral Raise — pull during its rest. Lat volume without a pull-up bar. Fixed 3 sets to protect session time.',
+          { num: '05', name: 'Banded Straight-Arm Pulldown', superset: 'A', tags: ['accessory', 'superset'], type: 'accessory', sets: '3', maxSets: 3, reps: '8–12', repRange: [8,12], load: 'Blue band (high anchor)', prog: 'Blue → Black band', notes: 'Superset with Banded Lateral Raise — pull during its rest. Lat volume without a pull-up bar. Fixed 3 sets to protect session time.',
           desc: 'Band on high door anchor. Arms straight, hinge slightly forward, pull the band down to your hips in a wide arc using the lats only. Full stretch overhead at the top, squeeze at the bottom. Balances the pressing volume of this session.' },
-          { num: '05', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
+          { num: '06', name: 'Banded Upright Row', tags: ['accessory'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: 'Blue band', prog: 'Blue → Black band', notes: 'Pull to chin, elbows lead. Stop if impingement felt.',
           desc: 'Band under feet, both hands. Pull to chin with elbows leading wide and high. Hits medial delt and upper traps. Stop if you feel any shoulder impingement — reduce range of motion before reducing weight.' },
-          { num: '06', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
+          { num: '07', name: 'Skullcrusher', tags: ['accessory', 'unilateral'], type: 'accessory', sets: '3–5', reps: '8–12', repRange: [8,12], load: '8 kg / arm', prog: '12 kg / arm', notes: 'Upper arm vertical. Lower to temple slowly. Lateral head emphasis.',
           desc: 'Lie on back, upper arm vertical. Lower KB to temple by bending the elbow only. Upper arm stays completely still. Targets the lateral head of the tricep. Moved to Push B so triceps receive direct isolation twice weekly.' },
-          { num: '07', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
+          { num: '08', name: 'Rotator Cuff External Rotation', tags: ['prehab', 'unilateral'], type: 'prehab', sets: '2', reps: '15/side', repRange: [15,15], load: 'Red band', prog: 'Never rush progression — prehab only', notes: 'Elbow pinned to side. Never skip. Shoulder health.',
           desc: 'Band at waist height, elbow pinned to side at 90°. Rotate forearm outward only — no movement at the shoulder or elbow. Prehab. Never skip, never increase load aggressively. Keeps the shoulder healthy for all pressing.' },
-          { num: '08', name: 'Plank', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '45s', repRange: [1,1], load: 'BW', prog: 'Extend hold → add plate on back', notes: 'Optional core. Full body tension. Hips level.' },
-          { num: '09', name: 'Ab Wheel Rollout', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Extend ROM gradually', notes: 'Optional core. Full extension if lower back allows.' },
+          { num: '09', name: 'Plank', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '45s', repRange: [1,1], load: 'BW', prog: 'Extend hold → add plate on back', notes: 'Optional core. Full body tension. Hips level.' },
+          { num: '10', name: 'Ab Wheel Rollout', tags: ['optional', 'core'], type: 'optional', sets: '3', reps: '8–10', repRange: [8,10], load: 'BW', prog: 'Extend ROM gradually', notes: 'Optional core. Full extension if lower back allows.' },
         ]
       },
       {
@@ -2139,6 +2139,42 @@ const PROGRAMME_PATCHES = [
       return changed;
     },
   },
+  {
+    // Face pull between the curls; quads twice a week — the ATG split
+    // squat moves from Wednesday to open Friday (Push B).
+    id: 'alex-2026-09-facepull-friday-quads',
+    profile: 'alex',
+    apply(sessions) {
+      const get = id => sessions.find(s => s.id === id);
+      const pull = get('pull'), legsA = get('legs-a'), pushB = get('push-b');
+      let changed = false;
+
+      if (pull) changed = reorderExercises(pull, ['Supinated KB Curl', 'Face Pull', 'Zottman Curl']) || changed;
+
+      if (legsA && pushB && !pushB.exercises.some(e => e.name === 'ATG Split Squat')) {
+        const i = legsA.exercises.findIndex(e => e.name === 'ATG Split Squat');
+        if (i !== -1) {
+          const [atg] = legsA.exercises.splice(i, 1);
+          const d = builtInExercise('push-b', 'ATG Split Squat');
+          refreshBuiltInText(atg, 'notes', ['Deep knee flexion. Touch wall for balance if needed.'], d?.notes);
+          refreshBuiltInText(atg, 'desc', ['Rear foot flat or elevated. Front shin as vertical or as forward as mobility allows — the goal is full knee flexion. KB held goblet-style or at sides. ATG = Ass To Grass. Unilateral quad development with full ROM.'], d?.desc);
+          pushB.exercises.unshift(atg);
+          changed = true;
+        }
+      }
+
+      const OLD = [
+        ['pull', 'note', 'Curls open the session — biceps are the priority, so they are trained fresh and arrive pre-fatigued for the rows (pre-fatigue, per Galpin). Supinated curl for the short head, then Zottman for the brachialis. Bent-over row is the primary horizontal compound — expect a few fewer reps than before with tired arms. Face pull hits rear delt while the back is warm. Overhead pull superset into straight-arm pulldown covers the lat through its full range. Rear delt fly closes as prehab.'],
+        ['legs-a', 'note', 'Goblet squat leads as the primary bilateral compound. Lateral band walk provides a genuine quad rest via glute med focus. Sissy squat hits the rectus femoris in its most lengthened position. ATG split squat finishes the compound quad work unilaterally. Banded hamstring curl is the second hamstring hit of the week, two days after the Monday hinges — knee flexion rather than another hinge. Nordic curl closes as the eccentric finisher — always last.'],
+        ['push-b', 'note', 'Single-arm press leads strict. Banded overhead press from low anchor adds lengthened-position shoulder stimulus. Lateral raise isolates medial delt. Upright row hits medial and upper trap. Skullcrusher provides direct tricep isolation. Rotator cuff ER is prehab — always last, never skipped.'],
+        ['push-b', 'subtitle', 'Shoulders & Triceps'],
+      ];
+      OLD.forEach(([id, field, old]) => {
+        changed = refreshBuiltInText(get(id), field, [old], builtInSession(id)?.[field]) || changed;
+      });
+      return changed;
+    },
+  },
 ];
 
 // Apply every patch this profile's saved programme hasn't had yet.
@@ -2464,7 +2500,7 @@ function buildSessionCard(session) {
     <div class="session-head" onclick="toggleSession('${session.id}')">
       <div class="session-pip" style="background:${session.color}"></div>
       <span class="session-tag" style="${tagStyle}">${session.name}</span>
-      ${power ? '<span class="power-badge">Power Session</span>' : `<span class="session-title">${session.subtitle}</span>`}
+      ${power ? '<span class="power-badge">Power Mode</span>' : `<span class="session-title">${session.subtitle}</span>`}
       <div class="session-head-actions">
         <span class="session-meta">${session.exercises.filter(e=>e.type!=='optional').length} ex</span>
         ${powerToggle}
@@ -2530,7 +2566,11 @@ function togglePowerMode(e, sessionId) {
   if (card) {
     const cls = session.power ? 'power-charging' : 'power-discharging';
     card.classList.add(cls);
-    card.addEventListener('animationend', e => { if (e.target === card) card.classList.remove(cls); });
+    // Pseudo-element and flicker animations also end on the card: wait for the main one
+    const main = session.power ? 'power-charge' : 'power-discharge';
+    card.addEventListener('animationend', e => {
+      if (e.target === card && !e.pseudoElement && e.animationName === main) card.classList.remove(cls);
+    });
   }
   renderTracker();
   if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
@@ -2643,7 +2683,7 @@ function renderTracker() {
   const grid = document.getElementById('tracker-select-grid');
   grid.innerHTML = state.programme.sessions.map(getTrainingSession).map(session => session.power ? `
     <div class="tracker-session-btn power-on" onclick="selectTrackerSession('${session.id}')">
-      <div class="tracker-session-name">${session.name} <span class="power-badge sm">Power Session</span></div>
+      <div class="tracker-session-name">${session.name} <span class="power-badge sm">Power Mode</span></div>
       <div class="tracker-session-detail">3–5 × 3–5 · all-out</div>
       <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} lifts · 3–5 min rest</div>
     </div>` : `
@@ -2668,7 +2708,7 @@ function renderPowerBanner(session) {
   if (!session?.power) { el.innerHTML = ''; el.style.display = 'none'; return; }
   el.style.display = 'block';
   el.innerHTML = `<div class="power-brief standalone">
-    <span class="power-badge">Power Session</span>
+    <span class="power-badge">Power Mode</span>
     <div><strong>Galpin's 3-to-5.</strong> ${POWER_BRIEF}
     <span class="power-brief-prog">Log RIR 0–1 on any set where the bell slowed — that holds the step. Every rep fast moves you one step next week.</span></div>
   </div>`;
@@ -2717,7 +2757,7 @@ function selectTrackerSession(sessionId) {  const session = getSessionById(sessi
 
   // Session name + pip
   document.getElementById('active-session-name').textContent = session.power
-    ? `${session.name} — Power Session` : `${session.name} — ${session.subtitle}`;
+    ? `${session.name} — Power Mode` : `${session.name} — ${session.subtitle}`;
   document.getElementById('active-session-pip').style.background = session.color;
   renderPowerBanner(session);
 
@@ -7135,10 +7175,10 @@ function buildPowerDashboardHtml() {
         '<span class="power-dash-rx">' + rx.sets + '×' + rx.reps[0] + (rx.load ? ' · ' + fmtLoad(rx.load) : '') + '</span>' +
         '</div>';
     }).join('');
-    return '<div class="dash-section-label" style="margin-top:16px">Power Session &middot; ' + esc(raw.name) + ' &middot; Galpin 3-to-5</div>' +
+    return '<div class="dash-section-label" style="margin-top:16px">Power Mode &middot; ' + esc(raw.name) + ' &middot; Galpin 3-to-5</div>' +
       '<div class="power-dash-card">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-          '<span class="power-badge sm">Power Session</span>' + deltaHtml +
+          '<span class="power-badge sm">Power Mode</span>' + deltaHtml +
         '</div>' +
         (spark || '<div style="height:34px;font-size:9px;color:var(--text-muted);display:flex;align-items:center">Two power sessions draw the trend</div>') +
         '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text);margin:2px 0 8px">' +

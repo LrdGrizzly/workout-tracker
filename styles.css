@@ -4544,6 +4544,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
     align-items: start;
   }
 }
+
 /* ═══════════════════════════════════════════
    POWER SESSION (Galpin 3-to-5) — hot pink, hard outlines.
    The card sets its own ink tokens so text stays dark on pink in both
@@ -4673,50 +4674,125 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 .session-card.power-on .session-focus { background: rgba(255,255,255,0.22); border-color: rgba(20,0,10,0.3); color: var(--power-ink); }
 .session-card.power-on .session-note { border-left-color: var(--power-ink); }
 
-/* ── Power: charge-up / discharge / idle hum ──────────────────
-   Charging sweeps pink across the card left to right while the glow
-   builds, flashes once, then settles into a slow pulse. */
+/* ── Power: charge from the centre out, then live current ─────
+   --charge is the radius of the pink core; animating it from 0 grows
+   the charge outward from the middle of the card. --spin drives a lime
+   spark that runs round the edge while power is on. Both are
+   registered so they interpolate; without @property the card simply
+   snaps to full pink. */
+@property --charge { syntax: '<percentage>'; inherits: false; initial-value: 160%; }
+@property --spin   { syntax: '<angle>';      inherits: false; initial-value: 0deg; }
+
 .session-card.power-on {
-  background-image: linear-gradient(90deg, var(--power-pink) 0 50%, var(--bg-surface) 50% 100%);
-  background-size: 200% 100%;
-  background-position: 0 0;
-  animation: power-hum 2.8s ease-in-out infinite;
+  position: relative;
+  background-color: var(--power-pink);
+  background-image: radial-gradient(ellipse at center,
+    #FF6DB8 0%, var(--power-pink) calc(var(--charge) * 0.55),
+    var(--power-pink) var(--charge), var(--bg-surface) calc(var(--charge) + 0.5%));
+  animation: power-hum 2.4s ease-in-out infinite, power-flicker 7s steps(1) infinite;
 }
+/* Current running round the inside of the outline */
+.session-card.power-on::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--spin),
+    transparent 0 62%, rgba(212,255,26,0.2) 70%, var(--power-lime) 78%, #fff 80%,
+    var(--power-lime) 82%, transparent 90% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  z-index: 2;
+  animation: power-spin 1.8s linear infinite;
+}
+.session-card.power-on .power-toggle.on { box-shadow: 0 0 10px 1px rgba(212,255,26,0.55); }
+
+/* Charging: core grows from the centre, stutters, buzzes, then bursts */
 .session-card.power-on.power-charging {
-  animation: power-charge 1.3s cubic-bezier(.55,.05,.35,1) both;
+  animation: power-charge 1.7s cubic-bezier(.5,0,.3,1) both;
 }
-.session-card.power-discharging {
-  animation: power-discharge 0.6s ease-out both;
+.session-card.power-on.power-charging::before { animation: power-spin 0.5s linear infinite; opacity: 0.9; }
+.session-card.power-on.power-charging::after {
+  content: '⚡ FULL POWER ⚡';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(22px, 5vw, 34px);
+  letter-spacing: 0.06em;
+  color: var(--power-lime);
+  -webkit-text-stroke: 1.5px var(--power-ink);
+  text-shadow: 0 0 14px rgba(212,255,26,0.9), 3px 3px 0 var(--power-ink);
+  animation: power-stamp 1.7s ease-out both;
 }
 @keyframes power-charge {
-  0%   { background-position: 100% 0; border-color: var(--border);
-         box-shadow: 0 0 0 0 rgba(255,31,142,0); }
-  25%  { box-shadow: 0 0 10px 1px rgba(255,31,142,0.35); }
-  60%  { border-color: var(--power-ink);
-         box-shadow: 0 0 26px 6px rgba(255,31,142,0.6); }
-  80%  { background-position: 0 0; filter: brightness(1.25) saturate(1.2);
-         box-shadow: 0 0 46px 14px rgba(255,31,142,0.85), 5px 5px 0 var(--power-ink); }
-  100% { background-position: 0 0; filter: none;
-         box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
+  0%   { --charge: 0%;   border-color: var(--border); filter: none;
+         box-shadow: 0 0 0 0 rgba(255,31,142,0); transform: none; }
+  18%  { --charge: 14%;  filter: brightness(1.15); }
+  24%  { --charge: 10%;  filter: brightness(0.9); }            /* stutter */
+  34%  { --charge: 30%;  filter: brightness(1.2);
+         box-shadow: 0 0 14px 2px rgba(255,31,142,0.45); }
+  40%  { --charge: 26%;  filter: brightness(0.95); }            /* stutter */
+  55%  { --charge: 60%;  border-color: var(--power-ink); transform: translate(1px, -1px); }
+  60%  { transform: translate(-1px, 1px); }
+  65%  { --charge: 85%;  transform: translate(1px, 1px);
+         box-shadow: 0 0 30px 8px rgba(255,31,142,0.7); }
+  70%  { transform: translate(-1px, -1px); }
+  76%  { --charge: 160%; transform: none; filter: brightness(1.7) saturate(1.4);
+         box-shadow: 0 0 60px 20px rgba(255,31,142,0.95), 0 0 16px 4px rgba(212,255,26,0.6), 5px 5px 0 var(--power-ink); }
+  84%  { filter: brightness(1.05); }
+  88%  { filter: brightness(1.35); }
+  100% { --charge: 160%; filter: none; transform: none;
+         box-shadow: 0 0 18px 3px rgba(255,31,142,0.5), 5px 5px 0 var(--power-ink); }
 }
+@keyframes power-stamp {
+  0%, 70% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  78%     { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(-3deg); }
+  86%     { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
+  100%    { opacity: 0; transform: translate(-50%, -50%) scale(1.1) rotate(-3deg); }
+}
+@keyframes power-spin { to { --spin: 360deg; } }
 @keyframes power-hum {
-  0%, 100% { box-shadow: 0 0 12px 1px rgba(255,31,142,0.35), 5px 5px 0 var(--power-ink); }
-  50%      { box-shadow: 0 0 26px 5px rgba(255,31,142,0.6),  5px 5px 0 var(--power-ink); }
+  0%, 100% { box-shadow: 0 0 12px 1px rgba(255,31,142,0.4), 5px 5px 0 var(--power-ink); }
+  50%      { box-shadow: 0 0 28px 6px rgba(255,31,142,0.7), 0 0 8px 1px rgba(212,255,26,0.25), 5px 5px 0 var(--power-ink); }
+}
+/* Mains flicker: a couple of quick blips every few seconds */
+@keyframes power-flicker {
+  0%, 100% { filter: none; }
+  90%      { filter: brightness(1.3); }
+  90.6%    { filter: brightness(0.92); }
+  91.2%    { filter: brightness(1.2); }
+  92%      { filter: none; }
+}
+/* Switching off: the charge collapses back into the centre */
+.session-card.power-discharging {
+  position: relative;
+  background-image: radial-gradient(ellipse at center, var(--power-pink) var(--charge), transparent calc(var(--charge) + 0.5%));
+  animation: power-discharge 0.55s ease-in both;
 }
 @keyframes power-discharge {
-  0%   { box-shadow: 0 0 30px 8px rgba(255,31,142,0.7); border-color: var(--power-pink); }
-  100% { box-shadow: 0 0 0 0 rgba(255,31,142,0); }
+  0%   { --charge: 160%; box-shadow: 0 0 34px 10px rgba(255,31,142,0.7); filter: brightness(1.3); }
+  100% { --charge: 0%;   box-shadow: 0 0 0 0 rgba(255,31,142,0); filter: none; }
 }
-.session-card.power-charging .power-badge { animation: power-badge-in 1.3s ease-out both; }
+.session-card.power-charging .power-badge { animation: power-badge-in 1.7s ease-out both; }
 @keyframes power-badge-in {
-  0%, 55% { opacity: 0; transform: scale(0.7); }
-  80%     { opacity: 1; transform: scale(1.12); }
+  0%, 72% { opacity: 0; transform: scale(0.6); }
+  80%     { opacity: 1; transform: scale(1.18); }
   100%    { opacity: 1; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .session-card.power-on,
   .session-card.power-on.power-charging,
+  .session-card.power-on::before,
   .session-card.power-discharging,
   .session-card.power-charging .power-badge { animation: none; }
+  .session-card.power-on.power-charging::after { display: none; }
   .session-card.power-on { box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
 }
