@@ -9320,135 +9320,86 @@ function getSessionById(id) {
   return getTrainingSession(state.programme.sessions.find(s => s.id === id));
 }
 
-/* ── Power sparks ──────────────────────────────
-   Small sparks run round every switched-on power surface and now and
-   then throw a few particles off the edge. Driven from JS so the speed
-   stays even on any shape: the path is the centre line of the outline,
-   sampled round the rounded corners, with keyframe offsets by distance.
-   A MutationObserver attaches them as surfaces are drawn and removes
-   them when a surface is redrawn, charging, draining or switched off. */
+/* ── Power live wire ───────────────────────────
+   Every switched-on power surface gets a live outline: an SVG copy of
+   its rounded outline, pushed through a turbulence displacement filter
+   whose seed changes ~18 times a second so the line crackles and
+   re-forms, with a white-hot pulse lapping it and an occasional surge.
+   A MutationObserver attaches it as surfaces are drawn and removes it
+   when a surface is redrawn, charging, draining or switched off. */
 const PowerFx = (() => {
-  const SPEED    = 230;               // px / s along the outline
-  const RUNNERS  = 2;                 // sparks per surface, evenly spaced
-  const TAIL     = [0.75, 0.5, 0.3];  // trailing dots: size and opacity
-  const TAIL_LAG = 24;                // ms between trailing dots
+  const NS    = 'http://www.w3.org/2000/svg';
+  const PAD   = 14;     // room round the card for the displaced line and glow
+  const TICK  = 55;     // ms between re-forms
+  const PULSE = 70;     // length of the lapping white pulse, px
   const hosts = new Map();
+  let uid = 0;
   const live = el => el.classList.contains('power-on')
     && !el.classList.contains('power-charging') && !el.classList.contains('power-draining');
 
-  // Centre line of the 3px outline (1px border + 2px inset ring), as
-  // points with cumulative distance and outward normal, clockwise
-  function outline(el) {
-    const w = el.clientWidth, h = el.clientHeight;
-    if (w < 24 || h < 24) return null;
-    const cs = getComputedStyle(el);
-    const b = parseFloat(cs.borderTopWidth) || 0;
-    const R = parseFloat(cs.borderTopLeftRadius) || 0;
-    const i = 1.5 - b;
-    const x0 = i, y0 = i, x1 = w - i, y1 = h - i;
-    const r = Math.max(0, Math.min(R - 1.5, (x1 - x0) / 2, (y1 - y0) / 2));
-    const pts = [];
-    const arc = (cx, cy, a0) => {
-      for (let k = 1; k <= 6; k++) {
-        const a = a0 + (k / 6) * Math.PI / 2;
-        pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), nx: Math.cos(a), ny: Math.sin(a) });
-      }
-    };
-    pts.push({ x: x0 + r, y: y0, nx: 0, ny: -1 });
-    pts.push({ x: x1 - r, y: y0, nx: 0, ny: -1 }); arc(x1 - r, y0 + r, -Math.PI / 2);
-    pts.push({ x: x1, y: y1 - r, nx: 1, ny: 0 });  arc(x1 - r, y1 - r, 0);
-    pts.push({ x: x0 + r, y: y1, nx: 0, ny: 1 });  arc(x0 + r, y1 - r, Math.PI / 2);
-    pts.push({ x: x0, y: y0 + r, nx: -1, ny: 0 }); arc(x0 + r, y0 + r, Math.PI);
-    let d = 0;
-    pts.forEach((p, k) => { if (k) d += Math.hypot(p.x - pts[k - 1].x, p.y - pts[k - 1].y); p.d = d; });
-    return d > 0 ? { pts, len: d } : null;
-  }
-
-  function pointAt(path, t) {
-    const target = t * path.len, pts = path.pts;
-    for (let k = 1; k < pts.length; k++) {
-      if (pts[k].d >= target) {
-        const a = pts[k - 1], b = pts[k], f = b.d > a.d ? (target - a.d) / (b.d - a.d) : 0;
-        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, nx: b.nx, ny: b.ny };
-      }
-    }
-    return pts[0];
-  }
-
-  function build(st) {
-    st.anims.forEach(a => a.cancel());
-    st.anims = []; st.heads = [];
-    st.layer.querySelectorAll('.power-spark:not(.fly)').forEach(n => n.remove());
-    st.path = outline(st.el);
-    if (!st.path) return;
-    const frames = st.path.pts.map(p => ({
-      transform: `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px)`, offset: Math.min(1, p.d / st.path.len),
-    }));
-    st.dur = st.path.len / SPEED * 1000;
-    for (let n = 0; n < RUNNERS; n++) {
-      const start = -(n / RUNNERS) * st.dur;
-      [1, ...TAIL].forEach((size, k) => {
-        const dot = document.createElement('span');
-        dot.className = 'power-spark' + (k ? ' tail' : '');
-        if (k) dot.style.cssText = `--s:${size};opacity:${size}`;
-        st.layer.appendChild(dot);
-        const a = dot.animate(frames, { duration: st.dur, iterations: Infinity, delay: start + k * TAIL_LAG });
-        st.anims.push(a);
-        if (!k) st.heads.push(a);
-      });
-    }
-  }
-
-  // A few particles flung off the edge where a spark is right now
-  function burst(st) {
-    if (!st.path || !st.heads.length || document.hidden) return;
-    const head = st.heads[Math.floor(Math.random() * st.heads.length)];
-    const t = (((Number(head.currentTime) || 0) % st.dur) + st.dur) % st.dur / st.dur;
-    const p = pointAt(st.path, t);
-    const count = 2 + Math.floor(Math.random() * 3);
-    for (let n = 0; n < count; n++) {
-      const ang = Math.atan2(p.ny, p.nx) + (Math.random() - 0.5) * 1.4;
-      const dist = 9 + Math.random() * 16;
-      const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
-      const s = document.createElement('span');
-      s.className = 'power-spark fly';
-      st.layer.appendChild(s);
-      const a = s.animate([
-        { transform: `translate(${p.x}px,${p.y}px) scale(1)`, opacity: 1 },
-        { transform: `translate(${p.x + dx * 0.75}px,${p.y + dy * 0.75}px) scale(0.8)`, opacity: 0.9, offset: 0.55 },
-        { transform: `translate(${p.x + dx}px,${p.y + dy + 5}px) scale(0.3)`, opacity: 0 },
-      ], { duration: 380 + Math.random() * 260, easing: 'cubic-bezier(.2,.7,.4,1)' });
-      a.onfinish = () => s.remove();
-    }
-  }
-
-  function schedule(st) {
-    st.timer = setTimeout(() => {
-      if (!hosts.has(st.el)) return;
-      burst(st);
-      schedule(st);
-    }, 1400 + Math.random() * 2400);
-  }
-
   function attach(el) {
-    const layer = document.createElement('div');
-    layer.className = 'power-spark-layer';
-    layer.setAttribute('aria-hidden', 'true');
-    el.appendChild(layer);
-    const st = { el, layer, anims: [], heads: [], path: null, dur: 0, timer: 0, raf: 0 };
-    st.ro = new ResizeObserver(() => { cancelAnimationFrame(st.raf); st.raf = requestAnimationFrame(() => build(st)); });
+    const id = `pw${++uid}`;
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'power-wire');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = `<defs>
+        <filter id="${id}a" x="-10%" y="-40%" width="120%" height="180%">
+          <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="2" seed="1"/>
+          <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/></filter>
+        <filter id="${id}b" x="-10%" y="-40%" width="120%" height="180%">
+          <feTurbulence type="turbulence" baseFrequency="0.07" numOctaves="1" seed="7"/>
+          <feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="G" yChannelSelector="R"/></filter>
+      </defs>
+      <rect class="glow" filter="url(#${id}a)"/><rect class="core" filter="url(#${id}b)"/><rect class="run" filter="url(#${id}b)"/>`;
+    el.appendChild(svg);
+    const st = {
+      el, svg, perim: 0, offset: 0, surgeUntil: 0,
+      turb: svg.querySelectorAll('feTurbulence'), disp: svg.querySelectorAll('feDisplacementMap'),
+      run: svg.querySelector('.run'),
+    };
+    st.ro = new ResizeObserver(() => size(st));
     st.ro.observe(el);
+    size(st);
+    st.tick = setInterval(() => crackle(st), TICK);
     hosts.set(el, st);
-    build(st);
-    schedule(st);
+  }
+
+  // Match the SVG to the host: the line runs down the middle of the
+  // 3px outline (1px border + 2px inset ring)
+  function size(st) {
+    const w = st.el.offsetWidth, h = st.el.offsetHeight;
+    if (w < 24 || h < 24) { st.perim = 0; return; }
+    const b = parseFloat(getComputedStyle(st.el).borderTopWidth) || 0;
+    const R = parseFloat(getComputedStyle(st.el).borderTopLeftRadius) || 0;
+    st.svg.style.left = st.svg.style.top = -(PAD + b) + 'px';
+    st.svg.setAttribute('width', w + PAD * 2);
+    st.svg.setAttribute('height', h + PAD * 2);
+    st.svg.querySelectorAll('rect').forEach(r => {
+      r.setAttribute('x', PAD + 1.5); r.setAttribute('y', PAD + 1.5);
+      r.setAttribute('width', w - 3); r.setAttribute('height', h - 3);
+      r.setAttribute('rx', Math.max(0, R - 1.5));
+    });
+    st.perim = 2 * (w + h - 6);
+    st.run.setAttribute('stroke-dasharray', `${PULSE} ${Math.max(0, st.perim - PULSE)}`);
+  }
+
+  function crackle(st) {
+    if (!st.perim || document.hidden) return;
+    st.turb[0].setAttribute('seed', Math.floor(Math.random() * 999));
+    st.turb[1].setAttribute('seed', Math.floor(Math.random() * 999));
+    const now = performance.now();
+    if (now > st.surgeUntil && Math.random() < 0.035) st.surgeUntil = now + 140;
+    const surging = now < st.surgeUntil;
+    st.svg.classList.toggle('surge', surging);
+    st.disp[0].setAttribute('scale', surging ? 13 : 7);
+    st.offset -= st.perim / 38;              // the pulse laps in ~2 s
+    st.run.setAttribute('stroke-dashoffset', st.offset.toFixed(1));
   }
 
   function detach(st) {
-    clearTimeout(st.timer);
-    cancelAnimationFrame(st.raf);
+    clearInterval(st.tick);
     st.ro.disconnect();
-    st.anims.forEach(a => a.cancel());
-    st.layer.remove();
+    st.svg.remove();
     hosts.delete(st.el);
   }
 
@@ -9463,8 +9414,8 @@ const PowerFx = (() => {
   let queued = 0;
   function init() {
     new MutationObserver(records => {
-      // Ignore the sparks' own comings and goings
-      if (records.every(r => r.target.closest?.('.power-spark-layer'))) return;
+      // Ignore the wire's own attribute updates
+      if (records.every(r => r.target.closest?.('.power-wire'))) return;
       if (!queued) queued = requestAnimationFrame(() => { queued = 0; sync(); });
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     sync();

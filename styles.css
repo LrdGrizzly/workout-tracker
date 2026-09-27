@@ -4635,26 +4635,21 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   100%    { opacity: 1; transform: scale(1); }
 }
 
-/* Sparks — positioned by JS (PowerFx) along the outline */
-.power-spark-layer {
-  position: absolute; left: 0; top: 0; width: 0; height: 0;
-  overflow: visible; pointer-events: none; z-index: 4;
+/* Live wire — the SVG outline drawn by PowerFx. It sits on the card's
+   outline and glows lime; a surge brightens it for a moment. */
+.power-wire {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 4;
+  filter: drop-shadow(0 0 3px rgba(212,255,26,0.95)) drop-shadow(0 0 9px rgba(212,255,26,0.55));
+  transition: filter 0.1s;
 }
-.power-spark {
-  --s: 1;
-  position: absolute; left: 0; top: 0;
-  width: calc(4px * var(--s)); height: calc(4px * var(--s));
-  margin: calc(-2px * var(--s)) 0 0 calc(-2px * var(--s));
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 3px 1px var(--power-lime), 0 0 8px 2px rgba(212,255,26,0.5);
-  will-change: transform;
-}
-.power-spark.tail { background: var(--power-lime); box-shadow: 0 0 4px 1px rgba(212,255,26,0.6); }
-.power-spark.fly {
-  width: 2px; height: 2px; margin: -1px 0 0 -1px;
-  box-shadow: 0 0 3px 1px var(--power-lime);
-}
+.power-wire.surge { filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px rgba(212,255,26,0.9)); }
+.power-wire rect { fill: none; }
+.power-wire .glow { stroke: var(--power-lime); stroke-width: 2.4; opacity: 0.8; }
+.power-wire .core { stroke: #fff; stroke-width: 1; opacity: 0.9; }
+.power-wire .run  { stroke: #fff; stroke-width: 2.6; stroke-linecap: round; }
 
 /* Badge */
 .power-badge {
