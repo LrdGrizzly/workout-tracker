@@ -178,6 +178,7 @@
           <div class="session-pip" id="active-session-pip" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>
           <div class="session-toolbar-name" id="active-session-name">—</div>
           <div class="time-display hidden" id="start-time-display">—</div>
+          <span id="active-power-slot"></span>
           <button class="time-btn start-btn" id="start-btn" onclick="startSession()">▶ Start</button>
           <button class="time-btn end-btn hidden" id="end-btn" onclick="endSession()">■ End</button>
           <button class="time-btn secondary" onclick="cancelSession()" style="font-size:9px;padding:4px 8px;">✕ Cancel</button>
@@ -2411,7 +2412,9 @@ function renderSessions() {
 }
 
 function buildSessionCard(session) {
-  // Power mode shows the session as it will be trained today
+  // Power mode shows the session as it will be trained today; Edit plan
+  // still edits the normal plan, so its fields read the programme entry
+  const raw = session;
   session = getTrainingSession(session);
   const power = !!session.power && !!session.powerCapable;
   const restId = `rest-${session.id}`;
@@ -2470,9 +2473,9 @@ function buildSessionCard(session) {
           ${ex.rir ? `<div class="ex-rir-view" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:1px">RIR ${ex.rir}</div>` : ''}
         </div>
         <div class="ex-cell-edit" style="display:none">
-          ${buildExEditField(session.id, ex.num, 'sets', 'Sets', ex.sets)}
-          ${buildExEditField(session.id, ex.num, 'reps', 'Reps', ex.reps)}
-          ${buildExEditField(session.id, ex.num, 'rir', 'RIR', ex.rir || '')}
+          ${buildExEditField(session.id, ex.num, 'sets', 'Sets', (raw.exercises[exIdx] || ex).sets)}
+          ${buildExEditField(session.id, ex.num, 'reps', 'Reps', (raw.exercises[exIdx] || ex).reps)}
+          ${buildExEditField(session.id, ex.num, 'rir', 'RIR', (raw.exercises[exIdx] || ex).rir || '')}
         </div>
       </td>
       <td class="ex-load">
@@ -2481,7 +2484,7 @@ function buildSessionCard(session) {
           <div class="ex-load-prog">${ex.powerMode ? '→ 3×3 → 5×5, then next bell' : computeNextProgression(ex, session.id)}</div>
         </div>
         <div class="ex-cell-edit" style="display:none">
-          ${buildExEditField(session.id, ex.num, 'load', 'Load', ex.load)}
+          ${buildExEditField(session.id, ex.num, 'load', 'Load', (raw.exercises[exIdx] || ex).load)}
         </div>
       </td>
       <td class="ex-notes">${ex.notes}</td>
@@ -2491,12 +2494,8 @@ function buildSessionCard(session) {
   const focus = sessionFocusLabel(session);
   const rgb   = session.colorRgb || '0,212,160';
   const tagStyle = `color:${session.color};border-color:rgba(${rgb},0.4);background:rgba(${rgb},0.1)`;
-  const powerToggle = session.powerCapable
-    ? `<button class="power-toggle${power ? ' on' : ''}" role="switch" aria-checked="${power}"
-        title="${power ? 'Back to the normal session' : 'Switch to a Galpin power session'}"
-        onclick="togglePowerMode(event,'${session.id}')"><span class="power-toggle-knob"></span>⚡ Power</button>`
-    : '';
-  return `<div class="session-card ${session.class || ''}${power ? ' power-on' : ''}" id="card-${session.id}" style="--sess-rgb:${rgb}">
+  const powerToggle = buildPowerToggle(session);
+  return `<div class="session-card ${session.class || ''}${power ? ' power-on' : ''}" id="card-${session.id}" style="--sess-rgb:${rgb}"${session.powerCapable ? ` data-power-host="${session.id}"` : ''}>
     <div class="session-head" onclick="toggleSession('${session.id}')">
       <div class="session-pip" style="background:${session.color}"></div>
       <span class="session-tag" style="${tagStyle}">${session.name}</span>
@@ -2504,7 +2503,7 @@ function buildSessionCard(session) {
       <div class="session-head-actions">
         <span class="session-meta">${session.exercises.filter(e=>e.type!=='optional').length} ex</span>
         ${powerToggle}
-        ${power ? '' : `<button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit plan</button>`}
+        <button class="edit-mode-btn" id="${editBtnId}" onclick="toggleEditMode(event,'${session.id}')">✎ Edit plan</button>
       </div>
       <span class="session-chevron">›</span>
     </div>
@@ -2516,15 +2515,15 @@ function buildSessionCard(session) {
         ? `<div class="session-note"><strong>Order:</strong> Ballistic lifts only, done fresh.${(() => {
             const extras = session.exercises.filter(e => !e.powerMode).map(e => esc(e.name));
             return extras.length ? ` ${extras.join(', ')} turn optional — do ${extras.length > 1 ? 'them' : 'it'} after, never before.` : '';
-          })()} Switch Power off to edit the plan.</div>`
+          })()} Edit plan changes the normal session.</div>`
         : (session.note ? `<div class="session-note"><strong>Order:</strong> ${session.note}</div>` : '')}
       <div class="edit-plan-hint">Editing here changes the <strong>plan targets</strong> (set/rep ranges).
         To change the reps and RIR you actually performed, open the session in <strong>History</strong> and tap Edit.</div>
       <div class="rest-row">
         <span class="rest-label">Rest Period</span>
         <span class="rest-value" id="${restId}">${power ? `${POWER_REST_S}s (3–5 min)` : `${session.rest}s`}</span>
-        <input class="rest-input" id="${restInputId}" type="number" min="30" max="300" value="${session.rest}" style="display:none">
-        ${power ? '' : `<button class="rest-edit-btn" onclick="editRest(event,'${session.id}')">Edit</button>`}
+        <input class="rest-input" id="${restInputId}" type="number" min="30" max="300" value="${raw.rest}" style="display:none">
+        <button class="rest-edit-btn" onclick="editRest(event,'${session.id}')">Edit</button>
       </div>
       <table class="ex-table">
         <thead><tr>
@@ -2545,36 +2544,91 @@ function toggleSession(id) {
   card.classList.toggle('open');
 }
 
-// Switch a power-capable session between its normal and power form.
-// Stored on the session so it syncs with the rest of the programme.
+/* ── Power toggle ──────────────────────────────
+   One switch, drawn wherever a power-capable session can be started:
+   Programme card, Track picker, the Track session header before Start,
+   and the Dashboard start button. Stored on the session so it syncs with
+   the programme. Locked from Start until the session is saved or
+   cancelled, so the session is logged as the mode it was started in.
+   Elements tagged data-power-host="<id>" are the pink surfaces: they
+   charge up when switched on and drain before being redrawn as normal. */
+const POWER_DRAIN_MS = 700;
+
+function isPowerLocked(sessionId) {
+  return state.activeSessionId === sessionId && !!state.startTime;
+}
+
+function buildPowerToggle(session, cls = '') {
+  if (!session?.powerCapable) return '';
+  const on = !!session.power, locked = isPowerLocked(session.id);
+  const title = locked ? 'Stays as it is until this session is saved or cancelled'
+    : on ? 'Back to the normal session' : 'Switch to a Galpin power session';
+  return `<button type="button" class="power-toggle${on ? ' on' : ''}${cls ? ' ' + cls : ''}" role="switch"
+    aria-checked="${on}" data-power-toggle="${session.id}"${locked ? ' disabled' : ''} title="${title}"
+    onclick="togglePowerMode(event,'${session.id}')"><span class="power-toggle-knob"></span>⚡ Power${locked ? ' · locked' : ''}</button>`;
+}
+
+// Header toggle in the Track tab's session view
+function renderActivePowerSlot() {
+  const slot = document.getElementById('active-power-slot');
+  if (!slot) return;
+  const session = state.programme.sessions.find(s => s.id === state.activeSessionId);
+  slot.innerHTML = buildPowerToggle(session, 'compact');
+}
+
+const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const visiblePowerHosts = id =>
+  [...document.querySelectorAll(`[data-power-host="${id}"]`)].filter(el => el.offsetParent !== null);
+
 function togglePowerMode(e, sessionId) {
-  e.stopPropagation();
+  e?.stopPropagation();
   const session = state.programme.sessions.find(s => s.id === sessionId);
   if (!session?.powerCapable) return;
-  if (state.activeSessionId === sessionId && state.startTime) {
-    toast('Finish or cancel this session before switching Power', 'info');
+  if (isPowerLocked(sessionId)) {
+    toast('Power stays as it is until this session is saved or cancelled', 'info');
     return;
   }
   session.power = !session.power;
   saveSettings();
   saveProgrammeToDrive().catch(err => console.warn('[Drive] Programme push failed:', err));
+  toast(session.power ? `${session.name} → Power mode (Galpin 3-to-5)` : `${session.name} → normal session`, 'success');
+
+  // Switching off: drain the pink out of what's on screen, then redraw
+  const hosts = session.power || reducedMotion() ? [] : visiblePowerHosts(sessionId);
+  if (hosts.length) {
+    hosts.forEach(h => h.classList.add('power-draining'));
+    setTimeout(() => refreshPowerViews(sessionId, false), POWER_DRAIN_MS);
+  } else {
+    refreshPowerViews(sessionId, session.power);
+  }
+}
+
+// Redraw every view that shows the session, then charge up the new pink
+function refreshPowerViews(sessionId, charge) {
   const openIds = [...document.querySelectorAll('.session-card.open')].map(c => c.id);
   renderSessions();
   openIds.forEach(id => document.getElementById(id)?.classList.add('open'));
-  // Charge up into pink (or drain back out) on the freshly drawn card
-  const card = document.getElementById(`card-${sessionId}`);
-  if (card) {
-    const cls = session.power ? 'power-charging' : 'power-discharging';
-    card.classList.add(cls);
-    // Pseudo-element and flicker animations also end on the card: wait for the main one
-    const main = session.power ? 'power-charge' : 'power-discharge';
-    card.addEventListener('animationend', e => {
-      if (e.target === card && !e.pseudoElement && e.animationName === main) card.classList.remove(cls);
-    });
+
+  // Track tab: rebuild the opened-but-not-started session in place,
+  // otherwise refresh the picker
+  const activeView = document.getElementById('active-session-view');
+  if (activeView?.classList.contains('visible')) {
+    if (state.activeSessionId === sessionId && !state.startTime) selectTrackerSession(sessionId);
+  } else {
+    renderTracker();
   }
-  renderTracker();
   if (document.getElementById('panel-dashboard')?.classList.contains('active')) renderDashboard();
-  toast(session.power ? `${session.name} → Power session (Galpin 3-to-5)` : `${session.name} → normal session`, 'success');
+
+  if (!charge || reducedMotion()) return;
+  visiblePowerHosts(sessionId).forEach(h => {
+    if (!h.classList.contains('power-on')) return;
+    h.classList.add('power-charging');
+    const done = () => h.classList.remove('power-charging');
+    h.addEventListener('animationend', ev => {
+      if (ev.target === h && !ev.pseudoElement && ev.animationName === 'power-charge') done();
+    });
+    setTimeout(done, 1400);   // in case the animation never runs (hidden tab)
+  });
 }
 
 // One labelled input inside an exercise row's edit mode
@@ -2658,7 +2712,7 @@ function editRest(e, sessionId) {
     if (val >= 30 && val <= 300) {
       const session = state.programme.sessions.find(s => s.id === sessionId);
       if (session) session.rest = val;
-      display.textContent = val + 's';
+      display.textContent = session?.power && session.powerCapable ? `${POWER_REST_S}s (3–5 min)` : val + 's';
       saveLocalState();
       toast('Rest period updated', 'success');
     }
@@ -2681,16 +2735,19 @@ function renderTracker() {
   if (selectView) { selectView.style.display = 'block'; }
 
   const grid = document.getElementById('tracker-select-grid');
+  const hostAttr = s => s.powerCapable ? ` data-power-host="${s.id}"` : '';
   grid.innerHTML = state.programme.sessions.map(getTrainingSession).map(session => session.power ? `
-    <div class="tracker-session-btn power-on" onclick="selectTrackerSession('${session.id}')">
+    <div class="tracker-session-btn power-on" onclick="selectTrackerSession('${session.id}')"${hostAttr(session)}>
       <div class="tracker-session-name">${session.name} <span class="power-badge sm">Power Mode</span></div>
       <div class="tracker-session-detail">3–5 × 3–5 · all-out</div>
       <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} lifts · 3–5 min rest</div>
+      ${buildPowerToggle(session, 'compact')}
     </div>` : `
-    <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" style="border-left: 3px solid ${session.color}">
+    <div class="tracker-session-btn" onclick="selectTrackerSession('${session.id}')" style="border-left: 3px solid ${session.color}"${hostAttr(session)}>
       <div class="tracker-session-name" style="color:${session.color}">${session.name}</div>
       <div class="tracker-session-detail">${session.subtitle}</div>
       <div class="tracker-session-detail">${session.exercises.filter(e=>e.type!=='optional').length} exercises · ${session.rest}s rest</div>
+      ${buildPowerToggle(session, 'compact')}
     </div>
   `).join('');
 }
@@ -2707,7 +2764,7 @@ function renderPowerBanner(session) {
   }
   if (!session?.power) { el.innerHTML = ''; el.style.display = 'none'; return; }
   el.style.display = 'block';
-  el.innerHTML = `<div class="power-brief standalone">
+  el.innerHTML = `<div class="power-brief standalone power-on" data-power-host="${session.id}">
     <span class="power-badge">Power Mode</span>
     <div><strong>Galpin's 3-to-5.</strong> ${POWER_BRIEF}
     <span class="power-brief-prog">Log RIR 0–1 on any set where the bell slowed — that holds the step. Every rep fast moves you one step next week.</span></div>
@@ -2760,6 +2817,7 @@ function selectTrackerSession(sessionId) {  const session = getSessionById(sessi
     ? `${session.name} — Power Mode` : `${session.name} — ${session.subtitle}`;
   document.getElementById('active-session-pip').style.background = session.color;
   renderPowerBanner(session);
+  renderActivePowerSlot();
 
   // Deload banner
   const deloadBanner = document.getElementById('deload-banner');
@@ -3554,6 +3612,7 @@ function startSession() {
   const display = document.getElementById('start-time-display');
   display.textContent = `Started: ${formatTime(state.startTime)}`;
   display.classList.remove('hidden');
+  renderActivePowerSlot();   // power mode locks for the session
 
   // Show warmup overlay (non-blocking — session is already running)
   const overlay = document.getElementById('warmup-overlay');
@@ -3842,8 +3901,11 @@ function cancelSession() {
   state.activeSession = null;
   state.startTime = null;
   state.endTime = null;
+  renderActivePowerSlot();
+  renderPowerBanner(null);   // no stale pink banner (or its sparks) in the hidden view
   document.getElementById('active-session-view').classList.remove('visible');
   document.getElementById('session-select-view').style.display = 'block';
+  renderTracker();   // picker toggles unlock
 }
 
 /* ═══════════════════════════════════════════
@@ -7080,6 +7142,18 @@ function _renderDashboardRightCol() {
 }
 
 // Rebuild only the next-session section within the dashboard left column
+// Start button for the dashboard's next session; power-capable sessions
+// get the power switch beside it and a pink button while it is on
+function buildDashStartControls(sess, color, rgb) {
+  const power = !!sess.power && !!sess.powerCapable;
+  const btn = `<button class="dash-start-btn${power ? ' power-start' : ''}"
+      ${power ? '' : `style="background:rgba(${rgb},0.1);border-color:rgba(${rgb},0.35);color:${color}"`}
+      onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${sess.id}')">
+      ▶ Start ${sess.name}${power ? ' · Power mode' : ''}
+    </button>`;
+  return `<div class="dash-start-row">${buildPowerToggle(sess)}${btn}</div>`;
+}
+
 function _renderDashboardNextSession() {
   const card = document.getElementById('dashboard-card');
   if (!card) return;
@@ -7111,11 +7185,7 @@ function _renderDashboardNextSession() {
     }</div>
     <div class="session-picker" id="dash-session-picker">${chips}</div>
     <div class="session-picker-hint">Scroll · tap to select</div>
-    <button class="dash-start-btn"
-      style="margin-top:10px;background:rgba(${nextColorRgb},0.1);border-color:rgba(${nextColorRgb},0.35);color:${nextColor}"
-      onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${nextSess.session.id}')">
-      ▶ Start ${nextSess.session.name}
-    </button>
+    ${buildDashStartControls(nextSess.session, nextColor, nextColorRgb)}
   `;
 }
 
@@ -7515,10 +7585,7 @@ function renderDashboard() {
           <div class="session-picker" id="dash-session-picker">${chips}</div>
           <div class="session-picker-hint">Scroll · tap to select</div>
 
-          <button class="dash-start-btn" style="margin-top:10px;background:rgba(${nextColorRgb},0.1);border-color:rgba(${nextColorRgb},0.35);color:${nextColor}"
-            onclick="state._nextSessionOverride=null;switchTab('tracker');selectTrackerSession('${nextSess.session.id}')">
-            ▶ Start ${nextSess.session.name}
-          </button>
+          ${buildDashStartControls(nextSess.session, nextColor, nextColorRgb)}
         `;
       })() : `<div class="dash-empty">No sessions yet — start your first session from the Track tab</div>`}
     </div>
@@ -9252,6 +9319,160 @@ function getTrainingSession(session) {
 function getSessionById(id) {
   return getTrainingSession(state.programme.sessions.find(s => s.id === id));
 }
+
+/* ── Power sparks ──────────────────────────────
+   Small sparks run round every switched-on power surface and now and
+   then throw a few particles off the edge. Driven from JS so the speed
+   stays even on any shape: the path is the centre line of the outline,
+   sampled round the rounded corners, with keyframe offsets by distance.
+   A MutationObserver attaches them as surfaces are drawn and removes
+   them when a surface is redrawn, charging, draining or switched off. */
+const PowerFx = (() => {
+  const SPEED    = 230;               // px / s along the outline
+  const RUNNERS  = 2;                 // sparks per surface, evenly spaced
+  const TAIL     = [0.75, 0.5, 0.3];  // trailing dots: size and opacity
+  const TAIL_LAG = 24;                // ms between trailing dots
+  const hosts = new Map();
+  const live = el => el.classList.contains('power-on')
+    && !el.classList.contains('power-charging') && !el.classList.contains('power-draining');
+
+  // Centre line of the 3px outline (1px border + 2px inset ring), as
+  // points with cumulative distance and outward normal, clockwise
+  function outline(el) {
+    const w = el.clientWidth, h = el.clientHeight;
+    if (w < 24 || h < 24) return null;
+    const cs = getComputedStyle(el);
+    const b = parseFloat(cs.borderTopWidth) || 0;
+    const R = parseFloat(cs.borderTopLeftRadius) || 0;
+    const i = 1.5 - b;
+    const x0 = i, y0 = i, x1 = w - i, y1 = h - i;
+    const r = Math.max(0, Math.min(R - 1.5, (x1 - x0) / 2, (y1 - y0) / 2));
+    const pts = [];
+    const arc = (cx, cy, a0) => {
+      for (let k = 1; k <= 6; k++) {
+        const a = a0 + (k / 6) * Math.PI / 2;
+        pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), nx: Math.cos(a), ny: Math.sin(a) });
+      }
+    };
+    pts.push({ x: x0 + r, y: y0, nx: 0, ny: -1 });
+    pts.push({ x: x1 - r, y: y0, nx: 0, ny: -1 }); arc(x1 - r, y0 + r, -Math.PI / 2);
+    pts.push({ x: x1, y: y1 - r, nx: 1, ny: 0 });  arc(x1 - r, y1 - r, 0);
+    pts.push({ x: x0 + r, y: y1, nx: 0, ny: 1 });  arc(x0 + r, y1 - r, Math.PI / 2);
+    pts.push({ x: x0, y: y0 + r, nx: -1, ny: 0 }); arc(x0 + r, y0 + r, Math.PI);
+    let d = 0;
+    pts.forEach((p, k) => { if (k) d += Math.hypot(p.x - pts[k - 1].x, p.y - pts[k - 1].y); p.d = d; });
+    return d > 0 ? { pts, len: d } : null;
+  }
+
+  function pointAt(path, t) {
+    const target = t * path.len, pts = path.pts;
+    for (let k = 1; k < pts.length; k++) {
+      if (pts[k].d >= target) {
+        const a = pts[k - 1], b = pts[k], f = b.d > a.d ? (target - a.d) / (b.d - a.d) : 0;
+        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, nx: b.nx, ny: b.ny };
+      }
+    }
+    return pts[0];
+  }
+
+  function build(st) {
+    st.anims.forEach(a => a.cancel());
+    st.anims = []; st.heads = [];
+    st.layer.querySelectorAll('.power-spark:not(.fly)').forEach(n => n.remove());
+    st.path = outline(st.el);
+    if (!st.path) return;
+    const frames = st.path.pts.map(p => ({
+      transform: `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px)`, offset: Math.min(1, p.d / st.path.len),
+    }));
+    st.dur = st.path.len / SPEED * 1000;
+    for (let n = 0; n < RUNNERS; n++) {
+      const start = -(n / RUNNERS) * st.dur;
+      [1, ...TAIL].forEach((size, k) => {
+        const dot = document.createElement('span');
+        dot.className = 'power-spark' + (k ? ' tail' : '');
+        if (k) dot.style.cssText = `--s:${size};opacity:${size}`;
+        st.layer.appendChild(dot);
+        const a = dot.animate(frames, { duration: st.dur, iterations: Infinity, delay: start + k * TAIL_LAG });
+        st.anims.push(a);
+        if (!k) st.heads.push(a);
+      });
+    }
+  }
+
+  // A few particles flung off the edge where a spark is right now
+  function burst(st) {
+    if (!st.path || !st.heads.length || document.hidden) return;
+    const head = st.heads[Math.floor(Math.random() * st.heads.length)];
+    const t = (((Number(head.currentTime) || 0) % st.dur) + st.dur) % st.dur / st.dur;
+    const p = pointAt(st.path, t);
+    const count = 2 + Math.floor(Math.random() * 3);
+    for (let n = 0; n < count; n++) {
+      const ang = Math.atan2(p.ny, p.nx) + (Math.random() - 0.5) * 1.4;
+      const dist = 9 + Math.random() * 16;
+      const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+      const s = document.createElement('span');
+      s.className = 'power-spark fly';
+      st.layer.appendChild(s);
+      const a = s.animate([
+        { transform: `translate(${p.x}px,${p.y}px) scale(1)`, opacity: 1 },
+        { transform: `translate(${p.x + dx * 0.75}px,${p.y + dy * 0.75}px) scale(0.8)`, opacity: 0.9, offset: 0.55 },
+        { transform: `translate(${p.x + dx}px,${p.y + dy + 5}px) scale(0.3)`, opacity: 0 },
+      ], { duration: 380 + Math.random() * 260, easing: 'cubic-bezier(.2,.7,.4,1)' });
+      a.onfinish = () => s.remove();
+    }
+  }
+
+  function schedule(st) {
+    st.timer = setTimeout(() => {
+      if (!hosts.has(st.el)) return;
+      burst(st);
+      schedule(st);
+    }, 1400 + Math.random() * 2400);
+  }
+
+  function attach(el) {
+    const layer = document.createElement('div');
+    layer.className = 'power-spark-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    el.appendChild(layer);
+    const st = { el, layer, anims: [], heads: [], path: null, dur: 0, timer: 0, raf: 0 };
+    st.ro = new ResizeObserver(() => { cancelAnimationFrame(st.raf); st.raf = requestAnimationFrame(() => build(st)); });
+    st.ro.observe(el);
+    hosts.set(el, st);
+    build(st);
+    schedule(st);
+  }
+
+  function detach(st) {
+    clearTimeout(st.timer);
+    cancelAnimationFrame(st.raf);
+    st.ro.disconnect();
+    st.anims.forEach(a => a.cancel());
+    st.layer.remove();
+    hosts.delete(st.el);
+  }
+
+  function sync() {
+    for (const st of [...hosts.values()]) if (!st.el.isConnected || !live(st.el)) detach(st);
+    if (reducedMotion()) return;
+    document.querySelectorAll('[data-power-host].power-on').forEach(el => {
+      if (live(el) && !hosts.has(el)) attach(el);
+    });
+  }
+
+  let queued = 0;
+  function init() {
+    new MutationObserver(records => {
+      // Ignore the sparks' own comings and goings
+      if (records.every(r => r.target.closest?.('.power-spark-layer'))) return;
+      if (!queued) queued = requestAnimationFrame(() => { queued = 0; sync(); });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  return { sync };
+})();
 
 // Stage a power log was prescribed at (stored on save), else the
 // highest stage its sets actually cover

@@ -4546,9 +4546,10 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 }
 
 /* ═══════════════════════════════════════════
-   POWER SESSION (Galpin 3-to-5) — hot pink, hard outlines.
-   The card sets its own ink tokens so text stays dark on pink in both
-   themes; the POWER SESSION badge is acid lime on near-black.
+   POWER MODE (Galpin 3-to-5) — hot pink, hard outlines.
+   Pink surfaces carry data-power-host and set their own ink tokens so
+   text stays dark on pink in both themes. The outline is a 1px border
+   plus a 2px inset ring, so switching on never changes the card size.
 ═══════════════════════════════════════════ */
 :root {
   --power-pink:  #FF1F8E;
@@ -4556,31 +4557,106 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   --power-lime:  #D4FF1A;
 }
 
+/* --charge is the reach of the pink from the centre; registered so the
+   fill animates smoothly (without @property it simply snaps to pink). */
+@property --charge { syntax: '<percentage>'; inherits: false; initial-value: 120%; }
+
 .session-card.power-on,
 .tracker-session-btn.power-on,
-.power-brief.standalone {
+.power-brief.standalone.power-on {
   --text:        var(--power-ink);
   --text-dim:    #3A0020;
   --text-muted:  #5C0B33;
   --border:      rgba(20,0,10,0.28);
   --border-h:    rgba(20,0,10,0.5);
   --bg-surface2: rgba(255,255,255,0.2);
-  background: var(--power-pink);
-  border: 3px solid var(--power-ink);
-  box-shadow: 5px 5px 0 var(--power-ink);
+  position: relative;
+  overflow: visible;                 /* sparks can leave the card */
   color: var(--power-ink);
+  border: 1px solid var(--power-ink);
+  background-color: var(--power-pink);
+  background-image: radial-gradient(ellipse at center,
+    var(--power-pink) calc(var(--charge) - 12%),
+    #FF8CC6 calc(var(--charge) - 3%),
+    var(--bg-surface) calc(var(--charge) + 2%));
+  box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 16px 2px rgba(255,31,142,0.4), 5px 5px 0 var(--power-ink);
+  animation: power-hum 2.8s ease-in-out infinite;
 }
-.session-card.power-on:hover { border-color: var(--power-ink); box-shadow: 6px 6px 0 var(--power-ink); }
 .session-card.power-on .session-head:hover { background: rgba(255,255,255,0.12); }
-.session-card.power-on .session-tag {
-  color: var(--power-ink); border: 2px solid var(--power-ink); background: rgba(255,255,255,0.25);
-}
-.session-card.power-on .session-pip { background: var(--power-ink) !important; }
+.session-card.power-on .session-head { flex-wrap: wrap; row-gap: 8px; }
+.session-card.power-on .session-head-actions { margin-left: auto; }
+.session-card.power-on .session-pip,
+.session-card.power-on .ex-type-dot { background: var(--power-ink) !important; }
 .session-card.power-on .ex-table td,
 .session-card.power-on .ex-table th { border-color: rgba(20,0,10,0.2); }
-.session-card.power-on .ex-type-dot { background: var(--power-ink) !important; }
 .session-card.power-on .ex-tag { color: var(--power-ink); border-color: rgba(20,0,10,0.4); background: rgba(255,255,255,0.22); }
+/* Inline session colours are unreadable on pink — force the power ink */
+.session-card.power-on .session-tag { color: var(--power-ink) !important; border: 2px solid var(--power-ink) !important; background: rgba(255,255,255,0.25) !important; }
+.session-card.power-on .ex-sets-range,
+.session-card.power-on .ex-load-prog { color: var(--text-dim) !important; opacity: 1 !important; }
+.session-card.power-on .session-focus { background: rgba(255,255,255,0.22); border-color: rgba(20,0,10,0.3); color: var(--power-ink); }
+.session-card.power-on .session-note { border-left-color: var(--power-ink); }
+.tracker-session-btn.power-on .tracker-session-name { color: var(--power-ink); }
+.tracker-session-btn.power-on:hover { background-color: var(--power-pink); }
 
+/* Glow breathes gently while on */
+@keyframes power-hum {
+  0%, 100% { box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 14px 1px rgba(255,31,142,0.35), 5px 5px 0 var(--power-ink); }
+  50%      { box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 24px 4px rgba(255,31,142,0.55), 5px 5px 0 var(--power-ink); }
+}
+
+/* Switching on: the pink fills out from the centre with a bright leading
+   edge, the outline and glow come up with it, then settle */
+[data-power-host].power-on.power-charging { animation: power-charge 0.95s both; }
+@keyframes power-charge {
+  0%   { --charge: 0%; border-color: var(--border);
+         box-shadow: inset 0 0 0 0 rgba(20,0,10,0), 0 0 0 0 rgba(255,31,142,0), 0 0 0 var(--power-ink);
+         animation-timing-function: cubic-bezier(.55,0,.2,1); }
+  72%  { --charge: 120%; border-color: var(--power-ink);
+         box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 30px 7px rgba(255,31,142,0.7), 5px 5px 0 var(--power-ink);
+         animation-timing-function: ease-out; }
+  100% { --charge: 120%;
+         box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 16px 2px rgba(255,31,142,0.4), 5px 5px 0 var(--power-ink); }
+}
+/* Switching off: the pink drains back into the centre, then the card is
+   redrawn as normal */
+[data-power-host].power-on.power-draining { animation: power-drain 0.7s cubic-bezier(.5,0,.4,1) both; }
+@keyframes power-drain {
+  0%   { --charge: 120%; border-color: var(--power-ink);
+         box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 20px 3px rgba(255,31,142,0.5), 5px 5px 0 var(--power-ink); }
+  100% { --charge: 0%; border-color: var(--border);
+         box-shadow: inset 0 0 0 0 rgba(20,0,10,0), 0 0 0 0 rgba(255,31,142,0), 0 0 0 var(--power-ink); }
+}
+.session-card.power-charging .power-badge,
+.power-brief.power-charging .power-badge { animation: power-badge-in 0.95s ease-out both; }
+@keyframes power-badge-in {
+  0%, 45% { opacity: 0; transform: scale(0.8); }
+  75%     { opacity: 1; transform: scale(1.06); }
+  100%    { opacity: 1; transform: scale(1); }
+}
+
+/* Sparks — positioned by JS (PowerFx) along the outline */
+.power-spark-layer {
+  position: absolute; left: 0; top: 0; width: 0; height: 0;
+  overflow: visible; pointer-events: none; z-index: 4;
+}
+.power-spark {
+  --s: 1;
+  position: absolute; left: 0; top: 0;
+  width: calc(4px * var(--s)); height: calc(4px * var(--s));
+  margin: calc(-2px * var(--s)) 0 0 calc(-2px * var(--s));
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 3px 1px var(--power-lime), 0 0 8px 2px rgba(212,255,26,0.5);
+  will-change: transform;
+}
+.power-spark.tail { background: var(--power-lime); box-shadow: 0 0 4px 1px rgba(212,255,26,0.6); }
+.power-spark.fly {
+  width: 2px; height: 2px; margin: -1px 0 0 -1px;
+  box-shadow: 0 0 3px 1px var(--power-lime);
+}
+
+/* Badge */
 .power-badge {
   display: inline-block;
   flex: 1 0 auto;
@@ -4596,10 +4672,12 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   border-radius: 4px;
   line-height: 1.2;
   white-space: nowrap;
+  text-shadow: 0 0 6px rgba(212,255,26,0.6);
 }
 .power-badge.sm { font-size: 10px; padding: 2px 7px; flex: none; vertical-align: middle; }
 .session-card.power-on .session-head .power-badge { margin-right: auto; }
 
+/* Toggle */
 .power-toggle {
   display: inline-flex;
   align-items: center;
@@ -4615,7 +4693,9 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   color: var(--text-dim);
   cursor: pointer;
   white-space: nowrap;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
+.power-toggle.compact { align-self: flex-start; font-size: 9px; padding: 3px 8px 3px 3px; }
 .power-toggle-knob {
   width: 22px; height: 12px; border-radius: 6px;
   background: rgba(128,128,128,0.35);
@@ -4626,14 +4706,28 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   content: ''; position: absolute; top: 2px; left: 2px;
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--bg-surface);
-  transition: transform var(--transition);
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), background var(--transition), box-shadow var(--transition);
 }
 .power-toggle:hover { border-color: var(--power-pink); color: var(--power-pink); }
-.power-toggle.on { border-color: var(--power-ink); color: var(--power-lime); background: var(--power-ink); }
+.power-toggle.on { border-color: var(--power-ink); color: var(--power-lime); background: var(--power-ink); box-shadow: 0 0 8px rgba(212,255,26,0.35); }
 .power-toggle.on .power-toggle-knob { background: var(--power-pink); }
-.power-toggle.on .power-toggle-knob::after { transform: translateX(10px); background: var(--power-lime); }
+.power-toggle.on .power-toggle-knob::after { transform: translateX(10px); background: var(--power-lime); box-shadow: 0 0 5px 1px rgba(212,255,26,0.8); }
 .power-toggle:focus-visible { outline: 2px solid var(--power-lime); outline-offset: 2px; }
+.power-toggle[disabled] { cursor: default; opacity: 0.8; }
+.power-toggle[disabled]:hover { border-color: var(--power-ink); color: var(--power-lime); }
+.session-toolbar #active-power-slot:empty { display: none; }
 
+/* Dashboard start row */
+.dash-start-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.dash-start-row .dash-start-btn { flex: 1; margin-top: 0 !important; }
+.dash-start-btn.power-start {
+  background: var(--power-pink); color: var(--power-ink);
+  border: 1px solid var(--power-ink);
+  box-shadow: inset 0 0 0 2px var(--power-ink), 0 0 14px rgba(255,31,142,0.45);
+  font-weight: 700;
+}
+
+/* Brief */
 .power-brief {
   padding: 10px 16px 12px;
   border-top: 2px solid var(--power-ink);
@@ -4651,9 +4745,6 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 }
 .power-rx { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text); }
 
-.tracker-session-btn.power-on .tracker-session-name { color: var(--power-ink); }
-.tracker-session-btn.power-on:hover { background: var(--power-pink); box-shadow: 6px 6px 0 var(--power-ink); }
-
 /* Dashboard tile */
 .power-dash-card {
   padding: 9px 11px;
@@ -4667,195 +4758,9 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 .power-dash-bar > span { display: block; height: 100%; min-width: 4px; border-radius: 3px; background: var(--power-pink); }
 .power-dash-rx { flex: 0 0 auto; font-family: var(--font-mono); color: var(--text); }
 
-/* Inline session colours are unreadable on pink — force the power ink */
-.session-card.power-on .session-tag { color: var(--power-ink) !important; border-color: var(--power-ink) !important; background: rgba(255,255,255,0.25) !important; }
-.session-card.power-on .ex-sets-range,
-.session-card.power-on .ex-load-prog { color: var(--text-dim) !important; opacity: 1 !important; }
-.session-card.power-on .session-focus { background: rgba(255,255,255,0.22); border-color: rgba(20,0,10,0.3); color: var(--power-ink); }
-.session-card.power-on .session-note { border-left-color: var(--power-ink); }
-
-/* ── Power: charge from the centre out, then live current ─────
-   --charge is the radius of the pink core; animating it from 0 grows
-   the charge outward from the middle of the card. --spin drives a lime
-   spark that runs round the edge while power is on. Both are
-   registered so they interpolate; without @property the card simply
-   snaps to full pink. */
-@property --charge { syntax: '<percentage>'; inherits: false; initial-value: 160%; }
-@property --spin   { syntax: '<angle>';      inherits: false; initial-value: 0deg; }
-
-.session-card.power-on {
-  position: relative;
-  background-color: var(--power-pink);
-  background-image:
-    repeating-linear-gradient(115deg, transparent 0 26px, rgba(212,255,26,0.13) 26px 27px, transparent 27px 52px),
-    radial-gradient(ellipse at center,
-      #FF6DB8 0%, var(--power-pink) calc(var(--charge) * 0.55),
-      var(--power-pink) var(--charge), var(--bg-surface) calc(var(--charge) + 0.5%));
-  background-position: 0 0, 0 0;
-  animation: power-hum 2.4s ease-in-out infinite, power-flicker 3.6s steps(1) infinite, power-field 0.9s linear infinite;
-}
-/* Current running round the inside of the outline */
-.session-card.power-on::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  border-radius: inherit;
-  background: conic-gradient(from var(--spin),
-    transparent 0 12%, rgba(212,255,26,0.2) 20%, var(--power-lime) 28%, #fff 30%, var(--power-lime) 32%, transparent 38%
-    62%, rgba(212,255,26,0.2) 70%, var(--power-lime) 78%, #fff 80%, var(--power-lime) 82%, transparent 88% 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  pointer-events: none;
-  z-index: 2;
-  animation: power-spin 1.4s linear infinite;
-}
-.session-card.power-on .power-toggle.on { box-shadow: 0 0 10px 1px rgba(212,255,26,0.55); }
-
-/* Charging: core grows from the centre, stutters, buzzes, then bursts */
-.session-card.power-on.power-charging {
-  animation: power-charge 1.7s cubic-bezier(.5,0,.3,1) both;
-}
-.session-card.power-on.power-charging::before { animation: power-spin 0.5s linear infinite; opacity: 0.9; }
-.session-card.power-on.power-charging::after {
-  content: '⚡ FULL POWER ⚡';
-  position: absolute;
-  inset: auto;
-  top: 50%; left: 50%;
-  background: none;
-  filter: none;
-  opacity: 1;
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  pointer-events: none;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(22px, 5vw, 34px);
-  letter-spacing: 0.06em;
-  color: var(--power-lime);
-  -webkit-text-stroke: 1.5px var(--power-ink);
-  text-shadow: 0 0 14px rgba(212,255,26,0.9), 3px 3px 0 var(--power-ink);
-  animation: power-stamp 1.7s ease-out both;
-}
-@keyframes power-charge {
-  0%   { --charge: 0%;   border-color: var(--border); filter: none;
-         box-shadow: 0 0 0 0 rgba(255,31,142,0); transform: none; }
-  18%  { --charge: 14%;  filter: brightness(1.15); }
-  24%  { --charge: 10%;  filter: brightness(0.9); }            /* stutter */
-  34%  { --charge: 30%;  filter: brightness(1.2);
-         box-shadow: 0 0 14px 2px rgba(255,31,142,0.45); }
-  40%  { --charge: 26%;  filter: brightness(0.95); }            /* stutter */
-  55%  { --charge: 60%;  border-color: var(--power-ink); transform: translate(1px, -1px); }
-  60%  { transform: translate(-1px, 1px); }
-  65%  { --charge: 85%;  transform: translate(1px, 1px);
-         box-shadow: 0 0 30px 8px rgba(255,31,142,0.7); }
-  70%  { transform: translate(-1px, -1px); }
-  76%  { --charge: 160%; transform: none; filter: brightness(1.7) saturate(1.4);
-         box-shadow: 0 0 60px 20px rgba(255,31,142,0.95), 0 0 16px 4px rgba(212,255,26,0.6), 5px 5px 0 var(--power-ink); }
-  84%  { filter: brightness(1.05); }
-  88%  { filter: brightness(1.35); }
-  100% { --charge: 160%; filter: none; transform: none;
-         box-shadow: 0 0 18px 3px rgba(255,31,142,0.5), 5px 5px 0 var(--power-ink); }
-}
-@keyframes power-stamp {
-  0%, 70% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-  78%     { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(-3deg); }
-  86%     { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
-  100%    { opacity: 0; transform: translate(-50%, -50%) scale(1.1) rotate(-3deg); }
-}
-@keyframes power-spin { to { --spin: 360deg; } }
-@keyframes power-hum {
-  0%, 100% { box-shadow: 0 0 12px 1px rgba(255,31,142,0.4), 5px 5px 0 var(--power-ink); }
-  50%      { box-shadow: 0 0 28px 6px rgba(255,31,142,0.7), 0 0 8px 1px rgba(212,255,26,0.25), 5px 5px 0 var(--power-ink); }
-}
-/* Mains flicker: a couple of quick blips every few seconds */
-@keyframes power-flicker {
-  0%, 100% { filter: none; }
-  27%      { filter: brightness(1.25); }
-  28%      { filter: none; }
-  61%      { filter: brightness(0.9); }
-  61.8%    { filter: brightness(1.3) saturate(1.2); }
-  63%      { filter: none; }
-  90%      { filter: brightness(1.35); }
-  90.6%    { filter: brightness(0.9); }
-  91.2%    { filter: brightness(1.2); }
-  92%      { filter: none; }
-}
-/* Switching off: the charge collapses back into the centre */
-.session-card.power-discharging {
-  position: relative;
-  background-image: radial-gradient(ellipse at center, var(--power-pink) var(--charge), transparent calc(var(--charge) + 0.5%));
-  animation: power-discharge 0.55s ease-in both;
-}
-@keyframes power-discharge {
-  0%   { --charge: 160%; box-shadow: 0 0 34px 10px rgba(255,31,142,0.7); filter: brightness(1.3); }
-  100% { --charge: 0%;   box-shadow: 0 0 0 0 rgba(255,31,142,0); filter: none; }
-}
-.session-card.power-charging .power-badge { animation: power-badge-in 1.7s ease-out both; }
-@keyframes power-badge-in {
-  0%, 72% { opacity: 0; transform: scale(0.6); }
-  80%     { opacity: 1; transform: scale(1.18); }
-  100%    { opacity: 1; transform: scale(1); }
-}
 @media (prefers-reduced-motion: reduce) {
-  .session-card.power-on,
-  .session-card.power-on.power-charging,
-  .session-card.power-on::before,
-  .session-card.power-discharging,
-  .session-card.power-charging .power-badge { animation: none; }
-  .session-card.power-on.power-charging::after { display: none; }
-  .session-card.power-on { box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
-}
-
-/* ── Power: live current while on ─────────────────────────────
-   Lightning arcs crackle across the card at shifting spots (stepped,
-   so they snap rather than glide), current streams through the pink
-   and the POWER MODE badge buzzes like a neon tube. */
-.session-card.power-on::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 60'%3E%3Cpolyline points='2,32 22,22 30,38 54,12 62,30 84,18 92,42 112,26 138,34' fill='none' stroke='%23D4FF1A' stroke-width='3.5' stroke-linejoin='bevel' opacity='.55'/%3E%3Cpolyline points='2,32 22,22 30,38 54,12 62,30 84,18 92,42 112,26 138,34' fill='none' stroke='%23fff' stroke-width='1.2' stroke-linejoin='bevel'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpolyline points='2,8 18,24 28,12 44,34 56,18 70,40 82,26 98,44' fill='none' stroke='%23D4FF1A' stroke-width='3.5' stroke-linejoin='bevel' opacity='.55'/%3E%3Cpolyline points='2,8 18,24 28,12 44,34 56,18 70,40 82,26 98,44' fill='none' stroke='%23fff' stroke-width='1.2' stroke-linejoin='bevel'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 150px 64px, 104px 52px;
-  filter: drop-shadow(0 0 4px rgba(212,255,26,0.9));
-  opacity: 0;
-  animation: power-arcs 3.1s steps(1) infinite;
-}
-@keyframes power-arcs {
-  0%    { opacity: 0; background-position: 12% 30%, 82% 70%; }
-  7%    { opacity: 1; background-position: 12% 30%, 82% 70%; }
-  8.5%  { opacity: 0.35; }
-  9.5%  { opacity: 1; background-position: 14% 34%, 80% 66%; }
-  11%   { opacity: 0; }
-  33%   { opacity: 0.95; background-position: 68% 18%, 22% 82%; }
-  35%   { opacity: 0; }
-  58%   { opacity: 1; background-position: 42% 78%, 94% 20%; }
-  59.5% { opacity: 0.4; }
-  60.5% { opacity: 1; background-position: 44% 74%, 92% 24%; }
-  62%   { opacity: 0; }
-  84%   { opacity: 1; background-position: 88% 58%, 6% 28%; }
-  86%   { opacity: 0; }
-  100%  { opacity: 0; }
-}
-@keyframes power-field { to { background-position: 52px 0, 0 0; } }
-.session-card.power-on .power-badge { animation: power-neon 3.3s steps(1) infinite; }
-@keyframes power-neon {
-  0%, 100% { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); }
-  41%      { text-shadow: none; color: #9DB814; }
-  42.5%    { text-shadow: 0 0 8px rgba(212,255,26,1), 0 0 20px rgba(212,255,26,0.7); color: var(--power-lime); }
-  44%      { text-shadow: none; color: #9DB814; }
-  45%      { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); color: var(--power-lime); }
-  78%      { text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 22px rgba(212,255,26,0.8); }
-  79.5%    { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); }
-}
-.power-toggle.on .power-toggle-knob::after { box-shadow: 0 0 6px 2px rgba(212,255,26,0.8); }
-@media (prefers-reduced-motion: reduce) {
-  .session-card.power-on::after,
-  .session-card.power-on .power-badge { animation: none; }
-  .session-card.power-on::after { opacity: 0; }
+  [data-power-host].power-on,
+  [data-power-host].power-on.power-charging,
+  [data-power-host].power-on.power-draining,
+  .power-charging .power-badge { animation: none; }
 }
