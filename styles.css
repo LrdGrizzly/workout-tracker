@@ -4656,20 +4656,21 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   display: inline-block;
   flex: 1 0 auto;
   max-width: max-content;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  /* Neon-tube lettering, lit: white-hot core, lime glow */
+  font-family: 'Tilt Neon', var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--power-lime);
+  color: #F4FFC8;
   background: var(--power-ink);
-  padding: 3px 10px;
+  padding: 1px 11px 2px;
   border-radius: 4px;
   line-height: 1.2;
   white-space: nowrap;
-  text-shadow: 0 0 6px rgba(212,255,26,0.6);
+  text-shadow: 0 0 2px #fff, 0 0 5px var(--power-lime), 0 0 11px var(--power-lime), 0 0 20px rgba(212,255,26,0.7);
 }
-.power-badge.sm { font-size: 10px; padding: 2px 7px; flex: none; vertical-align: middle; }
+.power-badge.sm { font-size: 12px; padding: 1px 7px; flex: none; vertical-align: middle; }
 .session-card.power-on .session-head .power-badge { margin-right: auto; }
 
 /* Toggle */
