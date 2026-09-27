@@ -4686,10 +4686,13 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 .session-card.power-on {
   position: relative;
   background-color: var(--power-pink);
-  background-image: radial-gradient(ellipse at center,
-    #FF6DB8 0%, var(--power-pink) calc(var(--charge) * 0.55),
-    var(--power-pink) var(--charge), var(--bg-surface) calc(var(--charge) + 0.5%));
-  animation: power-hum 2.4s ease-in-out infinite, power-flicker 7s steps(1) infinite;
+  background-image:
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(212,255,26,0.13) 26px 27px, transparent 27px 52px),
+    radial-gradient(ellipse at center,
+      #FF6DB8 0%, var(--power-pink) calc(var(--charge) * 0.55),
+      var(--power-pink) var(--charge), var(--bg-surface) calc(var(--charge) + 0.5%));
+  background-position: 0 0, 0 0;
+  animation: power-hum 2.4s ease-in-out infinite, power-flicker 3.6s steps(1) infinite, power-field 0.9s linear infinite;
 }
 /* Current running round the inside of the outline */
 .session-card.power-on::before {
@@ -4699,14 +4702,14 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   padding: 2px;
   border-radius: inherit;
   background: conic-gradient(from var(--spin),
-    transparent 0 62%, rgba(212,255,26,0.2) 70%, var(--power-lime) 78%, #fff 80%,
-    var(--power-lime) 82%, transparent 90% 100%);
+    transparent 0 12%, rgba(212,255,26,0.2) 20%, var(--power-lime) 28%, #fff 30%, var(--power-lime) 32%, transparent 38%
+    62%, rgba(212,255,26,0.2) 70%, var(--power-lime) 78%, #fff 80%, var(--power-lime) 82%, transparent 88% 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   pointer-events: none;
   z-index: 2;
-  animation: power-spin 1.8s linear infinite;
+  animation: power-spin 1.4s linear infinite;
 }
 .session-card.power-on .power-toggle.on { box-shadow: 0 0 10px 1px rgba(212,255,26,0.55); }
 
@@ -4718,7 +4721,11 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 .session-card.power-on.power-charging::after {
   content: '⚡ FULL POWER ⚡';
   position: absolute;
+  inset: auto;
   top: 50%; left: 50%;
+  background: none;
+  filter: none;
+  opacity: 1;
   transform: translate(-50%, -50%);
   z-index: 3;
   pointer-events: none;
@@ -4766,8 +4773,13 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 /* Mains flicker: a couple of quick blips every few seconds */
 @keyframes power-flicker {
   0%, 100% { filter: none; }
-  90%      { filter: brightness(1.3); }
-  90.6%    { filter: brightness(0.92); }
+  27%      { filter: brightness(1.25); }
+  28%      { filter: none; }
+  61%      { filter: brightness(0.9); }
+  61.8%    { filter: brightness(1.3) saturate(1.2); }
+  63%      { filter: none; }
+  90%      { filter: brightness(1.35); }
+  90.6%    { filter: brightness(0.9); }
   91.2%    { filter: brightness(1.2); }
   92%      { filter: none; }
 }
@@ -4795,4 +4807,55 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   .session-card.power-charging .power-badge { animation: none; }
   .session-card.power-on.power-charging::after { display: none; }
   .session-card.power-on { box-shadow: 0 0 16px 2px rgba(255,31,142,0.45), 5px 5px 0 var(--power-ink); }
+}
+
+/* ── Power: live current while on ─────────────────────────────
+   Lightning arcs crackle across the card at shifting spots (stepped,
+   so they snap rather than glide), current streams through the pink
+   and the POWER MODE badge buzzes like a neon tube. */
+.session-card.power-on::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 60'%3E%3Cpolyline points='2,32 22,22 30,38 54,12 62,30 84,18 92,42 112,26 138,34' fill='none' stroke='%23D4FF1A' stroke-width='3.5' stroke-linejoin='bevel' opacity='.55'/%3E%3Cpolyline points='2,32 22,22 30,38 54,12 62,30 84,18 92,42 112,26 138,34' fill='none' stroke='%23fff' stroke-width='1.2' stroke-linejoin='bevel'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpolyline points='2,8 18,24 28,12 44,34 56,18 70,40 82,26 98,44' fill='none' stroke='%23D4FF1A' stroke-width='3.5' stroke-linejoin='bevel' opacity='.55'/%3E%3Cpolyline points='2,8 18,24 28,12 44,34 56,18 70,40 82,26 98,44' fill='none' stroke='%23fff' stroke-width='1.2' stroke-linejoin='bevel'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 150px 64px, 104px 52px;
+  filter: drop-shadow(0 0 4px rgba(212,255,26,0.9));
+  opacity: 0;
+  animation: power-arcs 3.1s steps(1) infinite;
+}
+@keyframes power-arcs {
+  0%    { opacity: 0; background-position: 12% 30%, 82% 70%; }
+  7%    { opacity: 1; background-position: 12% 30%, 82% 70%; }
+  8.5%  { opacity: 0.35; }
+  9.5%  { opacity: 1; background-position: 14% 34%, 80% 66%; }
+  11%   { opacity: 0; }
+  33%   { opacity: 0.95; background-position: 68% 18%, 22% 82%; }
+  35%   { opacity: 0; }
+  58%   { opacity: 1; background-position: 42% 78%, 94% 20%; }
+  59.5% { opacity: 0.4; }
+  60.5% { opacity: 1; background-position: 44% 74%, 92% 24%; }
+  62%   { opacity: 0; }
+  84%   { opacity: 1; background-position: 88% 58%, 6% 28%; }
+  86%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+@keyframes power-field { to { background-position: 52px 0, 0 0; } }
+.session-card.power-on .power-badge { animation: power-neon 3.3s steps(1) infinite; }
+@keyframes power-neon {
+  0%, 100% { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); }
+  41%      { text-shadow: none; color: #9DB814; }
+  42.5%    { text-shadow: 0 0 8px rgba(212,255,26,1), 0 0 20px rgba(212,255,26,0.7); color: var(--power-lime); }
+  44%      { text-shadow: none; color: #9DB814; }
+  45%      { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); color: var(--power-lime); }
+  78%      { text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 22px rgba(212,255,26,0.8); }
+  79.5%    { text-shadow: 0 0 6px rgba(212,255,26,0.9), 0 0 14px rgba(212,255,26,0.5); }
+}
+.power-toggle.on .power-toggle-knob::after { box-shadow: 0 0 6px 2px rgba(212,255,26,0.8); }
+@media (prefers-reduced-motion: reduce) {
+  .session-card.power-on::after,
+  .session-card.power-on .power-badge { animation: none; }
+  .session-card.power-on::after { opacity: 0; }
 }
