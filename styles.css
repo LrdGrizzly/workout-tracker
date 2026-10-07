@@ -554,7 +554,19 @@ html[data-theme="dark"] .tabnav {
   color: var(--accent);
 }
 
-.tab-icon  { font-size: 18px; line-height: 1; }
+.tab-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--transition);
+}
+.tab-icon .f { transition: fill var(--transition); }
+.tab-btn.active .tab-icon .f { fill: color-mix(in srgb, var(--accent) 18%, transparent); }
+.tab-btn:active .tab-icon { transform: scale(0.92); }
 .tab-label { font-size: 9px; }
 
 /* ═══════════════════════════════════════════
@@ -1384,10 +1396,43 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
   color: var(--accent);
 }
 
+/* RIR ramp: closeness to failure. Light theme deepens toward 0;
+   dark theme brightens toward 0. Ink flips where the fill gets strong. */
+:root, html[data-theme="light"] {
+  --rir-0: #3D5030; --rir-1: #546B41; --rir-2: #708A55;
+  --rir-3: #99AD7A; --rir-4: #B8C99E; --rir-5: #DCE5CE;
+  --rir-ink-strong: #FFF8EC; --rir-ink-soft: #2C3A22;
+}
+html[data-theme="dark"] {
+  --rir-0: #C9DBA8; --rir-1: #A9BF86; --rir-2: #879E65;
+  --rir-3: #657A4B; --rir-4: #4A5A38; --rir-5: #36412B;
+  --rir-ink-strong: #1A1F16; --rir-ink-soft: #E8E2D2;
+}
+[data-rir="0"]  { --rir: var(--rir-0); --rir-ink: var(--rir-ink-strong); }
+[data-rir="1"]  { --rir: var(--rir-1); --rir-ink: var(--rir-ink-strong); }
+[data-rir="2"]  { --rir: var(--rir-2); --rir-ink: var(--rir-ink-strong); }
+[data-rir="3"]  { --rir: var(--rir-3); --rir-ink: var(--rir-ink-soft); }
+[data-rir="4"]  { --rir: var(--rir-4); --rir-ink: var(--rir-ink-soft); }
+[data-rir="5"],
+[data-rir="5+"] { --rir: var(--rir-5); --rir-ink: var(--rir-ink-soft); }
+
 .input-pill.rir-pill.selected {
-  background: color-mix(in srgb, var(--push-b) 15%, transparent);
-  border-color: color-mix(in srgb, var(--push-b) 45%, transparent);
-  color: var(--push-b);
+  background: var(--rir);
+  border-color: var(--rir);
+  color: var(--rir-ink);
+  font-weight: 600;
+}
+
+.rir-chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--rir);
+  color: var(--rir-ink);
+  vertical-align: 1px;
 }
 
 .pill-custom-btn {
@@ -1479,21 +1524,7 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 
 .tracker-ex-card.collapsed .tracker-ex-body { max-height: 0; opacity: 0; }
 
-.tracker-ex-collapse-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-dim);
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  line-height: 1;
-  flex-shrink: 0;
-}
 
-.tracker-ex-collapse-btn:hover { color: var(--text); background: var(--bg-surface3); }
-.tracker-ex-card.collapsed .tracker-ex-collapse-btn { transform: rotate(-90deg); }
 
 .set-row {
   transition: max-height 0.25s cubic-bezier(0.4,0,0.2,1),
@@ -1524,7 +1555,6 @@ html[data-theme="dark"] .session-head:hover { background: rgba(255,255,255,0.02)
 .set-row.set-collapsed .set-ghost-hint { display: none; }
 
 /* The cancel (✕) control is only reachable while the set is expanded */
-.set-row.set-collapsed .delete-set-btn { display: none; }
 
 /* Per-set collapse / expand chevron */
 .set-row-main { cursor: pointer; }
@@ -2228,21 +2258,7 @@ html[data-theme="light"] .milestone-overlay {
 
 .tracker-ex-target .range { font-size: 8px; opacity: 0.65; }
 
-.tracker-sub-btn {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  padding: 3px 7px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--bg-surface2);
-  color: var(--text-dim);
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: all var(--transition);
-}
 
-.tracker-sub-btn:hover { border-color: var(--border-h); color: var(--text); }
 
 .tracker-ex-body { padding: 0 14px 12px; }
 
@@ -3865,7 +3881,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 .info-tooltip {
   position: fixed;
   z-index: 600;
-  max-width: 300px;
+  max-width: 340px;
   padding: 12px 14px;
   background: var(--bg-surface);
   border: 1px solid var(--border-h);
@@ -3890,6 +3906,161 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 }
 
 .info-tooltip-desc { font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+
+/* Exercise illustration inside the info tooltip. Baked off-white panel,
+   so it keeps its own light background in both app themes. */
+.info-tooltip-img {
+  width: 100%;
+  display: block;
+  margin: 2px 0 9px;
+  border: 1px solid var(--border-h);
+  border-radius: calc(var(--radius) - 2px);
+  background: #F4F3EE;
+}
+.info-tooltip-img.hidden { display: none; }
+
+/* Primary / Secondary muscle list, coloured by the exercise's programme. */
+.info-tooltip-muscles { margin-bottom: 8px; }
+.info-tooltip-muscles:empty { display: none; }
+.info-mus-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.info-mus-h {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  width: 54px;
+  flex: none;
+}
+.info-mus {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: var(--mc);
+  border: 1px solid color-mix(in srgb, var(--mc) 40%, transparent);
+  background: color-mix(in srgb, var(--mc) 10%, transparent);
+}
+/* Secondary chip: the same lighter shade the body map uses, not opacity. */
+.info-mus.sec {
+  color: color-mix(in srgb, var(--mc) 70%, var(--text-muted));
+  border-color: color-mix(in srgb, var(--mc) 22%, transparent);
+  background: color-mix(in srgb, var(--mc) 5%, transparent);
+}
+
+/* Body map beside the muscle list */
+.info-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.info-mus-list { flex: 1; min-width: 0; }
+.info-mus-list .info-mus-row { flex-direction: column; align-items: flex-start; margin-bottom: 8px; }
+.info-mus-list .info-mus-h { width: auto; }
+/* Untrained muscle and silhouette derive from the text colour, so the
+   figure keeps its contrast in both themes. */
+.info-body, .body-map {
+  --body-mus:  color-mix(in srgb, var(--text) 11%, var(--bg-surface));
+  --body-fill: color-mix(in srgb, var(--text) 20%, var(--bg-surface));
+}
+.body-map { display: flex; gap: 4px; flex: none; }
+.body-map-fig { display: flex; flex-direction: column; align-items: center; }
+.body-map-fig span {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.body-map-svg { width: 88px; height: auto; display: block; }
+.body-map-svg .body-sil { fill: var(--body-fill); }
+.body-map-svg .body-mus { fill: var(--body-mus); transition: fill 0.18s ease; }
+.body-map-swap {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border-h);
+  border-radius: 5px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+/* TEMP — dashboard heatmap comparison (muscle × week vs calendar) */
+.heat-compare {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+.heat-compare > div { min-width: 0; }
+.heat-compare-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.heat-compare > div > div[role="table"] { margin-top: 6px !important; }
+.cal-hm { display: grid; gap: 2px; margin-top: 6px; }
+.cal-hm-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: rgba(128,128,128,0.08);
+}
+.cal-hm-cell.future { background: none; outline: 1px dashed rgba(128,128,128,0.12); outline-offset: -1px; }
+.cal-hm-cell.today  { box-shadow: inset 0 0 0 1px var(--text-muted); }
+.cal-hm-mo, .cal-hm-day {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  line-height: 1;
+  align-self: center;
+}
+/* Same single-hue ramp as the muscle × week grid */
+.cal-hm-cell.l1 { background: #DCE5CE; }
+.cal-hm-cell.l2 { background: #B8C99E; }
+.cal-hm-cell.l3 { background: #708A55; }
+.cal-hm-cell.l4 { background: #3D5030; }
+/* Dark theme: a cool blue ramp, contrasting with the dark forest surface */
+html[data-theme="dark"] .cal-hm-cell.l1 { background: #2B4A63; }
+html[data-theme="dark"] .cal-hm-cell.l2 { background: #3D6E96; }
+html[data-theme="dark"] .cal-hm-cell.l3 { background: #5B9BD0; }
+html[data-theme="dark"] .cal-hm-cell.l4 { background: #9FD3F5; }
+.cal-hm-day { font-size: 9px !important; color: var(--text-dim) !important; }
+.cal-hm-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 7px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.cal-hm-legend { display: inline-flex; align-items: center; gap: 2px; }
+.cal-hm-legend .cal-hm-cell { width: 9px; height: 9px; display: inline-block; }
+
+/* Info icon beside every exercise name */
+.ex-info-btn {
+  cursor: pointer;
+  color: var(--pull);
+  font-size: 9px;
+  margin-left: 3px;
+  user-select: none;
+}
 
 .info-tooltip-close {
   position: absolute;
@@ -3921,6 +4092,14 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
 }
 
 .gear-btn:hover { border-color: var(--border-h); color: var(--text); }
+.gear-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
 
 /* Band config row */
 .band-config-row {
@@ -4055,33 +4234,8 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.swap-btn {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid color-mix(in srgb, var(--amber) 28%, transparent);
-  background: color-mix(in srgb, var(--amber) 7%, transparent);
-  color: color-mix(in srgb, var(--amber) 80%, var(--text-dim));
-  cursor: pointer;
-  transition: all var(--transition);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
-.swap-btn:hover {
-  background: color-mix(in srgb, var(--amber) 15%, transparent);
-  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-  color: var(--amber);
-}
 
-.swap-btn.is-alt {
-  background: color-mix(in srgb, var(--amber) 12%, transparent);
-  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-  color: var(--amber);
-}
 
 .no-track-card .tracker-ex-body { padding: 8px 14px 12px; }
 
@@ -4093,30 +4247,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   margin-bottom: 6px;
 }
 
-.delete-set-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1px solid color-mix(in srgb, var(--red) 22%, transparent);
-  background: transparent;
-  color: color-mix(in srgb, var(--red) 40%, transparent);
-  cursor: pointer;
-  font-size: 9px;
-  line-height: 1;
-  transition: all var(--transition);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-left: 4px;
-}
 
-.delete-set-btn:hover {
-  background: color-mix(in srgb, var(--red) 10%, transparent);
-  color: var(--red);
-  border-color: color-mix(in srgb, var(--red) 45%, transparent);
-}
 
 .ceiling-flag {
   display: inline-flex;
@@ -4167,7 +4298,7 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
     letter-spacing: 0.04em;
     padding: 4px 2px;
   }
-  .tab-icon { font-size: 14px; }
+  .tab-icon { width: 20px; height: 20px; }
   .tab-btn span {
     display: block !important;
     font-size: 8px;
@@ -4759,4 +4890,137 @@ html[data-theme="dark"] .settings-section-head:hover { background: rgba(255,255,
   [data-power-host].power-on.power-charging,
   [data-power-host].power-on.power-draining,
   .power-charging .power-badge { animation: none; }
+}
+
+/* ═══════════════════════════════════════════
+   ACTION SHEETS + DECLUTTERED TRACKER
+   One ⋯ per exercise, the set number as the set's menu.
+═══════════════════════════════════════════ */
+.ex-more-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface2);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--transition), color var(--transition);
+}
+.ex-more-btn:hover { border-color: var(--border-h); color: var(--text); }
+
+/* The set number is the set's menu */
+button.set-num {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+}
+button.set-num:hover { border-color: var(--border-h); color: var(--text); }
+span.set-collapse-btn { cursor: pointer; }
+span.set-collapse-btn:hover { background: transparent; }
+
+/* Action list inside the sheet */
+.sheet-list { display: flex; flex-direction: column; gap: 2px; margin: 0 -8px; }
+.sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: background var(--transition);
+}
+.sheet-item:hover:not(:disabled) { background: var(--bg-surface2); }
+.sheet-item:disabled { opacity: 0.4; cursor: default; }
+.sheet-item-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--bg-surface2);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.sheet-item-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sheet-item-label { font-size: 14px; font-weight: 600; }
+.sheet-item-sub { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.03em; }
+.sheet-item.danger .sheet-item-label { color: var(--red); }
+.sheet-item.danger .sheet-item-icon { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+
+/* Stepper (rest period) */
+.sheet-stepper { display: flex; align-items: center; justify-content: center; gap: 22px; padding: 8px 0 4px; }
+.stepper-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--border-h);
+  background: var(--bg-surface2);
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color var(--transition);
+}
+.stepper-btn:active { transform: scale(0.94); }
+.stepper-val { font-family: var(--font-display); font-size: 44px; font-weight: 800; color: var(--text); min-width: 96px; text-align: center; line-height: 1; }
+.stepper-val small { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--text-muted); margin-left: 3px; }
+.sheet-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+/* Desktop: action sheets are a compact centred card */
+.modal-overlay.is-sheet .modal { max-width: 360px; padding: 20px; }
+.modal-overlay.is-sheet .modal-title { font-size: 16px; margin-bottom: 8px; }
+.modal-overlay.is-sheet .modal-body { margin-bottom: 12px; }
+
+/* Phones: every dialog is a bottom sheet with a grab handle */
+@media (max-width: 600px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-overlay.visible .modal { animation: sheetUp 0.26s cubic-bezier(.32,.72,0,1); }
+  .modal,
+  .modal-overlay.is-sheet .modal {
+    max-width: none;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+    padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    max-height: 88vh;
+    max-height: 88dvh;
+  }
+  .modal::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-h);
+    margin: 0 auto 14px;
+    flex: none;
+  }
+  .modal-actions { justify-content: stretch; }
+  .modal-actions .modal-btn { flex: 1; min-height: 46px; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }

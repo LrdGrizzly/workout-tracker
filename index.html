@@ -22,6 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&family=Tilt+Neon&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="bodymap-paths.js" defer></script>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -62,25 +63,25 @@
       <span id="topbar-username">—</span>
       <span style="color:var(--text-muted)">↩</span>
     </div>
-    <button class="gear-btn" onclick="openSettings()" title="Settings">⚙</button>
+    <button class="gear-btn" onclick="openSettings()" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
   </div>
 
   <!-- Bottom Nav -->
   <div class="tabnav">
     <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard">
-      <span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span>
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><rect class="f" x="3.5" y="3.5" width="7" height="9" rx="1.6"/><rect class="f" x="13.5" y="3.5" width="7" height="5" rx="1.6"/><rect class="f" x="13.5" y="11.5" width="7" height="9" rx="1.6"/><rect class="f" x="3.5" y="15.5" width="7" height="5" rx="1.6"/></svg><span class="tab-label">Dashboard</span>
     </button>
     <button class="tab-btn" onclick="switchTab('programme')" id="tab-programme">
-      <span class="tab-icon">📋</span><span class="tab-label">Programme</span>
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><rect class="f" x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5v-.7c0-.7.5-1.3 1.2-1.3h3.6c.7 0 1.2.6 1.2 1.3v.7"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg><span class="tab-label">Programme</span>
     </button>
     <button class="tab-btn" onclick="switchTab('tracker')" id="tab-tracker">
-      <span class="tab-icon">⚡</span><span class="tab-label">Track</span>
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 10.2 8.2 6.5a2.6 2.6 0 0 1 2.6-3h2.4a2.6 2.6 0 0 1 2.6 3l-.5 3.7"/><path class="f" d="M6.8 20.5h10.4a7 7 0 1 0-10.4 0z"/></svg><span class="tab-label">Track</span>
     </button>
     <button class="tab-btn" onclick="switchTab('history')" id="tab-history">
-      <span class="tab-icon">📈</span><span class="tab-label">History</span>
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5 16.5l4.5-5 3.5 3 6-7"/><path d="M15.5 7.5H19V11"/></svg><span class="tab-label">History</span>
     </button>
     <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide">
-      <span class="tab-icon">📖</span><span class="tab-label">Guide</span>
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M12 6.5C10.2 5 7.6 4.5 4 4.5v14c3.6 0 6.2.5 8 2 1.8-1.5 4.4-2 8-2v-14c-3.6 0-6.2.5-8 2z"/><path d="M12 6.5v14"/></svg><span class="tab-label">Guide</span>
     </button>
   </div>
 
@@ -428,6 +429,8 @@
 <div class="info-tooltip hidden" id="info-tooltip">
   <button class="info-tooltip-close" onclick="closeInfoTooltip()">✕</button>
   <div class="info-tooltip-name" id="info-tooltip-name"></div>
+  <img class="info-tooltip-img hidden" id="info-tooltip-img" alt="" />
+  <div class="info-tooltip-muscles" id="info-tooltip-muscles"></div>
   <div class="info-tooltip-desc" id="info-tooltip-desc"></div>
 </div>
 
@@ -911,6 +914,8 @@ const Validator = (() => {
       ...(session._manual   ? { _manual:   true } : {}),
       ...(session._conflict ? { _conflict: true } : {}),
       ...(session.power     ? { power:     true } : {}),
+      // Dummy sessions: keep the flag, and re-derive it for records saved before it was preserved
+      ...(session._dummy || session.id.startsWith('dummy_') ? { _dummy: true } : {}),
     };
   }
 
@@ -1942,8 +1947,8 @@ async function loadLocalState() {
 
   // ── 2. Sessions from IndexedDB (runs migration if needed) ───
   try {
-    const sessions = await StorageManager.init(state.profile);
-    state.sessions = sessions.filter(s => !s._dummy);
+    // Dummy sessions stay loaded so deleteDummyData can find and purge them from IndexedDB
+    state.sessions = await StorageManager.init(state.profile);
   } catch(e) {
     console.warn('[loadLocalState] IndexedDB load failed, falling back to empty', e);
     state.sessions = [];
@@ -2453,7 +2458,7 @@ function buildSessionCard(session) {
           <div>
             <div class="ex-name">
               ${ex.name}
-              ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
+              <sup class="ex-info-btn" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>
             </div>
             <div class="ex-tags">${ssTag}${musTags}${tags}${optTag}${preTag}${ruleTag}</div>
           </div>
@@ -2697,29 +2702,38 @@ function toggleEditMode(e, sessionId) {
   }
 }
 
+// Rest period editor: a stepper in a sheet, 30–300 s in 15 s steps.
 function editRest(e, sessionId) {
   e.stopPropagation();
-  const display = document.getElementById(`rest-${sessionId}`);
-  const input = document.getElementById(`rest-input-${sessionId}`);
-  const btn = e.target;
-
-  if (input.style.display === 'none') {
-    input.style.display = 'inline-block';
-    display.style.display = 'none';
-    btn.textContent = 'Save';
-  } else {
-    const val = parseInt(input.value);
-    if (val >= 30 && val <= 300) {
-      const session = state.programme.sessions.find(s => s.id === sessionId);
-      if (session) session.rest = val;
-      display.textContent = session?.power && session.powerCapable ? `${POWER_REST_S}s (3–5 min)` : val + 's';
+  const session = state.programme.sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  window._restDraft = session.rest || 90;
+  const body = `<div class="sheet-stepper">
+      <button class="stepper-btn" onclick="stepRestDraft(-15)" aria-label="15 seconds less">−</button>
+      <div class="stepper-val"><span id="rest-draft">${window._restDraft}</span><small>s</small></div>
+      <button class="stepper-btn" onclick="stepRestDraft(15)" aria-label="15 seconds more">+</button>
+    </div>
+    <div class="sheet-hint">Between sets, for every exercise in ${esc(session.name || 'this session')}.</div>`;
+  showModal('Rest period', body, [
+    { label: 'Cancel', cls: 'cancel', action: closeModal },
+    { label: 'Save', cls: 'save', action: () => {
+      session.rest = window._restDraft;
+      const display = document.getElementById(`rest-${sessionId}`);
+      const input = document.getElementById(`rest-input-${sessionId}`);
+      if (input) input.value = session.rest;
+      if (display) display.textContent = session.power && session.powerCapable ? `${POWER_REST_S}s (3–5 min)` : session.rest + 's';
       saveLocalState();
+      closeModal();
       toast('Rest period updated', 'success');
-    }
-    input.style.display = 'none';
-    display.style.display = 'inline';
-    btn.textContent = 'Edit';
-  }
+    }},
+  ]);
+  document.getElementById('modal-overlay').classList.add('is-sheet');
+}
+
+function stepRestDraft(delta) {
+  window._restDraft = Math.min(300, Math.max(30, (window._restDraft || 90) + delta));
+  const el = document.getElementById('rest-draft');
+  if (el) el.textContent = window._restDraft;
 }
 
 /* ═══════════════════════════════════════════
@@ -2976,7 +2990,7 @@ function buildTrackerExercises(session) {
         <div style="flex:1">
           <div class="tracker-ex-name">
             ${ss ? `<span class="ss-badge">${ssLabel}</span>` : ''}${ex.name}
-            ${ex.desc ? `<sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px;user-select:none" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>` : ''}
+            <sup class="ex-info-btn" onclick="showExerciseInfo(event,'${safeExName(ex.name)}')">ℹ</sup>
           </div>
           ${ex.tags.includes('unilateral') ? '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(61,171,255,0.5);margin-top:2px">🔄 Unilateral</div>' : ''}
         </div>
@@ -2985,11 +2999,7 @@ function buildTrackerExercises(session) {
           <div class="range" style="font-family:'DM Mono',monospace;font-size:9px;color:${session.color};opacity:0.85;font-weight:600">${ex.reps}</div>
           <div class="range" style="color:var(--text-muted);font-size:8px">${ex.load}</div>
         </div>
-        ${EXERCISE_SWAP_MAP[ex.name]
-          ? `<button class="swap-btn" id="swap-btn-${idx}" onclick="toggleExerciseSwap('${ex.name}',this.closest('.tracker-ex-card'),this)">Alt ⇄</button>`
-          : `<button class="tracker-sub-btn" onclick="showSubstitution('${ex.name}')">Sub</button>`
-        }
-        <button class="tracker-ex-collapse-btn" onclick="toggleExerciseCard('tex-${session.id}-${idx}', event)" title="Collapse">▾</button>
+        <button class="ex-more-btn" onclick="openExerciseMenu(event,'${session.id}',${idx})" aria-label="Exercise options" title="Options">⋯</button>
       </div>
       <div class="tracker-ex-body" id="tex-body-${session.id}-${idx}">
         ${bodyHtml}
@@ -3305,6 +3315,13 @@ function buildRIRPills(setIdx, exIdx, isUnilateral, currentRIR, rxBand) {
   <input type="hidden" class="set-rir" id="rir-val-${exIdx}-${setIdx}" value="${currentRIR || ''}">`;
 }
 
+// RIR as a chip tinted by closeness to failure (0 deepest → 5+ palest)
+function rirChip(rir, prefix = 'RIR ') {
+  const n = Math.min(5, Math.max(0, parseInt(rir, 10)));
+  if (isNaN(n)) return '';
+  return `<span class="rir-chip" data-rir="${n}">${prefix}${esc(String(rir))}</span>`;
+}
+
 // Pill selection handlers
 function selectLoadPill(btn, load, exIdx, setIdx) {
   const container = btn.closest('.pill-group');
@@ -3480,11 +3497,10 @@ function buildSetRow(setIdx, ex, isDeload, sessionId, exIdx, prefill, prevSet, r
   return `<div class="set-row" data-rep-range="${rr[0]},${rr[1]}">
     <div class="set-row-main" onclick="toggleSetRow(this, event)">
       <div class="set-indicator"></div>
-      <span class="set-num">${setIdx + 1}</span>
+      <button class="set-num" onclick="openSetMenu(event,this)" title="Set options">${setIdx + 1}</button>
       ${ghostHint}
       <span class="set-collapsed-summary"></span>
-      <button class="set-collapse-btn" title="Collapse / expand set" aria-label="Collapse or expand set">▾</button>
-      <button class="delete-set-btn" onclick="deleteSetRow(this)" title="Remove set">✕</button>
+      <span class="set-collapse-btn" aria-hidden="true">▾</span>
     </div>
     <div class="set-row-pills">
       <div class="pill-labeled-group">
@@ -4609,6 +4625,75 @@ function getWeeklyHardSets(days = 7, offsetDays = 0, primaryOnly = false) {
   return countHardSets(cutoff, end, primaryOnly);
 }
 
+// Hard sets in one logged session: same rule as countHardSets
+// (reps logged, RIR ≤ 4, optional/prehab and power sessions excluded).
+function sessionHardSetCount(sess, allConfigs) {
+  if (sess.status !== 'complete' || sess.power) return 0;
+  let n = 0;
+  (sess.exercises || []).forEach(ex => {
+    const cfg = allConfigs.find(e => e.name === ex.name);
+    if (cfg?.tags?.includes('optional') || cfg?.tags?.includes('prehab')) return;
+    (ex.sets || []).forEach(set => {
+      if (!(parseInt(set.reps) > 0)) return;
+      const rir = parseFloat(set.rir);
+      if (!isNaN(rir) && rir > 4) return;
+      n++;
+    });
+  });
+  return n;
+}
+
+// TEMP — GitHub-style calendar, one column per week (Mon→Sun), the last
+// `weeks` weeks. One hue, the same ramp as the muscle × week grid: the
+// deeper the cell, the more hard sets that day.
+function buildCalendarHeatmapHtml(weeks = 18) {
+  const allConfigs = state.programme.sessions.flatMap(s => s.exercises);
+  const byDay = {};
+  state.sessions.forEach(s => {
+    if (s.status !== 'complete' || !s.date) return;
+    const def = state.programme.sessions.find(p => p.id === s.sessionId);
+    const day = byDay[s.date] || (byDay[s.date] = { hard: 0, names: [] });
+    day.hard += sessionHardSetCount(s, allConfigs);
+    day.names.push(def?.name || s.sessionName || 'Session');
+  });
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const start = new Date(monday);
+  start.setDate(monday.getDate() - (weeks - 1) * 7);
+
+  const level = n => n <= 0 ? 1 : n < 8 ? 1 : n < 14 ? 2 : n < 20 ? 3 : 4;
+  let cells = '', monthRow = '', lastMonth = -1;
+  for (let w = 0; w < weeks; w++) {
+    const colStart = new Date(start); colStart.setDate(start.getDate() + w * 7);
+    const mo = colStart.getMonth();
+    monthRow += '<div class="cal-hm-mo" style="grid-row:1;grid-column:' + (w + 2) + '">' + (mo !== lastMonth ? colStart.toLocaleDateString('en-GB', { month: 'short' }) : '') + '</div>';
+    lastMonth = mo;
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(colStart); date.setDate(colStart.getDate() + d);
+      const key = localDateStr(date);
+      const info = byDay[key];
+      const future = date > today;
+      const label = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const style = 'grid-column:' + (w + 2) + ';grid-row:' + (d + 2);
+      const title = info ? label + ' — ' + info.names.join(' + ') + ', ' + info.hard + ' hard sets' : label;
+      cells += '<div class="cal-hm-cell' + (info ? ' l' + level(info.hard) : '') + (future ? ' future' : '') + (key === localDateStr(today) ? ' today' : '') +
+        '" style="' + style + '" title="' + title + '"></div>';
+    }
+  }
+  const dayLbls = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((l, d) =>
+    '<div class="cal-hm-day" style="grid-column:1;grid-row:' + (d + 2) + '">' + l + '</div>').join('');
+  const trained = Object.keys(byDay).filter(k => k >= localDateStr(start)).length;
+
+  return '<div class="cal-hm" style="grid-template-columns:64px repeat(' + weeks + ',minmax(0,1fr))" role="img" aria-label="Training days, last ' + weeks + ' weeks">' +
+      monthRow +
+      dayLbls + cells +
+    '</div>' +
+    '<div class="cal-hm-foot"><span>' + trained + ' training days &middot; ' + weeks + ' weeks</span>' +
+      '<span class="cal-hm-legend">Fewer <i class="cal-hm-cell l1"></i><i class="cal-hm-cell l2"></i><i class="cal-hm-cell l3"></i><i class="cal-hm-cell l4"></i> More hard sets</span></div>';
+}
+
 // Hard sets per muscle for complete sessions dated in [cutoff, end)
 function countHardSets(cutoff, end, primaryOnly = false) {
   const counts = {};
@@ -4868,7 +4953,7 @@ function buildHistoryCard(s) {
     if (!completeSets.length) return '';
     // Compact: one line per exercise — name + all sets inline
     const setChips = completeSets.map((set, i) =>
-      `<span style="font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;background:var(--bg-surface3);border-radius:3px;border:1px solid var(--border);white-space:nowrap">${set.load || 'BW'} × ${set.reps || '—'}${set.rir ? ' <span style=\'opacity:0.5\'>RIR ' + set.rir + '</span>' : ''}</span>`
+      `<span style="font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;background:var(--bg-surface3);border-radius:3px;border:1px solid var(--border);white-space:nowrap">${set.load || 'BW'} × ${set.reps || '—'}${set.rir != null && set.rir !== '' ? ' ' + rirChip(set.rir) : ''}</span>`
     ).join(' ');
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
       <div style="font-size:11px;font-weight:600;min-width:140px;flex-shrink:0;padding-top:2px;color:var(--text)">${ex.name}</div>
@@ -7302,6 +7387,14 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
     ).join('') +
     '</div>';
 
+  // ── TEMP: calendar heatmap, shown beside the muscle × week grid for comparison ──
+  const calHtml = buildCalendarHeatmapHtml(18);
+  const heatCompareHtml =
+    '<div class="heat-compare">' +
+      '<div><div class="heat-compare-lbl">Muscle &times; week</div>' + heatHtml + '</div>' +
+      '<div><div class="heat-compare-lbl">Calendar &middot; temp</div>' + calHtml + '</div>' +
+    '</div>';
+
   // ── 28-day vs previous 28-day comparison ──
   const m28  = getRollingStats(28);
   const p28  = getRollingStats(28, 28);
@@ -7459,7 +7552,7 @@ function buildVolumeInsightsPanel(week, weekVolumes, maxVol, totalVol, volFmt, p
       '<div class="dash-volume-total">' + hsNow + '</div>' + volChangeHtml +
     '</div>' +
     '<div class="dash-volume-sub">Hard sets &middot; ' + thisWeek.sessions + ' session' + (thisWeek.sessions !== 1 ? 's' : '') + ' &middot; ' + bwNote + '</div>' +
-    heatHtml +
+    heatCompareHtml +
     comp28Html +
     '<div class="dash-stat-grid" style="margin-top:10px">' +
       '<div class="dash-stat-box"><div class="dash-stat-val" style="font-size:20px">' + streak + '</div><div class="dash-stat-lbl">Day Streak</div></div>' +
@@ -7678,10 +7771,8 @@ function toggleExerciseCard(cardId, event) {
     // If click came from inside the body (not the head), block it
     const head = t.closest('.tracker-ex-head');
     if (!head) return; // clicked inside body — don't collapse
-    // Within the head, block sub-buttons except the collapse btn itself
-    const isCollapseBtn = t.closest('.tracker-ex-collapse-btn');
-    const isOtherBtn    = !isCollapseBtn && t.closest('button, input, select');
-    if (isOtherBtn) return;
+    // Within the head, buttons (ℹ, ⋯) do their own thing
+    if (t.closest('button, input, select')) return;
   }
   const card = document.getElementById(cardId);
   if (!card) return;
@@ -7730,7 +7821,7 @@ function updateSetSummary(row) {
     if (collapseBtn) main.insertBefore(summary, collapseBtn);
     else main?.appendChild(summary);
   }
-  summary.textContent = `${load || '—'} × ${reps || '—'}${rir !== '' ? ` @${rir}` : ''}`;
+  summary.innerHTML = `${esc(load || '—')} × ${esc(reps || '—')}${rir !== '' ? ' ' + rirChip(rir, '@') : ''}`;
   return summary;
 }
 
@@ -7740,8 +7831,6 @@ function toggleSetRow(el, event) {
   if (!row) return;
   if (event) {
     const t = event.target;
-    // Never toggle from the delete button
-    if (t.closest('.delete-set-btn')) return;
     // Inside the row body (pills, inputs) never toggles; only the chevron
     // and the bare header area do.
     const isCollapseBtn = !!t.closest('.set-collapse-btn');
@@ -9810,7 +9899,9 @@ function showModal(title, body, actions) {
     `<button class="modal-btn ${a.cls}" onclick="modalAction(${i})">${a.label}</button>`
   ).join('');
   window._modalActions = actions;
-  document.getElementById('modal-overlay').classList.add('visible');
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.remove('is-sheet');
+  overlay.classList.add('visible');
 }
 
 function modalAction(i) { window._modalActions[i].action(); }
@@ -9822,6 +9913,58 @@ function closeModal() {
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// Action sheet: a list of choices in the modal (a bottom sheet on phones).
+// items: [{ icon, label, sub, danger, disabled, action }]
+function openActionSheet(title, items) {
+  window._sheetItems = items;
+  const body = `<div class="sheet-list">${items.map((it, i) =>
+    `<button class="sheet-item${it.danger ? ' danger' : ''}" onclick="sheetAction(${i})"${it.disabled ? ' disabled' : ''}>
+      <span class="sheet-item-icon">${it.icon || ''}</span>
+      <span class="sheet-item-text"><span class="sheet-item-label">${it.label}</span>${it.sub ? `<span class="sheet-item-sub">${it.sub}</span>` : ''}</span>
+    </button>`).join('')}</div>`;
+  showModal(title, body, [{ label: 'Close', cls: 'cancel', action: closeModal }]);
+  document.getElementById('modal-overlay').classList.add('is-sheet');
+}
+
+function sheetAction(i) {
+  const it = window._sheetItems?.[i];
+  closeModal();
+  if (it && !it.disabled) it.action();
+}
+
+// ⋯ on a tracker exercise card
+function openExerciseMenu(event, sessionId, idx) {
+  event.stopPropagation();
+  const session = getSessionById(sessionId);
+  const ex = session?.exercises[idx];
+  const card = document.getElementById(`tex-${sessionId}-${idx}`);
+  if (!ex || !card) return;
+  const alt = EXERCISE_SWAP_MAP[ex.name];
+  const isAlt = !!_swapState[ex.name];
+  const collapsed = card.classList.contains('collapsed');
+  const items = [];
+  if (alt) items.push({ icon: '⇄', label: isAlt ? `Back to ${esc(ex.name)}` : `Swap to ${esc(alt.name)}`,
+    sub: isAlt ? 'Programme exercise' : 'Alternative for this slot',
+    action: () => toggleExerciseSwap(ex.name, card, null) });
+  else items.push({ icon: '↻', label: 'Substitute…', sub: 'Pick a stand-in for today', action: () => showSubstitution(ex.name) });
+  items.push({ icon: '+', label: 'Add set', action: () => { expandExerciseCard(card.id); addSet(sessionId, idx); } });
+  items.push({ icon: 'ℹ', label: 'Exercise info', sub: 'Muscles worked and cues', action: () => card.querySelector('.ex-info-btn')?.click() });
+  items.push({ icon: collapsed ? '▾' : '▴', label: collapsed ? 'Expand' : 'Collapse', action: () => card.classList.toggle('collapsed') });
+  openActionSheet(getTrackedExDef(session, idx).name, items);
+}
+
+// Tap on a set number
+function openSetMenu(event, btn) {
+  event.stopPropagation();
+  const row = btn.closest('.set-row');
+  const only = row.closest('.set-rows').querySelectorAll('.set-row').length <= 1;
+  const collapsed = row.classList.contains('set-collapsed');
+  openActionSheet(`Set ${btn.textContent.trim()}`, [
+    { icon: collapsed ? '▾' : '▴', label: collapsed ? 'Expand set' : 'Collapse set', action: () => toggleSetRow(row.querySelector('.set-row-main')) },
+    { icon: '✕', label: 'Remove set', sub: only ? 'An exercise keeps at least one set' : '', danger: true, disabled: only, action: () => deleteSetRow(btn) },
+  ]);
+}
 
 /* ═══════════════════════════════════════════
    TOAST
@@ -10438,36 +10581,142 @@ function safeExName(name) {
   return (name || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
-function showExerciseInfo(event, exName) {
-  event.stopPropagation();
-  const tooltip = document.getElementById('info-tooltip');
-  const nameEl  = document.getElementById('info-tooltip-name');
-  const descEl  = document.getElementById('info-tooltip-desc');
+// Slug for the illustration file: exercises/<slug>.png
+function exerciseSlug(name) {
+  return String(name).toLowerCase()
+    .replace(/[→–—/]/g, ' ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
-  // Find exercise desc across all sessions
-  let desc = '';
-  for (const sess of state.programme.sessions) {
+// Desc, programme colour and muscle groups for an exercise name.
+function exerciseInfoData(exName) {
+  let desc = '', color = '';
+  // Prefer the active programme (so a shared lift shows the colour you train it in)
+  for (const sess of (state.programme?.sessions || [])) {
     const ex = sess.exercises.find(e => e.name === exName);
-    if (ex && ex.desc) { desc = ex.desc; break; }
+    if (ex) {
+      if (sess.color) color = sess.color;
+      if (ex.desc) desc = ex.desc;
+      break;
+    }
   }
+  // Fall back to any programme that has it (alt / cross-programme lifts)
+  if (!color) {
+    for (const prog of Object.values(typeof PROGRAMMES !== 'undefined' ? PROGRAMMES : {})) {
+      const sess = (prog.sessions || []).find(s => s.exercises.some(e => e.name === exName));
+      if (sess) { color = sess.color || ''; if (!desc) desc = sess.exercises.find(e => e.name === exName)?.desc || ''; break; }
+    }
+  }
+  const cfg = findExerciseConfig(exName) || { name: exName, tags: [] };
+  const a = getExerciseAttrs(cfg);
+  return { desc, color: color || 'var(--pull)', primary: a.primary, secondary: a.secondary };
+}
 
-  nameEl.textContent = exName;
-  descEl.textContent = desc || 'No description available. Add one in Settings.';
+/* ── Body map: MuscleMap front + back figures (bodymap-paths.js) ──
+   App muscle ids → MuscleMap parts. `back` covers lats, traps and
+   erectors; `core` covers abs, obliques and serratus; `calves` also
+   lights the shins, since tibialis work is filed under calves. */
+const BODY_PARTS = {
+  chest: ['chest'],
+  back: ['upper-back', 'trapezius', 'lower-back'],
+  shoulders: ['deltoids'],
+  biceps: ['biceps'],
+  triceps: ['triceps'],
+  forearms: ['forearm'],
+  quads: ['quadriceps'],
+  hamstrings: ['hamstring'],
+  glutes: ['gluteal'],
+  adductors: ['adductors'],
+  'hip-flexors': ['hip-flexors'],
+  calves: ['calves', 'tibialis'],
+  core: ['abs', 'obliques', 'serratus'],
+};
+const BODY_INERT = ['head', 'hair', 'neck', 'hands', 'feet', 'knees', 'ankles'];
 
-  // Position near the icon
-  const rect = event.target.getBoundingClientRect();
-  tooltip.classList.remove('hidden');
+// Which figure the body map draws, per profile.
+function bodyMapFigure() {
+  try { return localStorage.getItem(`wt_bodymap_${state.profile}`) === 'female' ? 'female' : 'male'; }
+  catch (e) { return 'male'; }
+}
+function toggleBodyMapFigure(event) {
+  event.stopPropagation();
+  const next = bodyMapFigure() === 'male' ? 'female' : 'male';
+  try { localStorage.setItem(`wt_bodymap_${state.profile}`, next); } catch (e) {}
+  const wrap = event.target.closest('.info-body');
+  if (wrap) wrap.querySelector('.body-map').outerHTML =
+    bodyMapHtml(JSON.parse(wrap.dataset.primary), JSON.parse(wrap.dataset.secondary), wrap.dataset.color);
+}
 
-  const tWidth  = 300;
+// One view as SVG. Primary muscles take the programme colour; secondary
+// ones a lighter shade of the same hue (mixed toward the untrained fill).
+function bodyMapSvg(view, primary, secondary, color) {
+  const fillOf = {};
+  secondary.forEach(m => (BODY_PARTS[m] || []).forEach(p => { fillOf[p] = `color-mix(in srgb, ${color} 42%, var(--body-mus))`; }));
+  primary.forEach(m => (BODY_PARTS[m] || []).forEach(p => { fillOf[p] = color; }));
+  const paths = (parts, cls) => parts.map(p => (view.p[p] || [])
+    .map(d => `<path class="${cls}" d="${d}"${fillOf[p] ? ` style="fill:${fillOf[p]}"` : ''}/>`).join('')).join('');
+  const muscleParts = Object.keys(view.p).filter(p => !BODY_INERT.includes(p));
+  return `<svg class="body-map-svg" viewBox="${view.vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`
+    + paths(BODY_INERT, 'body-sil') + paths(muscleParts, 'body-mus') + '</svg>';
+}
+
+function bodyMapHtml(primary, secondary, color) {
+  const g = window.BODY_PATHS?.[bodyMapFigure()];
+  if (!g) return '<div class="body-map"></div>';
+  return `<div class="body-map">
+    <div class="body-map-fig">${bodyMapSvg(g.front, primary, secondary, color)}<span>Front</span></div>
+    <div class="body-map-fig">${bodyMapSvg(g.back, primary, secondary, color)}<span>Back</span></div>
+  </div>`;
+}
+
+// Place the tooltip near the clicked icon, kept on screen.
+function positionInfoTooltip(tooltip, rect) {
+  const tWidth  = tooltip.offsetWidth  || 340;
   const tHeight = tooltip.offsetHeight || 120;
   let left = rect.left + 12;
   let top  = rect.bottom + 8;
+  if (left + tWidth  > window.innerWidth  - 10) left = window.innerWidth  - tWidth  - 10;
+  if (top  + tHeight > window.innerHeight - 10) top  = rect.top - tHeight - 8;
+  tooltip.style.left = Math.max(10, left) + 'px';
+  tooltip.style.top  = Math.max(10, top)  + 'px';
+}
 
-  if (left + tWidth > window.innerWidth - 10) left = window.innerWidth - tWidth - 10;
-  if (top + tHeight > window.innerHeight - 10) top = rect.top - tHeight - 8;
+function showExerciseInfo(event, exName, descOverride) {
+  event.stopPropagation();
+  const tooltip = document.getElementById('info-tooltip');
+  const nameEl  = document.getElementById('info-tooltip-name');
+  const imgEl   = document.getElementById('info-tooltip-img');
+  const musEl   = document.getElementById('info-tooltip-muscles');
+  const descEl  = document.getElementById('info-tooltip-desc');
 
-  tooltip.style.left = left + 'px';
-  tooltip.style.top  = top  + 'px';
+  const data = exerciseInfoData(exName);
+  const desc = (descOverride != null ? descOverride : data.desc);
+
+  nameEl.textContent = exName;
+  nameEl.style.color = data.color;
+  descEl.textContent = desc || 'No description available. Add one in Settings.';
+
+  // Primary / Secondary muscle list, coloured by programme
+  const chip = (m, sec) => `<span class="info-mus${sec ? ' sec' : ''}" style="--mc:${data.color}">${muscleLabel(m)}</span>`;
+  let musHtml = '';
+  if (data.primary.length)   musHtml += `<div class="info-mus-row"><span class="info-mus-h">Primary</span>${data.primary.map(m => chip(m, false)).join('')}</div>`;
+  if (data.secondary.length) musHtml += `<div class="info-mus-row"><span class="info-mus-h">Secondary</span>${data.secondary.map(m => chip(m, true)).join('')}</div>`;
+  musEl.innerHTML = (data.primary.length || data.secondary.length)
+    ? `<div class="info-body" style="--mc:${data.color}" data-color="${data.color}" data-primary='${JSON.stringify(data.primary)}' data-secondary='${JSON.stringify(data.secondary)}'>`
+      + bodyMapHtml(data.primary, data.secondary, data.color)
+      + `<div class="info-mus-list">${musHtml}<button class="body-map-swap" onclick="toggleBodyMapFigure(event)" title="Switch body figure">⇄ Figure</button></div></div>`
+    : '';
+
+  // Illustration — hidden until it loads, stays hidden if none exists yet
+  const rect = event.target.getBoundingClientRect();
+  imgEl.classList.add('hidden');
+  imgEl.onload  = () => { imgEl.classList.remove('hidden'); positionInfoTooltip(tooltip, rect); };
+  imgEl.onerror = () => { imgEl.classList.add('hidden'); positionInfoTooltip(tooltip, rect); };
+  imgEl.src = `exercises/${exerciseSlug(exName)}.png`;
+
+  tooltip.classList.remove('hidden');
+  positionInfoTooltip(tooltip, rect);
 
   // Auto-close on outside click
   if (_tooltipTimeout) clearTimeout(_tooltipTimeout);
@@ -12129,15 +12378,13 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
     // ── Switch TO alternative ──────────────────────────────────
     animateSwap(cardEl, () => {
       cardEl.classList.add('is-alt');
-      btnEl.textContent = '← Primary';
-      btnEl.classList.add('is-alt');
+      if (btnEl) { btnEl.textContent = '← Primary'; btnEl.classList.add('is-alt'); }
 
       // Update name with ALT badge and info icon
       if (nameEl) {
         nameEl.innerHTML = altDef.name
           + ' <span class="alt-tag">ALT</span>'
-          + ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
-              onclick="showExerciseInfo(event,'${safeExName(altDef.name)}')">ℹ</sup>`;
+          + ` <sup class="ex-info-btn" onclick="showExerciseInfo(event,'${safeExName(altDef.name)}')">ℹ</sup>`;
       }
 
       // Update target load display
@@ -12153,16 +12400,12 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
     // ── Switch BACK to primary ─────────────────────────────────
     animateSwap(cardEl, () => {
       cardEl.classList.remove('is-alt');
-      btnEl.textContent = 'Alt ⇄';
-      btnEl.classList.remove('is-alt');
+      if (btnEl) { btnEl.textContent = 'Alt ⇄'; btnEl.classList.remove('is-alt'); }
 
       // Restore primary name with info icon
       if (nameEl && primaryEx) {
         nameEl.innerHTML = exName
-          + (primaryEx.desc
-              ? ` <sup style="cursor:pointer;color:var(--pull);font-size:9px;margin-left:3px"
-                  onclick="showExerciseInfo(event,'${safeExName(exName)}')">ℹ</sup>`
-              : '');
+          + ` <sup class="ex-info-btn" onclick="showExerciseInfo(event,'${safeExName(exName)}')">ℹ</sup>`;
       }
 
       // Restore target load display
@@ -12176,23 +12419,12 @@ function toggleExerciseSwap(exName, cardEl, btnEl) {
   }
 }
 
-// Override showExerciseInfo to also look up alt descs
+// Override showExerciseInfo to also look up alt descs — the base renderer
+// still resolves the image and muscle list from the (alt) exercise name.
 const _origShowInfo = showExerciseInfo;
 showExerciseInfo = function(event, exName) {
-  // Check if it's an alt exercise we registered
-  if (window._altDescs && window._altDescs[exName]) {
-    event.stopPropagation();
-    const tooltip = document.getElementById('info-tooltip');
-    document.getElementById('info-tooltip-name').textContent = exName;
-    document.getElementById('info-tooltip-desc').textContent = window._altDescs[exName];
-    tooltip.classList.remove('hidden');
-    const rect = event.target.getBoundingClientRect();
-    tooltip.style.left = Math.min(rect.left + 12, window.innerWidth - 310) + 'px';
-    tooltip.style.top  = (rect.bottom + 8) + 'px';
-    setTimeout(() => document.addEventListener('click', closeInfoTooltip, { once: true }), 10);
-    return;
-  }
-  _origShowInfo(event, exName);
+  const altDesc = window._altDescs && window._altDescs[exName];
+  _origShowInfo(event, exName, altDesc != null ? altDesc : undefined);
 };
 
 </script>
